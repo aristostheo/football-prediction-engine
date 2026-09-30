@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import exp
 
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import TimeSeriesSplit
+from sklearn.linear_model import LogisticRegression, PoissonRegressor
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -51,6 +52,7 @@ class LeagueModelComparison:
     test_matches: int
     elo_baseline: ModelScore
     calibrated_logistic_regression: ModelScore
+    poisson_goal_model: ModelScore
 
 
 def compare_models_chronologically(
@@ -59,7 +61,14 @@ def compare_models_chronologically(
     """Compare Elo and calibrated logistic regression using each league's future holdout."""
     if not 0 < test_fraction < 1:
         raise ValueError("test_fraction must be between zero and one")
-    required = {"competition", "match_date", "result", *FEATURE_COLUMNS}
+    required = {
+        "competition",
+        "match_date",
+        "result",
+        "home_goals",
+        "away_goals",
+        *FEATURE_COLUMNS,
+    }
     missing = required.difference(features.columns)
     if missing:
         raise ValueError(f"missing model columns: {sorted(missing)}")
@@ -75,11 +84,13 @@ def compare_models_chronologically(
 
         baseline_predictions = add_elo_probabilities(test)
         logistic_predictions = _fit_predict_logistic(train, test)
+        poisson_predictions = _fit_predict_poisson(train, test)
         comparisons[str(competition)] = LeagueModelComparison(
             train_matches=len(train),
             test_matches=len(test),
             elo_baseline=_score(baseline_predictions),
             calibrated_logistic_regression=_score(logistic_predictions),
+            poisson_goal_model=_score(poisson_predictions),
         )
     return comparisons
 
@@ -107,6 +118,77 @@ def _fit_predict_logistic(train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFra
     probabilities = test.copy()
     for index, column in enumerate(columns):
         probabilities[column] = predicted[:, index]
+    return probabilities
+
+
+def _fit_predict_poisson(train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:
+    """Fit separate, time-tuned Poisson regressors for home and away goals."""
+    home_model = _fit_poisson_model(train, "home_goals")
+    away_model = _fit_poisson_model(train, "away_goals")
+    home_rates = home_model.predict(test[list(FEATURE_COLUMNS)])
+    away_rates = away_model.predict(test[list(FEATURE_COLUMNS)])
+
+    probabilities = test.copy()
+    probability_rows = [
+        _outcome_probabilities_from_goal_rates(float(home_rate), float(away_rate))
+        for home_rate, away_rate in zip(home_rates, away_rates, strict=True)
+    ]
+    probability_frame = pd.DataFrame(probability_rows, index=probabilities.index)
+    for column in probability_frame:
+        probabilities[column] = probability_frame[column]
+    probabilities["expected_home_goals"] = home_rates
+    probabilities["expected_away_goals"] = away_rates
+    return probabilities
+
+
+def _fit_poisson_model(train: pd.DataFrame, target: str) -> GridSearchCV:
+    pipeline = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="median")),
+            ("scale", StandardScaler()),
+            ("model", PoissonRegressor(max_iter=1000)),
+        ]
+    )
+    model = GridSearchCV(
+        estimator=pipeline,
+        param_grid={"model__alpha": (0.01, 0.1, 1.0, 10.0)},
+        scoring="neg_mean_poisson_deviance",
+        cv=TimeSeriesSplit(n_splits=3),
+    )
+    model.fit(train[list(FEATURE_COLUMNS)], train[target])
+    return model
+
+
+def _outcome_probabilities_from_goal_rates(home_rate: float, away_rate: float) -> dict[str, float]:
+    """Sum independent Poisson scorelines from 0-0 through 12-12 and normalize."""
+    home_probabilities = _poisson_probabilities(home_rate)
+    away_probabilities = _poisson_probabilities(away_rate)
+    home_win = 0.0
+    draw = 0.0
+    away_win = 0.0
+    for home_goals, home_probability in enumerate(home_probabilities):
+        for away_goals, away_probability in enumerate(away_probabilities):
+            scoreline_probability = home_probability * away_probability
+            if home_goals > away_goals:
+                home_win += scoreline_probability
+            elif home_goals == away_goals:
+                draw += scoreline_probability
+            else:
+                away_win += scoreline_probability
+    total = home_win + draw + away_win
+    return {
+        "p_home_win": home_win / total,
+        "p_draw": draw / total,
+        "p_away_win": away_win / total,
+    }
+
+
+def _poisson_probabilities(rate: float, max_goals: int = 12) -> list[float]:
+    if rate <= 0:
+        raise ValueError("Poisson goal rate must be positive")
+    probabilities = [exp(-rate)]
+    for goals in range(1, max_goals + 1):
+        probabilities.append(probabilities[-1] * rate / goals)
     return probabilities
 
 
