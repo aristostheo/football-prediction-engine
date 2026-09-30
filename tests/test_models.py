@@ -1,10 +1,12 @@
 from math import isfinite
 
 import pandas as pd
+import pytest
 
 from football_predictor.models import (
     FEATURE_COLUMNS,
     _outcome_probabilities_from_goal_rates,
+    blend_probabilities,
     compare_models_chronologically,
 )
 
@@ -14,6 +16,20 @@ def test_poisson_scoreline_probabilities_are_normalized() -> None:
 
     assert abs(sum(probabilities.values()) - 1) < 1e-12
     assert probabilities["p_home_win"] > probabilities["p_away_win"]
+
+
+def test_probability_blend_is_normalized() -> None:
+    elo = pd.DataFrame(
+        {"p_home_win": [0.5], "p_draw": [0.3], "p_away_win": [0.2], "result": ["H"]}
+    )
+    poisson = pd.DataFrame(
+        {"p_home_win": [0.7], "p_draw": [0.2], "p_away_win": [0.1], "result": ["H"]}
+    )
+
+    blended = blend_probabilities(elo, poisson, elo_weight=0.25)
+
+    assert blended["p_home_win"].iloc[0] == pytest.approx(0.65)
+    assert abs(blended[["p_home_win", "p_draw", "p_away_win"]].iloc[0].sum() - 1) < 1e-12
 
 
 def test_model_comparison_trains_on_past_rows_and_scores_future_rows() -> None:
@@ -40,4 +56,7 @@ def test_model_comparison_trains_on_past_rows_and_scores_future_rows() -> None:
     assert premier_league.calibrated_logistic_regression.metrics.matches == 18
     assert premier_league.poisson_goal_model.metrics.matches == 18
     assert isfinite(premier_league.poisson_goal_model.metrics.log_loss)
+    ensemble = premier_league.validation_selected_elo_poisson_ensemble
+    assert ensemble.elo_weight in {0.0, 0.25, 0.5, 0.75, 1.0}
+    assert ensemble.test_score.metrics.matches == 18
     assert set(premier_league.elo_baseline.calibration_error) == {"H", "D", "A"}

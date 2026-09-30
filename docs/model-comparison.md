@@ -19,9 +19,25 @@ W/D/L probabilities.
 | Super League Greece | Elo baseline | 0.9857 | 0.5860 | 51.03% |
 | Super League Greece | Calibrated logistic | 1.0021 | 0.5967 | 51.03% |
 | Super League Greece | Poisson goal model | 1.0080 | 0.6019 | 48.45% |
+| Premier League | Validation-selected ensemble | **0.9879** | **0.5888** | 53.63% |
+| Super League Greece | Validation-selected ensemble | 0.9893 | 0.5887 | 51.03% |
 
 The logistic model does not beat Elo. The Poisson goal model narrowly improves
 Premier League log loss by 0.0002 but is worse on its Brier score and on every
-reported Greek metric. Elo therefore remains the practical overall champion.
-This result is intentionally retained: the next candidate must improve the same
-fixed metrics and split, not merely accuracy.
+reported Greek metric. The validation-selected ensemble improves both Premier
+League probability metrics, while pure Elo remains better for Greece. These
+results are intentionally retained: later candidates must improve the same fixed
+metrics and split, not merely accuracy.
+
+## Ensemble selection without holdout tuning
+
+For each league, the initial 80% pre-holdout training period is divided again:
+the earliest 80% fits Poisson and the latest 20% selects one of five fixed Elo
+weights (`1.0`, `0.75`, `0.5`, `0.25`, `0.0`) by validation log loss. The chosen
+weight is then used once on the untouched final 20% holdout, with Poisson
+refitted on all pre-holdout training rows.
+
+| Competition | Selected Elo weight | Final policy |
+| --- | ---: | --- |
+| Premier League | 0.25 | Use the 25% Elo / 75% Poisson ensemble. |
+| Super League Greece | 0.75 | Keep pure Elo; the ensemble is worse on final holdout. |

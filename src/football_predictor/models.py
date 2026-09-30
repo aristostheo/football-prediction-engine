@@ -47,12 +47,20 @@ class ModelScore:
 
 
 @dataclass(frozen=True)
+class ValidationSelectedEnsembleScore:
+    elo_weight: float
+    validation_log_loss: float
+    test_score: ModelScore
+
+
+@dataclass(frozen=True)
 class LeagueModelComparison:
     train_matches: int
     test_matches: int
     elo_baseline: ModelScore
     calibrated_logistic_regression: ModelScore
     poisson_goal_model: ModelScore
+    validation_selected_elo_poisson_ensemble: ValidationSelectedEnsembleScore
 
 
 def compare_models_chronologically(
@@ -85,12 +93,14 @@ def compare_models_chronologically(
         baseline_predictions = add_elo_probabilities(test)
         logistic_predictions = _fit_predict_logistic(train, test)
         poisson_predictions = _fit_predict_poisson(train, test)
+        ensemble_score = _select_and_score_ensemble(train, test)
         comparisons[str(competition)] = LeagueModelComparison(
             train_matches=len(train),
             test_matches=len(test),
             elo_baseline=_score(baseline_predictions),
             calibrated_logistic_regression=_score(logistic_predictions),
             poisson_goal_model=_score(poisson_predictions),
+            validation_selected_elo_poisson_ensemble=ensemble_score,
         )
     return comparisons
 
@@ -139,6 +149,72 @@ def _fit_predict_poisson(train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFram
     probabilities["expected_home_goals"] = home_rates
     probabilities["expected_away_goals"] = away_rates
     return probabilities
+
+
+def _select_and_score_ensemble(
+    train: pd.DataFrame, test: pd.DataFrame
+) -> ValidationSelectedEnsembleScore:
+    """Choose an Elo/Poisson mix on late training data, then score it once on the future."""
+    validation_start = int(len(train) * 0.8)
+    fit_train = train.iloc[:validation_start]
+    validation = train.iloc[validation_start:]
+    if len(fit_train) < 40 or validation.empty:
+        raise ValueError("not enough training data to select an ensemble")
+
+    validation_elo = add_elo_probabilities(validation)
+    validation_poisson = _fit_predict_poisson(fit_train, validation)
+    elo_weight, validation_log_loss = _select_elo_weight(validation_elo, validation_poisson)
+
+    test_elo = add_elo_probabilities(test)
+    test_poisson = _fit_predict_poisson(train, test)
+    test_ensemble = blend_probabilities(test_elo, test_poisson, elo_weight=elo_weight)
+    return ValidationSelectedEnsembleScore(
+        elo_weight=elo_weight,
+        validation_log_loss=validation_log_loss,
+        test_score=_score(test_ensemble),
+    )
+
+
+def blend_probabilities(
+    elo_predictions: pd.DataFrame, poisson_predictions: pd.DataFrame, *, elo_weight: float
+) -> pd.DataFrame:
+    """Return an arithmetic W/D/L probability blend without changing outcome labels."""
+    if not 0 <= elo_weight <= 1:
+        raise ValueError("elo_weight must be between zero and one")
+    if len(elo_predictions) != len(poisson_predictions):
+        raise ValueError("prediction collections must have equal lengths")
+
+    blended = elo_predictions.copy()
+    probability_columns = ("p_home_win", "p_draw", "p_away_win")
+    required = set(probability_columns)
+    if required.difference(elo_predictions.columns) or required.difference(
+        poisson_predictions.columns
+    ):
+        raise ValueError("both prediction collections must include W/D/L probabilities")
+    for column in probability_columns:
+        blended[column] = (
+            elo_weight * elo_predictions[column].to_numpy()
+            + (1 - elo_weight) * poisson_predictions[column].to_numpy()
+        )
+    return blended
+
+
+def _select_elo_weight(
+    elo_predictions: pd.DataFrame, poisson_predictions: pd.DataFrame
+) -> tuple[float, float]:
+    """Pick the lowest-log-loss fixed blend using validation data only."""
+    candidates = (1.0, 0.75, 0.5, 0.25, 0.0)
+    scores = [
+        (
+            weight,
+            evaluate_probabilities(
+                blend_probabilities(elo_predictions, poisson_predictions, elo_weight=weight)
+            ),
+        )
+        for weight in candidates
+    ]
+    best_weight, best_score = min(scores, key=lambda item: item[1].log_loss)
+    return best_weight, best_score.log_loss
 
 
 def _fit_poisson_model(train: pd.DataFrame, target: str) -> GridSearchCV:

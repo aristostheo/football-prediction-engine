@@ -1,4 +1,4 @@
-"""CLI for the chronological Elo versus calibrated-logistic comparison."""
+"""CLI for chronological comparison of Elo, logistic, Poisson, and ensemble models."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from football_predictor.models import compare_models_chronologically
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compare Elo and calibrated logistic regression chronologically."
+        description="Compare Elo, logistic, Poisson, and a validation-selected ensemble."
     )
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--test-fraction", type=float, default=0.2)

@@ -78,7 +78,8 @@ uv run python -m football_predictor.model_cli \
 ## Milestone 1 status
 
 The foundation, canonical match schema, source selection, leakage-safe feature
-engine, Elo probability baseline, calibrated logistic comparison, and Poisson
-goal model are in place. Elo remains the practical overall champion on the
-held-out probability metrics. Next: assess whether carefully chosen ensemble
-weights improve calibration without fitting to the final test set.
+engine, Elo probability baseline, calibrated logistic comparison, Poisson goal
+model, and validation-selected ensemble are in place. The current policy uses
+the ensemble for the Premier League and Elo for Super League Greece, selected
+without tuning on the final holdout. Next: expose these trained prediction paths
+through a FastAPI service and integrate a reviewed current-fixture source.
