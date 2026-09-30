@@ -5,6 +5,7 @@ from football_predictor.evaluation import (
     add_elo_probabilities,
     chronological_holdout,
     evaluate_probabilities,
+    expected_calibration_error,
 )
 
 
@@ -58,3 +59,19 @@ def test_evaluation_rejects_invalid_probability_rows() -> None:
 
     with pytest.raises(ValueError, match="strictly"):
         evaluate_probabilities(matches)
+
+
+def test_expected_calibration_error_returns_each_outcome() -> None:
+    matches = pd.DataFrame(
+        {
+            "result": ["H", "D", "A"],
+            "p_home_win": [0.6, 0.2, 0.2],
+            "p_draw": [0.2, 0.6, 0.2],
+            "p_away_win": [0.2, 0.2, 0.6],
+        }
+    )
+
+    errors = expected_calibration_error(matches, bins=3)
+
+    assert set(errors) == {"H", "D", "A"}
+    assert all(error >= 0 for error in errors.values())

@@ -67,8 +67,18 @@ uv run python -m football_predictor.baseline_cli \
   --input data/processed/historical_match_features.csv
 ```
 
+Compare it with a time-calibrated logistic model, still using each league's
+chronological holdout:
+
+```bash
+uv run python -m football_predictor.model_cli \
+  --input data/processed/historical_match_features.csv
+```
+
 ## Milestone 1 status
 
 The foundation, canonical match schema, source selection, leakage-safe feature
-engine, and Elo probability baseline are in place. Next: compare calibrated
-statistical and machine-learning models using chronological backtests.
+engine, Elo probability baseline, and calibrated logistic comparison are in
+place. Elo remains the current champion on the held-out probability metrics.
+Next: add a football-specific Poisson goal model and compare it on the same
+chronological backtest.

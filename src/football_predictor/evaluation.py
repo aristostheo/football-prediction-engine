@@ -18,6 +18,41 @@ class EvaluationMetrics:
     accuracy: float
 
 
+def expected_calibration_error(
+    matches: pd.DataFrame, *, bins: int = 10
+) -> dict[str, float]:
+    """Return one-vs-rest expected calibration error for each outcome."""
+    if bins < 2:
+        raise ValueError("bins must be at least two")
+    required = {"result", "p_home_win", "p_draw", "p_away_win"}
+    missing = required.difference(matches.columns)
+    if missing:
+        raise ValueError(f"missing calibration columns: {sorted(missing)}")
+
+    probability_columns = {
+        MatchResult.HOME_WIN.value: "p_home_win",
+        MatchResult.DRAW.value: "p_draw",
+        MatchResult.AWAY_WIN.value: "p_away_win",
+    }
+    errors: dict[str, float] = {}
+    for outcome, column in probability_columns.items():
+        probabilities = matches[column]
+        observed = (matches["result"] == outcome).astype(float)
+        error = 0.0
+        for bin_index in range(bins):
+            lower = bin_index / bins
+            upper = (bin_index + 1) / bins
+            in_bin = (probabilities >= lower) & (
+                probabilities <= upper if bin_index == bins - 1 else probabilities < upper
+            )
+            if not in_bin.any():
+                continue
+            bin_weight = float(in_bin.mean())
+            error += bin_weight * abs(float(observed[in_bin].mean() - probabilities[in_bin].mean()))
+        errors[outcome] = error
+    return errors
+
+
 def add_elo_probabilities(
     matches: pd.DataFrame, *, draw_factor: float = 0.75, home_advantage: float = 60.0
 ) -> pd.DataFrame:
