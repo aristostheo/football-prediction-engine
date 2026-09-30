@@ -4,6 +4,9 @@ from football_predictor.domain import Competition
 from football_predictor.sources.openfootball import parse_openfootball_results
 
 SOURCE_URL = "https://raw.githubusercontent.com/openfootball/europe/master/greece/2024-25_gr1.txt"
+ENGLAND_SOURCE_URL = (
+    "https://raw.githubusercontent.com/openfootball/eng-england/master/2024-25/1-premierleague.txt"
+)
 
 
 def test_parser_handles_season_boundary_and_excludes_playoffs() -> None:
@@ -53,3 +56,44 @@ def test_parser_rejects_a_match_without_a_date_header() -> None:
         assert "before its date" in str(error)
     else:
         raise AssertionError("expected a missing date header to fail")
+
+
+def test_parser_handles_premier_league_format() -> None:
+    text = """= English Premier League 2024/25
+
+▪ Matchday 1
+  Fri Aug 16 2024
+    20:00  Manchester United FC    v Fulham FC                1-0 (0-0)
+  Sat Aug 17
+    12:30  Ipswich Town FC         v Liverpool FC             0-2 (0-0)
+"""
+    matches = parse_openfootball_results(
+        text,
+        competition=Competition.PREMIER_LEAGUE,
+        season="2024-25",
+        source_url=ENGLAND_SOURCE_URL,
+        retrieved_at=datetime(2026, 9, 30, tzinfo=UTC),
+    )
+
+    assert [(match.home_team, match.away_team) for match in matches] == [
+        ("Manchester United FC", "Fulham FC"),
+        ("Ipswich Town FC", "Liverpool FC"),
+    ]
+
+
+def test_parser_handles_legacy_home_score_away_format() -> None:
+    text = """▪ Matchday 1
+Sat Aug 19
+  15:00  Charlton Athletic        4-0 (2-0)  Manchester City
+"""
+    matches = parse_openfootball_results(
+        text,
+        competition=Competition.PREMIER_LEAGUE,
+        season="2000-01",
+        source_url=ENGLAND_SOURCE_URL,
+        retrieved_at=datetime(2026, 9, 30, tzinfo=UTC),
+    )
+
+    assert [(match.home_team, match.away_team, match.result.value) for match in matches] == [
+        ("Charlton Athletic", "Manchester City", "H")
+    ]

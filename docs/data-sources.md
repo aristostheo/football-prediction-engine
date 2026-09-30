@@ -2,21 +2,36 @@
 
 ## Initial historical-results source
 
-The first adapter supports **OpenFootball Europe**, a public CC0 repository.
-It contains Greek Super League results and uses a concise, text-based fixture
-format. Raw data remains outside this repository; each generated canonical row
-retains the exact file URL and retrieval timestamp.
+The first production ingest uses public CC0 OpenFootball repositories with the
+same concise, text-based results format:
+
+- [OpenFootball England](https://github.com/openfootball/eng-england) for the
+  Premier League, with completed seasons from 2000-01 to 2024-25 in V1.
+- [OpenFootball Europe](https://github.com/openfootball/europe) for Super
+  League Greece. V1 includes its available completed files: 2018-19, 2019-20,
+  2020-21, 2023-24, and 2024-25.
+
+Raw data remains outside this repository; each generated canonical row retains
+the exact file URL and retrieval timestamp. The Greek coverage has explicit
+gaps, which are preserved rather than filled or inferred.
 
 The adapter is intentionally source-neutral at its output boundary. It converts
 an external file into `HistoricalMatch` records, then the canonical dataset
 builder applies cross-source validation.
 
-## Premier League coverage decision
+## Rebuilding the initial dataset
 
-OpenFootball's Europe repository does not own the England data. Before the
-first production ingest, we will select a separately licensed Premier League
-results source and implement its own adapter. We will not silently reuse a
-source whose stated terms prohibit the project's intended use.
+Clone the two source repositories outside this repository, then run:
+
+```bash
+uv run python -m football_predictor \
+  --england-root /path/to/eng-england \
+  --europe-root /path/to/europe
+```
+
+This writes an ignored CSV and JSON manifest under `data/processed/`. The
+manifest fixes the source-file set, records the retrieval time, and gives a
+per-competition match count.
 
 ## Competition-stage policy for V1
 

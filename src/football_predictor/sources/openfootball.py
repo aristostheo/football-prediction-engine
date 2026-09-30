@@ -16,6 +16,11 @@ _MATCH_LINE: Final = re.compile(
     r"(?P<home>.+?)\s+v\s+(?P<away>.+?)\s+"
     r"(?P<home_goals>\d+)-(?P<away_goals>\d+)(?:\s+\([^)]*\))?\s*$"
 )
+_MATCH_LINE_HOME_SCORE_AWAY: Final = re.compile(
+    r"^\s*(?:\d{1,2}:\d{2}\s+)?"
+    r"(?P<home>.+?)\s+(?P<home_goals>\d+)-(?P<away_goals>\d+)"
+    r"(?:\s+\([^)]*\))?\s+(?P<away>.+?)\s*$"
+)
 _REGULAR_MATCHDAY: Final = re.compile(r"^\s*[▪»]\s*Matchday\s+\d+\s*$")
 _ANY_MATCHDAY: Final = re.compile(r"^\s*[▪»].*Matchday\s+\d+\s*$")
 
@@ -57,7 +62,7 @@ def parse_openfootball_results(
             current_date = date(year, month, int(date_match.group("day")))
             continue
 
-        result_match = _MATCH_LINE.match(line)
+        result_match = _MATCH_LINE.match(line) or _MATCH_LINE_HOME_SCORE_AWAY.match(line)
         if not result_match or not is_regular_stage:
             continue
         if current_date is None:

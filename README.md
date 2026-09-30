@@ -24,12 +24,14 @@ The project will estimate pre-match probabilities for home win, draw, and away w
 
 The first ingestion path will target open/public-domain historical results where possible. We will not bundle third-party raw data in this repository. The ingestion layer will be source-adapter based, so a source can be replaced without rewriting the model pipeline.
 
-Current candidates:
+The initial historical dataset uses CC0-licensed OpenFootball repositories:
 
-- [openfootball](https://github.com/openfootball) for open historical schedules/results, including Greece.
-- A separately reviewed provider for current fixtures and richer Premier League statistics later.
+- [eng-england](https://github.com/openfootball/eng-england) for Premier League results
+- [europe](https://github.com/openfootball/europe) for Super League Greece results
 
-We will document the final source and licence before downloading production data.
+The first reproducible build covers Premier League completed seasons from
+2000-01 to 2024-25 and the available Greek completed seasons. It keeps Greek
+coverage gaps explicit and excludes post-regular-season stages.
 
 ## Repository layout
 
@@ -51,4 +53,6 @@ uv run ruff check .
 
 ## Milestone 1 status
 
-The foundation, canonical match schema, normalization rules, and validation suite are in place. The first OpenFootball source adapter now parses regular-season historical results without mixing in Greek play-off stages. Next: select the final Premier League source and produce the first two-league historical dataset.
+The foundation, canonical match schema, source selection, and reproducible
+two-league ingestion path are in place. Next: build leakage-safe pre-match
+features and establish chronological baseline backtests.
