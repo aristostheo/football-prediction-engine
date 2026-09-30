@@ -1,0 +1,33 @@
+[project]
+name = "football-prediction-engine"
+version = "0.1.0"
+description = "Leakage-safe match outcome prediction for the Premier League and Super League Greece."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "pandas>=2.2,<3.0",
+  "pydantic>=2.8,<3.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3,<9.0",
+  "ruff>=0.6,<1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/football_predictor"]
