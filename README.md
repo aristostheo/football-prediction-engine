@@ -51,5 +51,4 @@ uv run ruff check .
 
 ## Milestone 1 status
 
-The foundation, canonical match schema, normalization rules, and validation suite are in place. Next: connect approved source adapters and create the first two-league historical dataset.
-
+The foundation, canonical match schema, normalization rules, and validation suite are in place. The first OpenFootball source adapter now parses regular-season historical results without mixing in Greek play-off stages. Next: select the final Premier League source and produce the first two-league historical dataset.
