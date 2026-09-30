@@ -51,8 +51,24 @@ uv run pytest
 uv run ruff check .
 ```
 
+## Build model-ready features
+
+After generating `historical_matches.csv`, build leakage-safe feature rows:
+
+```bash
+uv run python -m football_predictor.feature_cli \
+  --input data/processed/historical_matches.csv
+```
+
+Evaluate the online Elo baseline without random shuffling:
+
+```bash
+uv run python -m football_predictor.baseline_cli \
+  --input data/processed/historical_match_features.csv
+```
+
 ## Milestone 1 status
 
-The foundation, canonical match schema, source selection, and reproducible
-two-league ingestion path are in place. Next: build leakage-safe pre-match
-features and establish chronological baseline backtests.
+The foundation, canonical match schema, source selection, leakage-safe feature
+engine, and Elo probability baseline are in place. Next: compare calibrated
+statistical and machine-learning models using chronological backtests.
