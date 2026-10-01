@@ -19,6 +19,13 @@ The adapter is intentionally source-neutral at its output boundary. It converts
 an external file into `HistoricalMatch` records, then the canonical dataset
 builder applies cross-source validation.
 
+## Live-fixture source
+
+The optional API service reads upcoming fixtures from API-Football. It is used
+only to discover fixtures: the local, versioned historical dataset remains the
+source of model inputs and always exposes its freshness in each prediction.
+See [live-fixtures.md](live-fixtures.md) for setup and endpoint details.
+
 ## Rebuilding the initial dataset
 
 Clone the two source repositories outside this repository, then run:

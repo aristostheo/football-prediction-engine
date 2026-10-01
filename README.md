@@ -75,6 +75,16 @@ uv run python -m football_predictor.model_cli \
   --input data/processed/historical_match_features.csv
 ```
 
+## Run the prediction API
+
+```bash
+API_FOOTBALL_KEY=your_key \
+uv run uvicorn football_predictor.api:app --reload
+```
+
+See [live fixture setup](docs/live-fixtures.md) for endpoints, provider setup,
+and the data-freshness policy.
+
 ## Milestone 1 status
 
 The foundation, canonical match schema, source selection, leakage-safe feature
