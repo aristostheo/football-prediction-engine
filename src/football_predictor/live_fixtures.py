@@ -54,7 +54,11 @@ class ApiFootballFixtureProvider:
 
     def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
         query = urlencode(
-            {"league": API_FOOTBALL_LEAGUE_IDS[competition], "date": fixture_date.isoformat()}
+            {
+                "league": API_FOOTBALL_LEAGUE_IDS[competition],
+                "season": _season_start_year(fixture_date),
+                "date": fixture_date.isoformat(),
+            }
         )
         request = Request(
             f"{self._base_url}/fixtures?{query}",
@@ -82,3 +86,8 @@ class ApiFootballFixtureProvider:
             raise FixtureProviderError(
                 "API-Football returned an unexpected fixture payload"
             ) from error
+
+
+def _season_start_year(fixture_date: date) -> int:
+    """Return API-Football's starting year for a European league season."""
+    return fixture_date.year if fixture_date.month >= 7 else fixture_date.year - 1
