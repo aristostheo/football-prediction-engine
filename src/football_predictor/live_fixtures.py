@@ -19,6 +19,7 @@ API_FOOTBALL_LEAGUE_IDS = {
     Competition.SUPER_LEAGUE_GREECE: 197,
 }
 GOAL_API_BASE_URL = "https://api.goal-api.com/v1"
+GOAL_API_USER_AGENT = "football-prediction-engine/0.1"
 GOAL_API_LEAGUE_IDS = {
     Competition.PREMIER_LEAGUE: 152,
     Competition.SUPER_LEAGUE_GREECE: 178,
@@ -71,6 +72,7 @@ class GoalApiFixtureProvider:
                 headers={
                     "Accept": "application/json",
                     "Authorization": f"Bearer {self._api_key}",
+                    "User-Agent": GOAL_API_USER_AGENT,
                 },
             )
             payload = self._request_json(request)

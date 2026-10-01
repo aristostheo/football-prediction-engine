@@ -53,6 +53,7 @@ def test_goal_api_provider_parses_and_filters_fixture_payload(monkeypatch) -> No
     assert "limit=50" in requests[0].full_url
     assert "offset=0" in requests[0].full_url
     assert requests[0].get_header("Authorization") == "Bearer test-key"
+    assert requests[0].get_header("User-agent") == "football-prediction-engine/0.1"
 
 
 def test_goal_api_provider_supports_greece_and_split_date_fields(monkeypatch) -> None:  # type: ignore[no-untyped-def]
