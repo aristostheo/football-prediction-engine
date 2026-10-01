@@ -17,6 +17,7 @@ from football_predictor.models import (
     _outcome_probabilities_from_goal_rates,
     blend_probabilities,
 )
+from football_predictor.team_names import resolve_team_name
 
 
 @dataclass(frozen=True)
@@ -82,14 +83,19 @@ class PredictionEngine:
         canonical_fixture = FixtureToPredict(
             competition=fixture.competition,
             kickoff_date=fixture.kickoff_date,
-            home_team=_resolve_team_name(fixture.home_team, known_teams),
-            away_team=_resolve_team_name(fixture.away_team, known_teams),
+            home_team=resolve_team_name(fixture.home_team, fixture.competition, known_teams),
+            away_team=resolve_team_name(fixture.away_team, fixture.competition, known_teams),
         )
         unknown_teams = {canonical_fixture.home_team, canonical_fixture.away_team}.difference(
             known_teams
         )
         if unknown_teams:
-            raise ValueError(f"unknown team names: {sorted(unknown_teams)}")
+            raise ValueError(
+                f"No historical results available for these teams in {competition}: "
+                f"{sorted(unknown_teams)}. Check the team names or update the historical dataset."
+            )
+        if canonical_fixture.home_team == canonical_fixture.away_team:
+            raise ValueError("home and away teams must be different clubs")
 
         fixture_features = self._fixture_features(history, canonical_fixture)
         elo = add_elo_probabilities(fixture_features)
@@ -127,26 +133,3 @@ class PredictionEngine:
         placeholder["result"] = "D"
         feature_history = pd.concat([history, placeholder], ignore_index=True)
         return build_pre_match_features(feature_history).tail(1)
-
-
-def _resolve_team_name(name: str, known_teams: set[str]) -> str:
-    """Resolve common provider naming variants to a unique historical team label."""
-    if name in known_teams:
-        return name
-
-    identity = _team_identity(name)
-    matches = {team for team in known_teams if _team_identity(team) == identity}
-    if len(matches) == 1:
-        return matches.pop()
-    return name
-
-
-def _team_identity(name: str) -> str:
-    identity = " ".join(name.casefold().split())
-    # Nottingham Forest is occasionally misspelled as "Forrest" by providers.
-    identity = identity.replace("nottingham forrest", "nottingham forest")
-    for suffix in (" football club", " fc", " afc", " cf", " sc"):
-        if identity.endswith(suffix):
-            identity = identity[: -len(suffix)].strip()
-            break
-    return identity

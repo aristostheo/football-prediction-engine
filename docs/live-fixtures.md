@@ -10,7 +10,7 @@ uv run uvicorn football_predictor.api:app --reload
 - `GET /health` confirms that the service is running.
 - `GET /fixtures?competition=premier_league&date=YYYY-MM-DD` reads scheduled
   fixtures from Goal API when `GOAL_API_KEY` is configured.
-- `POST /predict` accepts canonical project team names and a fixture date after
+- `POST /predict` accepts canonical names or registered club aliases and a fixture date after
   the local historical dataset's final result.
 
 ## Provider decision
@@ -42,3 +42,23 @@ prediction only needs the local historical dataset. The predictor resolves
 common provider labels and club suffixes against locally recorded team names,
 while unknown or ambiguous teams remain rejected. Current-result synchronization
 and explicit mapping through provider team IDs remain future hardening steps.
+
+## Team-name coverage
+
+`team_names.py` registers all 46 English clubs and 20 Greek clubs represented in
+the bundled history. It handles common English abbreviations (Bournemouth,
+Brighton, Man Utd, Tottenham, Wolves), Greek transliterations (AEK Athens,
+Olympiacos, PAOK, OFI, Kifisia), Greek-script aliases, capitalization, accents,
+punctuation, and club suffixes. Resolution is scoped to the selected league and
+prefers the recent historical label when a club also has an older label.
+
+Iraklis and Kalamata have recognized names but no results in the bundled dataset;
+their predictions return a clear missing-history error. Unknown or ambiguous
+names are not guessed. The audit tests cover all real clubs in the local dataset
+and the fixture-selection-to-prediction API flow for both leagues. Live API roster
+verification requires a configured provider key; no key was available in the
+development environment during this audit.
+
+Two historical awarded-match rows contain malformed parser labels (`[awarded]`
+and combined fixture text). These are not registered as club aliases. Historical
+result cleanup and refreshing the dataset remain separate work.
