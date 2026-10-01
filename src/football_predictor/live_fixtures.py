@@ -1,11 +1,11 @@
-"""Optional current-fixture adapter for API-Football."""
+"""Optional current-fixture adapters for Goal API and API-Football."""
 
 from __future__ import annotations
 
 import json
 import os
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Protocol
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -17,11 +17,16 @@ API_FOOTBALL_LEAGUE_IDS = {
     Competition.PREMIER_LEAGUE: 39,
     Competition.SUPER_LEAGUE_GREECE: 197,
 }
+GOAL_API_BASE_URL = "https://api.goal-api.com/v1"
+GOAL_API_LEAGUE_IDS = {
+    Competition.PREMIER_LEAGUE: 152,
+    Competition.SUPER_LEAGUE_GREECE: 178,
+}
 
 
 @dataclass(frozen=True)
 class LiveFixture:
-    fixture_id: int
+    fixture_id: str
     competition: Competition
     kickoff_at: datetime
     home_team: str
@@ -34,6 +39,60 @@ class FixtureProvider(Protocol):
 
 class FixtureProviderError(RuntimeError):
     """Raised when a live-fixture provider cannot return a valid response."""
+
+
+class GoalApiFixtureProvider:
+    """Read current fixtures from Goal API using a server-side API key."""
+
+    def __init__(self, api_key: str, *, base_url: str = GOAL_API_BASE_URL) -> None:
+        if not api_key:
+            raise ValueError("Goal API key is required")
+        self._api_key = api_key
+        self._base_url = base_url.rstrip("/")
+
+    @classmethod
+    def from_environment(cls) -> GoalApiFixtureProvider:
+        api_key = os.environ.get("GOAL_API_KEY")
+        if not api_key:
+            raise FixtureProviderError("GOAL_API_KEY is not configured")
+        return cls(api_key)
+
+    def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
+        league_id = GOAL_API_LEAGUE_IDS[competition]
+        query = urlencode({"date": fixture_date.isoformat(), "limit": 100})
+        request = Request(
+            f"{self._base_url}/leagues/{league_id}/fixtures?{query}",
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Bearer {self._api_key}",
+            },
+        )
+        try:
+            with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
+                payload = json.load(response)
+        except OSError as error:
+            raise FixtureProviderError("Goal API request failed") from error
+
+        if payload.get("success") is False:
+            detail = payload.get("error") or payload.get("message") or "unknown error"
+            raise FixtureProviderError(f"Goal API returned an error: {detail}")
+
+        raw_fixtures = payload.get("data")
+        if isinstance(raw_fixtures, dict):
+            raw_fixtures = raw_fixtures.get("fixtures") or raw_fixtures.get("matches")
+        if not isinstance(raw_fixtures, list):
+            raise FixtureProviderError("Goal API returned an unexpected fixture payload")
+
+        try:
+            fixtures = [
+                _goal_api_fixture(item, competition)
+                for item in raw_fixtures
+                if isinstance(item, dict)
+            ]
+        except (KeyError, TypeError, ValueError) as error:
+            raise FixtureProviderError("Goal API returned an unexpected fixture payload") from error
+
+        return [fixture for fixture in fixtures if fixture.kickoff_at.date() == fixture_date]
 
 
 class ApiFootballFixtureProvider:
@@ -74,7 +133,7 @@ class ApiFootballFixtureProvider:
         try:
             return [
                 LiveFixture(
-                    fixture_id=int(item["fixture"]["id"]),
+                    fixture_id=str(item["fixture"]["id"]),
                     competition=competition,
                     kickoff_at=datetime.fromisoformat(item["fixture"]["date"]),
                     home_team=item["teams"]["home"]["name"],
@@ -86,6 +145,80 @@ class ApiFootballFixtureProvider:
             raise FixtureProviderError(
                 "API-Football returned an unexpected fixture payload"
             ) from error
+
+
+class FallbackFixtureProvider:
+    """Try configured providers in order when an upstream provider fails."""
+
+    def __init__(self, *providers: FixtureProvider) -> None:
+        if not providers:
+            raise ValueError("At least one fixture provider is required")
+        self._providers = providers
+
+    def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
+        errors: list[str] = []
+        for provider in self._providers:
+            try:
+                return provider.list_fixtures(competition, fixture_date)
+            except FixtureProviderError as error:
+                errors.append(str(error))
+        raise FixtureProviderError("; fallback also failed: ".join(errors))
+
+
+def fixture_provider_from_environment() -> FixtureProvider:
+    """Build the available provider chain, preferring Goal API."""
+    providers: list[FixtureProvider] = []
+    goal_api_key = os.environ.get("GOAL_API_KEY")
+    api_football_key = os.environ.get("API_FOOTBALL_KEY")
+    if goal_api_key:
+        providers.append(GoalApiFixtureProvider(goal_api_key))
+    if api_football_key:
+        providers.append(ApiFootballFixtureProvider(api_football_key))
+    if not providers:
+        raise FixtureProviderError(
+            "GOAL_API_KEY or API_FOOTBALL_KEY must be configured for live fixtures"
+        )
+    if len(providers) == 1:
+        return providers[0]
+    return FallbackFixtureProvider(*providers)
+
+
+def _goal_api_fixture(item: dict[str, object], competition: Competition) -> LiveFixture:
+    fixture_id = item.get("id") or item.get("fixtureId") or item.get("fixture_id")
+    if fixture_id is None:
+        raise KeyError("fixture id")
+    return LiveFixture(
+        fixture_id=str(fixture_id),
+        competition=competition,
+        kickoff_at=_goal_api_kickoff(item),
+        home_team=_goal_api_team_name(item, "home"),
+        away_team=_goal_api_team_name(item, "away"),
+    )
+
+
+def _goal_api_kickoff(item: dict[str, object]) -> datetime:
+    raw_kickoff = item.get("kickoffUtc") or item.get("kickoff_utc") or item.get("kickoffAt")
+    if isinstance(raw_kickoff, str):
+        parsed = datetime.fromisoformat(raw_kickoff.replace("Z", "+00:00"))
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+    raw_date = item.get("matchDate") or item.get("match_date") or item.get("date")
+    raw_time = item.get("matchTime") or item.get("match_time") or item.get("time")
+    if not isinstance(raw_date, str) or not isinstance(raw_time, str):
+        raise KeyError("kickoff")
+    parsed = datetime.fromisoformat(f"{raw_date}T{raw_time.replace('Z', '+00:00')}")
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def _goal_api_team_name(item: dict[str, object], side: str) -> str:
+    camel_key = f"{side}Team"
+    snake_key = f"{side}_team"
+    team = item.get(camel_key) or item.get(snake_key) or item.get(side)
+    if isinstance(team, dict) and isinstance(team.get("name"), str):
+        return team["name"]
+    if isinstance(team, str):
+        return team
+    raise KeyError(f"{side} team")
 
 
 def _season_start_year(fixture_date: date) -> int:

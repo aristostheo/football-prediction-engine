@@ -80,7 +80,7 @@ uv run python -m football_predictor.model_cli \
 ## Run the prediction API
 
 ```bash
-API_FOOTBALL_KEY=your_key \
+GOAL_API_KEY=your_key \
 uv run uvicorn football_predictor.api:app --reload
 ```
 

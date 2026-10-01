@@ -17,7 +17,7 @@ export interface Prediction extends PredictionRequest {
 }
 
 export interface LiveFixture {
-  fixture_id: number;
+  fixture_id: string;
   competition: Competition;
   kickoff_at: string;
   home_team: string;

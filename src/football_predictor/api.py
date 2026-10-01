@@ -14,10 +14,10 @@ from pydantic import BaseModel, Field
 
 from football_predictor.domain import Competition
 from football_predictor.live_fixtures import (
-    ApiFootballFixtureProvider,
     FixtureProvider,
     FixtureProviderError,
     LiveFixture,
+    fixture_provider_from_environment,
 )
 from football_predictor.prediction import FixtureToPredict, MatchPrediction, PredictionEngine
 
@@ -43,7 +43,7 @@ class PredictionResponse(BaseModel):
 
 
 class LiveFixtureResponse(BaseModel):
-    fixture_id: int
+    fixture_id: str
     competition: Competition
     kickoff_at: str
     home_team: str
@@ -78,7 +78,7 @@ def create_app(
     def get_fixture_provider() -> FixtureProvider:
         nonlocal configured_provider
         if configured_provider is None:
-            configured_provider = ApiFootballFixtureProvider.from_environment()
+            configured_provider = fixture_provider_from_environment()
         return configured_provider
 
     @app.get("/health")

@@ -25,8 +25,9 @@ docker build -t football-prediction-engine .
 docker run --rm -p 8000:8000 football-prediction-engine
 ```
 
-Open `http://localhost:8000`. Supply `API_FOOTBALL_KEY` at runtime to activate
-live fixture discovery. Manual prediction remains available without that key.
+Open `http://localhost:8000`. Supply `GOAL_API_KEY` at runtime to activate live
+fixture discovery. `API_FOOTBALL_KEY` is an optional fallback. Manual prediction
+remains available without either key.
 
 The checked-in compressed model input is a generated, canonical dataset derived
 from the source URLs documented in its rows. Raw third-party repositories are
@@ -36,6 +37,7 @@ history is updated.
 ## Render
 
 `render.yaml` defines a Docker web service with `/health` as its health check.
-Create the service from the repository and add `API_FOOTBALL_KEY` as a secret
-environment variable. The first prediction request trains the models and keeps
+Create the service from the repository and add `GOAL_API_KEY` as a secret
+environment variable. Add `API_FOOTBALL_KEY` only if a paid/current-season
+fallback is desired. The first prediction request trains the models and keeps
 them in the server process for subsequent requests.

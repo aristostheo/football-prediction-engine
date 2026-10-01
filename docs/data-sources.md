@@ -21,9 +21,10 @@ builder applies cross-source validation.
 
 ## Live-fixture source
 
-The optional API service reads upcoming fixtures from API-Football. It is used
-only to discover fixtures: the local, versioned historical dataset remains the
-source of model inputs and always exposes its freshness in each prediction.
+The optional API service prefers Goal API for upcoming fixtures in both
+supported leagues, with API-Football available as a fallback. Providers are
+used only to discover fixtures: the local, versioned historical dataset remains
+the source of model inputs and always exposes its freshness in each prediction.
 See [live-fixtures.md](live-fixtures.md) for setup and endpoint details.
 
 ## Rebuilding the initial dataset

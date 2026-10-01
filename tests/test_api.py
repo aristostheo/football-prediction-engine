@@ -27,7 +27,7 @@ class StubFixtureProvider:
     def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
         return [
             LiveFixture(
-                fixture_id=123,
+                fixture_id="123",
                 competition=competition,
                 kickoff_at=datetime(2025, 6, 1, 15, 0),
                 home_team="Arsenal FC",
@@ -42,11 +42,9 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             assert (await client.get("/health")).json() == {"status": "ok"}
-            fixtures = await client.get(
-                "/fixtures?competition=premier_league&date=2025-06-01"
-            )
+            fixtures = await client.get("/fixtures?competition=premier_league&date=2025-06-01")
             assert fixtures.status_code == 200
-            assert fixtures.json()[0]["fixture_id"] == 123
+            assert fixtures.json()[0]["fixture_id"] == "123"
 
             response = await client.post(
                 "/predict",

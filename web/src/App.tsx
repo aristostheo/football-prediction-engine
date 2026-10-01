@@ -235,7 +235,7 @@ function App() {
               <div className="fixture-empty">
                 <span>⌁</span>
                 <strong>Live fixtures are optional</strong>
-                <p>Manual forecasts above work from the local model. Add an API-Football key to enable this feed.</p>
+                <p>Manual forecasts above work from the local model. Add a Goal API key to enable this feed.</p>
               </div>
             )}
           </div>

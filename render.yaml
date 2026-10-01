@@ -5,5 +5,7 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
+      - key: GOAL_API_KEY
+        sync: false
       - key: API_FOOTBALL_KEY
         sync: false
