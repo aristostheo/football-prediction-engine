@@ -69,14 +69,13 @@ class GoalApiFixtureProvider:
         while True:
             query = urlencode(
                 {
-                    "from": fixture_date.isoformat(),
-                    "to": fixture_date.isoformat(),
+                    "leagueId": league_id,
                     "limit": 100,
                     "offset": offset,
                 }
             )
             request = Request(
-                f"{self._base_url}/leagues/{league_id}/fixtures?{query}",
+                f"{self._base_url}/fixtures/date/{fixture_date.isoformat()}?{query}",
                 headers={
                     "Accept": "application/json",
                     "Authorization": f"Bearer {self._api_key}",
