@@ -50,7 +50,8 @@ def test_goal_api_provider_parses_and_filters_fixture_payload(monkeypatch) -> No
     assert fixtures[0].home_team == "Arsenal"
     assert fixtures[0].kickoff_at.isoformat() == "2026-10-04T15:00:00+00:00"
     assert "/fixtures/date/2026-10-04?" in requests[0].full_url
-    assert "limit=50" in requests[0].full_url
+    assert "leagueId=152" in requests[0].full_url
+    assert "limit=100" in requests[0].full_url
     assert "offset=0" in requests[0].full_url
     assert requests[0].get_header("Authorization") == "Bearer test-key"
     assert requests[0].get_header("User-agent") == "football-prediction-engine/0.1"

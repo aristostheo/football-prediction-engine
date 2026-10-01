@@ -67,7 +67,7 @@ class GoalApiFixtureProvider:
         seen_pages: set[str] = set()
 
         while True:
-            query = urlencode({"limit": 50, "offset": offset})
+            query = urlencode({"leagueId": league_id, "limit": 100, "offset": offset})
             request = Request(
                 f"{self._base_url}/fixtures/date/{fixture_date.isoformat()}?{query}",
                 headers={
@@ -93,7 +93,7 @@ class GoalApiFixtureProvider:
             if page_count >= 20:
                 raise FixtureProviderError("Goal API returned too many fixture pages")
             try:
-                page_limit = int(pagination.get("limit", 50))
+                page_limit = int(pagination.get("limit", 100))
             except (TypeError, ValueError) as error:
                 raise FixtureProviderError("Goal API returned invalid pagination") from error
             if page_limit <= 0:
