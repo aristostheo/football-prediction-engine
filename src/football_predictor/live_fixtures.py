@@ -67,9 +67,16 @@ class GoalApiFixtureProvider:
         seen_pages: set[str] = set()
 
         while True:
-            query = urlencode({"leagueId": league_id, "limit": 100, "offset": offset})
+            query = urlencode(
+                {
+                    "from": fixture_date.isoformat(),
+                    "to": fixture_date.isoformat(),
+                    "limit": 100,
+                    "offset": offset,
+                }
+            )
             request = Request(
-                f"{self._base_url}/fixtures/date/{fixture_date.isoformat()}?{query}",
+                f"{self._base_url}/leagues/{league_id}/fixtures?{query}",
                 headers={
                     "Accept": "application/json",
                     "Authorization": f"Bearer {self._api_key}",
@@ -82,9 +89,7 @@ class GoalApiFixtureProvider:
             if page_fingerprint in seen_pages:
                 break
             seen_pages.add(page_fingerprint)
-            raw_fixtures.extend(
-                item for item in page_fixtures if _goal_api_league_id(item) == league_id
-            )
+            raw_fixtures.extend(page_fixtures)
 
             pagination = payload.get("pagination")
             if not isinstance(pagination, dict) or pagination.get("hasMore") is not True:
@@ -220,21 +225,6 @@ def _goal_api_fixture_items(payload: dict[str, object]) -> list[dict[str, object
     if not isinstance(raw_fixtures, list):
         raise FixtureProviderError("Goal API returned an unexpected fixture payload")
     return [item for item in raw_fixtures if isinstance(item, dict)]
-
-
-def _goal_api_league_id(item: dict[str, object]) -> str | None:
-    league = item.get("league")
-    candidates = [
-        item.get("leagueId"),
-        item.get("league_id"),
-        item.get("leagueApiId"),
-        item.get("league_api_id"),
-    ]
-    if isinstance(league, dict):
-        candidates.extend([league.get("id"), league.get("apiId"), league.get("api_id")])
-    else:
-        candidates.append(league)
-    return next((str(candidate) for candidate in candidates if candidate is not None), None)
 
 
 def _goal_api_http_error_detail(error: HTTPError) -> str:
