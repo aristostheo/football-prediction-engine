@@ -38,6 +38,7 @@ The response always reports `history_through` and `history_age_days`. The
 service deliberately refuses to back-predict a date at or before the local
 history's latest completed match, preventing future information from entering a
 historical prediction. Fixture discovery requires a live-provider key, while a
-prediction only needs the local historical dataset. Current-result
-synchronization and provider-to-canonical team mapping are the next production
-hardening step.
+prediction only needs the local historical dataset. The predictor resolves
+common provider labels and club suffixes against locally recorded team names,
+while unknown or ambiguous teams remain rejected. Current-result synchronization
+and explicit mapping through provider team IDs remain future hardening steps.
