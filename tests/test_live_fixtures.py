@@ -1,5 +1,6 @@
 import io
 from datetime import date
+from urllib.error import HTTPError
 
 import football_predictor.live_fixtures as live_fixtures
 from football_predictor.domain import Competition
@@ -25,11 +26,13 @@ def test_goal_api_provider_parses_and_filters_fixture_payload(monkeypatch) -> No
         },
         {
           "id": "fixture-456",
-          "kickoffUtc": "2026-10-05T19:00:00.000Z",
+          "leagueId": "178",
+          "kickoffUtc": "2026-10-04T19:00:00.000Z",
           "homeTeam": {"name": "Leeds United"},
           "awayTeam": {"name": "Everton"}
         }
-      ]
+      ],
+      "pagination": {"total": 2, "limit": 50, "offset": 0, "hasMore": false}
     }"""
     requests = []
 
@@ -46,8 +49,9 @@ def test_goal_api_provider_parses_and_filters_fixture_payload(monkeypatch) -> No
     assert [fixture.fixture_id for fixture in fixtures] == ["fixture-123"]
     assert fixtures[0].home_team == "Arsenal"
     assert fixtures[0].kickoff_at.isoformat() == "2026-10-04T15:00:00+00:00"
-    assert "/leagues/152/fixtures?" in requests[0].full_url
-    assert "date=2026-10-04" in requests[0].full_url
+    assert "/fixtures/date/2026-10-04?" in requests[0].full_url
+    assert "limit=50" in requests[0].full_url
+    assert "offset=0" in requests[0].full_url
     assert requests[0].get_header("Authorization") == "Bearer test-key"
 
 
@@ -56,11 +60,13 @@ def test_goal_api_provider_supports_greece_and_split_date_fields(monkeypatch) ->
       "success": true,
       "data": [{
         "id": 789,
+        "league": {"apiId": 178},
         "matchDate": "2026-10-04",
         "matchTime": "17:30",
         "homeTeam": {"name": "Olympiacos"},
         "awayTeam": {"name": "Panathinaikos"}
-      }]
+      }],
+      "pagination": {"total": 1, "limit": 50, "offset": 0, "hasMore": false}
     }"""
     requested_urls = []
 
@@ -76,7 +82,63 @@ def test_goal_api_provider_supports_greece_and_split_date_fields(monkeypatch) ->
 
     assert fixtures[0].fixture_id == "789"
     assert fixtures[0].kickoff_at.isoformat() == "2026-10-04T17:30:00+00:00"
-    assert "/leagues/178/fixtures?" in requested_urls[0]
+    assert "/fixtures/date/2026-10-04?" in requested_urls[0]
+
+
+def test_goal_api_provider_follows_pagination_until_matching_league(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    first_page = b"""{
+      "success": true,
+      "data": [{"id": 1, "leagueId": 999}],
+      "pagination": {"total": 2, "limit": 1, "offset": 0, "hasMore": true}
+    }"""
+    second_page = b"""{
+      "success": true,
+      "data": [{
+        "id": 2,
+        "leagueId": 152,
+        "kickoffUtc": "2026-10-04T15:00:00Z",
+        "homeTeam": {"name": "Arsenal"},
+        "awayTeam": {"name": "Chelsea"}
+      }],
+      "pagination": {"total": 2, "limit": 1, "offset": 1, "hasMore": false}
+    }"""
+    requested_urls = []
+
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        requested_urls.append(request.full_url)
+        return io.BytesIO(first_page if "offset=0" in request.full_url else second_page)
+
+    monkeypatch.setattr(live_fixtures, "urlopen", fake_urlopen)
+
+    fixtures = GoalApiFixtureProvider("test-key").list_fixtures(
+        Competition.PREMIER_LEAGUE, date(2026, 10, 4)
+    )
+
+    assert [fixture.fixture_id for fixture in fixtures] == ["2"]
+    assert len(requested_urls) == 2
+    assert "offset=1" in requested_urls[1]
+
+
+def test_goal_api_provider_exposes_safe_http_error_detail(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        raise HTTPError(
+            request.full_url,
+            400,
+            "Bad Request",
+            hdrs=None,
+            fp=io.BytesIO(b'{"error":{"code":"BAD_LIMIT","message":"limit too high"}}'),
+        )
+
+    monkeypatch.setattr(live_fixtures, "urlopen", fake_urlopen)
+
+    try:
+        GoalApiFixtureProvider("test-key").list_fixtures(
+            Competition.PREMIER_LEAGUE, date(2026, 10, 4)
+        )
+    except FixtureProviderError as error:
+        assert str(error) == "Goal API returned HTTP 400: limit too high"
+    else:
+        raise AssertionError("Expected Goal API request to fail")
 
 
 def test_api_football_provider_parses_fixture_payload(monkeypatch) -> None:  # type: ignore[no-untyped-def]

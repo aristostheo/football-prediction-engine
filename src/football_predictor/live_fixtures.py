@@ -7,6 +7,7 @@ import os
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Protocol
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -58,41 +59,63 @@ class GoalApiFixtureProvider:
         return cls(api_key)
 
     def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
-        league_id = GOAL_API_LEAGUE_IDS[competition]
-        query = urlencode({"date": fixture_date.isoformat(), "limit": 100})
-        request = Request(
-            f"{self._base_url}/leagues/{league_id}/fixtures?{query}",
-            headers={
-                "Accept": "application/json",
-                "Authorization": f"Bearer {self._api_key}",
-            },
-        )
+        league_id = str(GOAL_API_LEAGUE_IDS[competition])
+        raw_fixtures: list[dict[str, object]] = []
+        offset = 0
+        page_count = 0
+
+        while True:
+            query = urlencode({"limit": 50, "offset": offset})
+            request = Request(
+                f"{self._base_url}/fixtures/date/{fixture_date.isoformat()}?{query}",
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {self._api_key}",
+                },
+            )
+            payload = self._request_json(request)
+            page_fixtures = _goal_api_fixture_items(payload)
+            raw_fixtures.extend(
+                item for item in page_fixtures if _goal_api_league_id(item) == league_id
+            )
+
+            pagination = payload.get("pagination")
+            if not isinstance(pagination, dict) or pagination.get("hasMore") is not True:
+                break
+            page_count += 1
+            if page_count >= 20:
+                raise FixtureProviderError("Goal API returned too many fixture pages")
+            try:
+                page_limit = int(pagination.get("limit", 50))
+            except (TypeError, ValueError) as error:
+                raise FixtureProviderError("Goal API returned invalid pagination") from error
+            if page_limit <= 0:
+                raise FixtureProviderError("Goal API returned invalid pagination")
+            offset += page_limit
+
         try:
-            with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
-                payload = json.load(response)
-        except OSError as error:
-            raise FixtureProviderError("Goal API request failed") from error
-
-        if payload.get("success") is False:
-            detail = payload.get("error") or payload.get("message") or "unknown error"
-            raise FixtureProviderError(f"Goal API returned an error: {detail}")
-
-        raw_fixtures = payload.get("data")
-        if isinstance(raw_fixtures, dict):
-            raw_fixtures = raw_fixtures.get("fixtures") or raw_fixtures.get("matches")
-        if not isinstance(raw_fixtures, list):
-            raise FixtureProviderError("Goal API returned an unexpected fixture payload")
-
-        try:
-            fixtures = [
-                _goal_api_fixture(item, competition)
-                for item in raw_fixtures
-                if isinstance(item, dict)
-            ]
+            fixtures = [_goal_api_fixture(item, competition) for item in raw_fixtures]
         except (KeyError, TypeError, ValueError) as error:
             raise FixtureProviderError("Goal API returned an unexpected fixture payload") from error
 
         return [fixture for fixture in fixtures if fixture.kickoff_at.date() == fixture_date]
+
+    def _request_json(self, request: Request) -> dict[str, object]:
+        try:
+            with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
+                payload = json.load(response)
+        except HTTPError as error:
+            detail = _goal_api_http_error_detail(error)
+            raise FixtureProviderError(f"Goal API returned HTTP {error.code}: {detail}") from error
+        except (OSError, json.JSONDecodeError) as error:
+            raise FixtureProviderError("Goal API request failed") from error
+
+        if not isinstance(payload, dict):
+            raise FixtureProviderError("Goal API returned an unexpected response")
+        if payload.get("success") is False:
+            detail = payload.get("error") or payload.get("message") or "unknown error"
+            raise FixtureProviderError(f"Goal API returned an error: {detail}")
+        return payload
 
 
 class ApiFootballFixtureProvider:
@@ -181,6 +204,43 @@ def fixture_provider_from_environment() -> FixtureProvider:
     if len(providers) == 1:
         return providers[0]
     return FallbackFixtureProvider(*providers)
+
+
+def _goal_api_fixture_items(payload: dict[str, object]) -> list[dict[str, object]]:
+    raw_fixtures = payload.get("data")
+    if isinstance(raw_fixtures, dict):
+        raw_fixtures = raw_fixtures.get("fixtures") or raw_fixtures.get("matches")
+    if not isinstance(raw_fixtures, list):
+        raise FixtureProviderError("Goal API returned an unexpected fixture payload")
+    return [item for item in raw_fixtures if isinstance(item, dict)]
+
+
+def _goal_api_league_id(item: dict[str, object]) -> str | None:
+    league = item.get("league")
+    candidates = [
+        item.get("leagueId"),
+        item.get("league_id"),
+        item.get("leagueApiId"),
+        item.get("league_api_id"),
+    ]
+    if isinstance(league, dict):
+        candidates.extend([league.get("id"), league.get("apiId"), league.get("api_id")])
+    else:
+        candidates.append(league)
+    return next((str(candidate) for candidate in candidates if candidate is not None), None)
+
+
+def _goal_api_http_error_detail(error: HTTPError) -> str:
+    try:
+        payload = json.loads(error.read().decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return error.reason or "request failed"
+    if not isinstance(payload, dict):
+        return error.reason or "request failed"
+    detail = payload.get("error") or payload.get("message")
+    if isinstance(detail, dict):
+        detail = detail.get("message") or detail.get("code")
+    return str(detail or error.reason or "request failed")
 
 
 def _goal_api_fixture(item: dict[str, object], competition: Competition) -> LiveFixture:
