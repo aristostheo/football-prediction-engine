@@ -120,6 +120,34 @@ def test_goal_api_provider_follows_pagination_until_matching_league(monkeypatch)
     assert "offset=1" in requested_urls[1]
 
 
+def test_goal_api_provider_stops_when_provider_repeats_a_page(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    repeated_page = b"""{
+      "success": true,
+      "data": [{
+        "id": 2,
+        "leagueId": 152,
+        "kickoffUtc": "2026-10-04T15:00:00Z",
+        "homeTeam": {"name": "Arsenal"},
+        "awayTeam": {"name": "Chelsea"}
+      }],
+      "pagination": {"total": 100, "limit": 1, "offset": 0, "hasMore": true}
+    }"""
+    requested_urls = []
+
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        requested_urls.append(request.full_url)
+        return io.BytesIO(repeated_page)
+
+    monkeypatch.setattr(live_fixtures, "urlopen", fake_urlopen)
+
+    fixtures = GoalApiFixtureProvider("test-key").list_fixtures(
+        Competition.PREMIER_LEAGUE, date(2026, 10, 4)
+    )
+
+    assert [fixture.fixture_id for fixture in fixtures] == ["2"]
+    assert len(requested_urls) == 2
+
+
 def test_goal_api_provider_exposes_safe_http_error_detail(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
         raise HTTPError(

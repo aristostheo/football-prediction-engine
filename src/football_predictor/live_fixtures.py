@@ -64,6 +64,7 @@ class GoalApiFixtureProvider:
         raw_fixtures: list[dict[str, object]] = []
         offset = 0
         page_count = 0
+        seen_pages: set[str] = set()
 
         while True:
             query = urlencode({"limit": 50, "offset": offset})
@@ -77,6 +78,10 @@ class GoalApiFixtureProvider:
             )
             payload = self._request_json(request)
             page_fixtures = _goal_api_fixture_items(payload)
+            page_fingerprint = json.dumps(page_fixtures, sort_keys=True, default=str)
+            if page_fingerprint in seen_pages:
+                break
+            seen_pages.add(page_fingerprint)
             raw_fixtures.extend(
                 item for item in page_fixtures if _goal_api_league_id(item) == league_id
             )
