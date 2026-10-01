@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import mimetypes
 import os
 from datetime import date
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from football_predictor.domain import Competition
@@ -48,9 +51,18 @@ class LiveFixtureResponse(BaseModel):
 
 
 def create_app(
-    *, engine: PredictionEngine | None = None, fixture_provider: FixtureProvider | None = None
+    *,
+    engine: PredictionEngine | None = None,
+    fixture_provider: FixtureProvider | None = None,
+    web_dist_path: Path | None = None,
 ) -> FastAPI:
     app = FastAPI(title="European Football Prediction Engine", version="0.1.0")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
     configured_engine = engine
     configured_provider = fixture_provider
 
@@ -70,11 +82,11 @@ def create_app(
         return configured_provider
 
     @app.get("/health")
-    def health() -> dict[str, str]:
+    async def health() -> dict[str, str]:
         return {"status": "ok"}
 
     @app.get("/fixtures", response_model=list[LiveFixtureResponse])
-    def fixtures(
+    async def fixtures(
         competition: Competition,
         fixture_date: date = Query(alias="date"),
     ) -> list[LiveFixtureResponse]:
@@ -85,12 +97,29 @@ def create_app(
         return [_fixture_response(fixture) for fixture in live_fixtures]
 
     @app.post("/predict", response_model=PredictionResponse)
-    def predict(request: PredictionRequest) -> PredictionResponse:
+    async def predict(request: PredictionRequest) -> PredictionResponse:
         try:
             prediction = get_engine().predict(FixtureToPredict(**request.model_dump()))
         except (FileNotFoundError, ValueError) as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
         return _prediction_response(prediction)
+
+    resolved_web_dist = web_dist_path or Path(os.environ.get("WEB_DIST_PATH", "web/dist"))
+    if resolved_web_dist.is_dir():
+        resolved_web_root = resolved_web_dist.resolve()
+
+        @app.get("/{requested_path:path}", include_in_schema=False)
+        async def frontend(requested_path: str) -> Response:
+            requested_file = (resolved_web_root / requested_path).resolve()
+            if (
+                requested_path
+                and requested_file.is_relative_to(resolved_web_root)
+                and requested_file.is_file()
+            ):
+                media_type = mimetypes.guess_type(requested_file)[0]
+                return Response(requested_file.read_bytes(), media_type=media_type)
+            index_file = resolved_web_root / "index.html"
+            return Response(index_file.read_bytes(), media_type="text/html")
 
     return app
 

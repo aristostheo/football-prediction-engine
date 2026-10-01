@@ -7,5 +7,12 @@ data/raw/
 data/processed/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+data/model/*
+!data/model/.gitkeep
+!data/model/historical_matches.csv.gz
 .env
-
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+web/vite.config.js
+web/vite.config.d.ts

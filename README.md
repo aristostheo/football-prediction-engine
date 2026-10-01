@@ -38,8 +38,10 @@ coverage gaps explicit and excludes post-regular-season stages.
 ```text
 src/football_predictor/  # domain models, source adapters, validation, later features/models
 tests/                   # deterministic unit tests
+web/                     # React + TypeScript prediction dashboard
 data/raw/                # ignored raw source downloads
-data/processed/          # ignored generated datasets
+data/processed/          # ignored working datasets
+data/model/              # compressed canonical inference input
 docs/                    # methodology and source decisions
 ```
 
@@ -85,11 +87,24 @@ uv run uvicorn football_predictor.api:app --reload
 See [live fixture setup](docs/live-fixtures.md) for endpoints, provider setup,
 and the data-freshness policy.
 
-## Milestone 1 status
+## Run the dashboard
+
+For development, run the API command above and start Vite separately:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+The production Docker image builds the dashboard and serves it from FastAPI as
+one deployable service. See [deployment setup](docs/deployment.md).
+
+## Project status
 
 The foundation, canonical match schema, source selection, leakage-safe feature
 engine, Elo probability baseline, calibrated logistic comparison, Poisson goal
-model, and validation-selected ensemble are in place. The current policy uses
-the ensemble for the Premier League and Elo for Super League Greece, selected
-without tuning on the final holdout. Next: expose these trained prediction paths
-through a FastAPI service and integrate a reviewed current-fixture source.
+model, validation-selected ensemble, FastAPI service, optional live-fixture
+adapter, and React dashboard are in place. The current policy uses the ensemble
+for the Premier League and Elo for Super League Greece, selected without tuning
+on the final holdout.

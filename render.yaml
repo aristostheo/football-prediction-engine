@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: football-prediction-engine
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: API_FOOTBALL_KEY
+        sync: false
