@@ -17,8 +17,9 @@ uv run uvicorn football_predictor.api:app --reload
 
 V1 prefers the optional [Goal API](https://goal-api.com/) adapter for current
 fixture discovery. Its free plan covers both supported leagues and allows 1,000
-requests per day. The integration uses league `152` for the Premier League and
-league `178` for Super League Greece.
+requests per day. The date-fixture endpoint's `leagueId` filter uses Goal API's
+internal league `id` from `/leagues`, not the provider's numeric `apiId` (152 for
+the Premier League and 178 for Super League Greece).
 
 [API-Football](https://www.api-football.com/) remains an optional fallback when
 `API_FOOTBALL_KEY` is also configured. Provider order is:

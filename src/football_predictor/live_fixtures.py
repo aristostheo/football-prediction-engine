@@ -21,8 +21,9 @@ API_FOOTBALL_LEAGUE_IDS = {
 GOAL_API_BASE_URL = "https://api.goal-api.com/v1"
 GOAL_API_USER_AGENT = "football-prediction-engine/0.1"
 GOAL_API_LEAGUE_IDS = {
-    Competition.PREMIER_LEAGUE: 152,
-    Competition.SUPER_LEAGUE_GREECE: 178,
+    # Fixtures' leagueId filter expects Goal API's internal `id`, not `apiId`.
+    Competition.PREMIER_LEAGUE: "cmr77dvkr005nrx06lp7rvp49",
+    Competition.SUPER_LEAGUE_GREECE: "cmr77dwfb00jmrx06oapyzogf",
 }
 
 

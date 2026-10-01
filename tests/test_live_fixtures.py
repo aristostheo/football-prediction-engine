@@ -51,7 +51,7 @@ def test_goal_api_provider_parses_and_filters_fixture_payload(monkeypatch) -> No
     assert fixtures[0].home_team == "Arsenal"
     assert fixtures[0].kickoff_at.isoformat() == "2026-10-04T15:00:00+00:00"
     assert "/fixtures/date/2026-10-04?" in requests[0].full_url
-    assert "leagueId=152" in requests[0].full_url
+    assert "leagueId=cmr77dvkr005nrx06lp7rvp49" in requests[0].full_url
     assert "limit=100" in requests[0].full_url
     assert "offset=0" in requests[0].full_url
     assert requests[0].get_header("Authorization") == "Bearer test-key"
@@ -86,7 +86,7 @@ def test_goal_api_provider_supports_greece_and_split_date_fields(monkeypatch) ->
     assert fixtures[0].fixture_id == "789"
     assert fixtures[0].kickoff_at.isoformat() == "2026-10-04T17:30:00+00:00"
     assert "/fixtures/date/2026-10-04?" in requested_urls[0]
-    assert "leagueId=178" in requested_urls[0]
+    assert "leagueId=cmr77dwfb00jmrx06oapyzogf" in requested_urls[0]
 
 
 def test_goal_api_provider_follows_league_fixture_pagination(monkeypatch) -> None:  # type: ignore[no-untyped-def]
