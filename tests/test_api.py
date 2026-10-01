@@ -3,11 +3,12 @@ from datetime import date, datetime
 from pathlib import Path
 
 import httpx
+import pytest
 
 from football_predictor.api import create_app
 from football_predictor.domain import Competition
 from football_predictor.live_fixtures import LiveFixture
-from football_predictor.prediction import FixtureToPredict, MatchPrediction
+from football_predictor.prediction import FixtureToPredict, MatchPrediction, PredictionEngine
 
 
 class StubEngine:
@@ -34,6 +35,44 @@ class StubFixtureProvider:
                 away_team="Chelsea FC",
             )
         ]
+
+
+@pytest.mark.parametrize("custom_path", [None, "custom/history.csv"])
+def test_api_loads_bundled_history_by_default_and_honors_override(
+    monkeypatch: pytest.MonkeyPatch, custom_path: str | None
+) -> None:
+    monkeypatch.delenv("HISTORICAL_MATCHES_PATH", raising=False)
+    if custom_path:
+        monkeypatch.setenv("HISTORICAL_MATCHES_PATH", custom_path)
+    loaded_paths: list[Path] = []
+
+    def load_history(path: Path) -> StubEngine:
+        loaded_paths.append(path)
+        if not custom_path:
+            assert path.is_file(), "default prediction data must ship with the repository"
+        return StubEngine()
+
+    monkeypatch.setattr(PredictionEngine, "from_csv", load_history)
+
+    async def exercise() -> None:
+        app = create_app()
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            for _ in range(2):
+                response = await client.post(
+                    "/predict",
+                    json={
+                        "competition": "premier_league",
+                        "kickoff_date": "2026-10-18",
+                        "home_team": "Arsenal FC",
+                        "away_team": "Chelsea FC",
+                    },
+                )
+                assert response.status_code == 200, response.text
+
+    asyncio.run(exercise())
+    assert loaded_paths == [Path(custom_path or "data/model/historical_matches.csv.gz")]
 
 
 def test_api_exposes_health_fixtures_and_predictions() -> None:

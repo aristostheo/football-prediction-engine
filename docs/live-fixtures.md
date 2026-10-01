@@ -32,6 +32,10 @@ Keys are read only by the backend from environment variables and must never be
 committed or exposed to the browser. Manual prediction remains available with
 no provider key.
 
+Run the server from the repository root. Predictions load the included
+`data/model/historical_matches.csv.gz` by default. Set `HISTORICAL_MATCHES_PATH`
+only when you want to use a different historical dataset.
+
 ## Freshness guardrail
 
 The response always reports `history_through` and `history_age_days`. The

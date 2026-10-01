@@ -70,7 +70,7 @@ def create_app(
         nonlocal configured_engine
         if configured_engine is None:
             history_path = Path(
-                os.environ.get("HISTORICAL_MATCHES_PATH", "data/processed/historical_matches.csv")
+                os.environ.get("HISTORICAL_MATCHES_PATH", "data/model/historical_matches.csv.gz")
             )
             configured_engine = PredictionEngine.from_csv(history_path)
         return configured_engine
