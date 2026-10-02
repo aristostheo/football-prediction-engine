@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from math import isfinite
 
 import pandas as pd
@@ -5,10 +6,67 @@ import pytest
 
 from football_predictor.models import (
     FEATURE_COLUMNS,
+    _complete_season_order,
     _outcome_probabilities_from_goal_rates,
+    _season_block_log_loss_intervals,
     blend_probabilities,
     compare_models_chronologically,
 )
+
+
+def test_walk_forward_folds_include_only_schedule_complete_seasons() -> None:
+    teams = [f"Team {index}" for index in range(20)]
+    rows = []
+    current_date = date(2024, 8, 1)
+    for first in range(len(teams)):
+        for second in range(first + 1, len(teams)):
+            for home, away in ((teams[first], teams[second]), (teams[second], teams[first])):
+                rows.append(
+                    {
+                        "competition": "premier_league",
+                        "season": "2024-25",
+                        "match_date": current_date,
+                        "home_team": home,
+                        "away_team": away,
+                    }
+                )
+                current_date += timedelta(days=1)
+    rows.extend(
+        [
+            {
+                "competition": "premier_league",
+                "season": "2025-26",
+                "match_date": current_date,
+                "home_team": "Team 0",
+                "away_team": "Team 1",
+            }
+        ]
+    )
+
+    assert _complete_season_order(pd.DataFrame(rows)) == ["2024-25"]
+
+
+def test_walk_forward_paired_bootstrap_is_repeatable_and_ordered() -> None:
+    def probabilities(home_probability: float) -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "result": ["H", "A"],
+                "p_home_win": [home_probability, 1 - home_probability],
+                "p_draw": [0.1, 0.1],
+                "p_away_win": [0.9 - home_probability, home_probability - 0.1],
+            }
+        )
+
+    folds = {
+        "2024-25": {"elo": probabilities(0.7), "climatology": probabilities(0.5)},
+        "2025-26": {"elo": probabilities(0.7), "climatology": probabilities(0.5)},
+    }
+    first = _season_block_log_loss_intervals(folds, bootstrap_samples=100, random_seed=17)
+    second = _season_block_log_loss_intervals(folds, bootstrap_samples=100, random_seed=17)
+
+    assert first == second
+    interval = first["climatology - elo"]
+    assert interval["lower_95"] <= interval["mean_difference"] <= interval["upper_95"]
 
 
 def test_poisson_scoreline_probabilities_are_normalized() -> None:

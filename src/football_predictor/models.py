@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import exp
+from itertools import combinations
+from math import exp, log
+from random import Random
+from statistics import mean
 
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
@@ -12,6 +15,7 @@ from sklearn.linear_model import LogisticRegression, PoissonRegressor
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from threadpoolctl import threadpool_limits
 
 from football_predictor.domain import MatchResult
 from football_predictor.evaluation import (
@@ -64,6 +68,15 @@ class LeagueModelComparison:
     validation_selected_elo_poisson_ensemble: ValidationSelectedEnsembleScore
 
 
+@dataclass(frozen=True)
+class WalkForwardLeagueComparison:
+    """Expanding-window scores and paired season-block uncertainty by league."""
+
+    tested_seasons: tuple[str, ...]
+    model_scores: dict[str, ModelScore]
+    paired_log_loss_differences: dict[str, dict[str, float]]
+
+
 def compare_models_chronologically(
     features: pd.DataFrame, *, test_fraction: float = 0.2
 ) -> dict[str, LeagueModelComparison]:
@@ -106,6 +119,159 @@ def compare_models_chronologically(
             validation_selected_elo_poisson_ensemble=ensemble_score,
         )
     return comparisons
+
+
+def compare_models_walk_forward(
+    features: pd.DataFrame,
+    *,
+    max_test_seasons: int = 5,
+    minimum_training_matches: int = 200,
+    bootstrap_samples: int = 2000,
+    random_seed: int = 42,
+) -> dict[str, WalkForwardLeagueComparison]:
+    """Compare candidates on complete future seasons with an expanding train window.
+
+    Incomplete and malformed seasons are excluded from test folds. Their rows
+    can still be included in an earlier fold's training data only when they
+    chronologically precede that fold, which does not occur for the current
+    in-progress seasons. Uncertainty resamples whole seasons to preserve
+    within-season dependence.
+    """
+    if max_test_seasons < 1 or minimum_training_matches < 1 or bootstrap_samples < 1:
+        raise ValueError("walk-forward limits and bootstrap sample count must be positive")
+
+    results: dict[str, WalkForwardLeagueComparison] = {}
+    for competition, league in features.groupby("competition", sort=True):
+        ordered = league.sort_values("match_date", kind="stable").reset_index(drop=True)
+        seasons = _complete_season_order(ordered)
+        test_seasons = seasons[-max_test_seasons:]
+        by_model: dict[str, list[pd.DataFrame]] = {}
+        by_season: dict[str, dict[str, pd.DataFrame]] = {}
+        for season in test_seasons:
+            test = ordered[ordered["season"] == season].copy()
+            first_date = test["match_date"].min()
+            train = ordered[ordered["match_date"] < first_date].copy()
+            if len(train) < minimum_training_matches:
+                continue
+            with threadpool_limits(limits=1):
+                fold: dict[str, pd.DataFrame] = {
+                    "climatology": _climatology_probabilities(train, test),
+                    "elo": add_elo_probabilities(test),
+                    "logistic": _fit_predict_logistic(train, test),
+                    "poisson": _fit_predict_poisson(train, test),
+                }
+                ensemble, _, _ = _fit_predict_ensemble(train, test)
+            fold["ensemble"] = ensemble
+            by_season[season] = fold
+            for name, prediction in fold.items():
+                prediction["season"] = season
+                by_model.setdefault(name, []).append(prediction)
+
+        if not by_season:
+            continue
+        predictions = {
+            name: pd.concat(parts, ignore_index=True) for name, parts in by_model.items()
+        }
+        scores = {name: _score(frame) for name, frame in predictions.items()}
+        intervals = _season_block_log_loss_intervals(
+            by_season, bootstrap_samples=bootstrap_samples, random_seed=random_seed
+        )
+        results[str(competition)] = WalkForwardLeagueComparison(
+            tested_seasons=tuple(by_season),
+            model_scores=scores,
+            paired_log_loss_differences=intervals,
+        )
+    return results
+
+
+def _complete_season_order(features: pd.DataFrame) -> list[str]:
+    competition = str(features["competition"].iloc[0])
+    ordered_seasons = (
+        features.groupby("season", sort=False)["match_date"].min().sort_values().index.tolist()
+    )
+    complete: list[str] = []
+    for season in ordered_seasons:
+        matches = features[features["season"] == season]
+        expected, expected_teams = _expected_season_dimensions(competition, str(season))
+        appearances = pd.concat([matches["home_team"], matches["away_team"]]).value_counts()
+        if (
+            expected
+            and len(appearances) == expected_teams
+            and len(appearances) % 2 == 0
+            and appearances.eq(expected).all()
+        ):
+            complete.append(str(season))
+    return complete
+
+
+def _expected_season_dimensions(competition: str, season: str) -> tuple[int | None, int | None]:
+    if competition == "premier_league":
+        return 38, 20
+    if competition == "super_league_greece":
+        return (30, 16) if season == "2018-19" else (26, 14)
+    return None, None
+
+
+def _fit_predict_ensemble(
+    train: pd.DataFrame, test: pd.DataFrame
+) -> tuple[pd.DataFrame, float, float]:
+    validation_start = int(len(train) * 0.8)
+    fit_train = train.iloc[:validation_start]
+    validation = train.iloc[validation_start:]
+    if len(fit_train) < 40 or validation.empty:
+        raise ValueError("not enough training data to select an ensemble")
+    validation_elo = add_elo_probabilities(validation)
+    validation_poisson = _fit_predict_poisson(fit_train, validation)
+    elo_weight, validation_log_loss = _select_elo_weight(validation_elo, validation_poisson)
+    test_ensemble = blend_probabilities(
+        add_elo_probabilities(test), _fit_predict_poisson(train, test), elo_weight=elo_weight
+    )
+    return test_ensemble, elo_weight, validation_log_loss
+
+
+def _season_block_log_loss_intervals(
+    by_season: dict[str, dict[str, pd.DataFrame]], *, bootstrap_samples: int, random_seed: int
+) -> dict[str, dict[str, float]]:
+    seasons = list(by_season)
+    model_names = sorted(next(iter(by_season.values())))
+    losses = {
+        season: {name: _per_match_log_loss(frame) for name, frame in by_season[season].items()}
+        for season in seasons
+    }
+    rng = Random(random_seed)
+    intervals: dict[str, dict[str, float]] = {}
+    for first, second in combinations(model_names, 2):
+        season_differences = {
+            season: mean(losses[season][first]) - mean(losses[season][second])
+            for season in seasons
+        }
+        fold_differences = list(season_differences.values())
+        bootstrap_differences: list[float] = []
+        for _ in range(bootstrap_samples):
+            bootstrap_differences.append(mean(rng.choice(fold_differences) for _ in seasons))
+        bootstrap_differences.sort()
+        intervals[f"{first} - {second}"] = {
+            "mean_difference": mean(fold_differences),
+            "lower_95": _quantile(bootstrap_differences, 0.025),
+            "upper_95": _quantile(bootstrap_differences, 0.975),
+        }
+    return intervals
+
+
+def _per_match_log_loss(predictions: pd.DataFrame) -> list[float]:
+    probability_column = {"H": "p_home_win", "D": "p_draw", "A": "p_away_win"}
+    return [
+        -log(float(getattr(row, probability_column[row.result])))
+        for row in predictions.itertuples(index=False)
+    ]
+
+
+def _quantile(sorted_values: list[float], quantile: float) -> float:
+    position = (len(sorted_values) - 1) * quantile
+    lower = int(position)
+    upper = min(lower + 1, len(sorted_values) - 1)
+    fraction = position - lower
+    return sorted_values[lower] * (1 - fraction) + sorted_values[upper] * fraction
 
 
 def _climatology_probabilities(train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:
@@ -172,19 +338,7 @@ def _select_and_score_ensemble(
     train: pd.DataFrame, test: pd.DataFrame
 ) -> ValidationSelectedEnsembleScore:
     """Choose an Elo/Poisson mix on late training data, then score it once on the future."""
-    validation_start = int(len(train) * 0.8)
-    fit_train = train.iloc[:validation_start]
-    validation = train.iloc[validation_start:]
-    if len(fit_train) < 40 or validation.empty:
-        raise ValueError("not enough training data to select an ensemble")
-
-    validation_elo = add_elo_probabilities(validation)
-    validation_poisson = _fit_predict_poisson(fit_train, validation)
-    elo_weight, validation_log_loss = _select_elo_weight(validation_elo, validation_poisson)
-
-    test_elo = add_elo_probabilities(test)
-    test_poisson = _fit_predict_poisson(train, test)
-    test_ensemble = blend_probabilities(test_elo, test_poisson, elo_weight=elo_weight)
+    test_ensemble, elo_weight, validation_log_loss = _fit_predict_ensemble(train, test)
     return ValidationSelectedEnsembleScore(
         elo_weight=elo_weight,
         validation_log_loss=validation_log_loss,

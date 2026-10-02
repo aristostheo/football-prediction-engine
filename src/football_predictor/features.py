@@ -20,6 +20,8 @@ class FeatureConfig:
     elo_k_factor: float = 20.0
     elo_home_advantage: float = 60.0
     max_rest_days: int = 97
+    history_gap_reset_days: int = 180
+    elo_gap_half_life_days: float = 365.0
 
 
 @dataclass
@@ -67,6 +69,10 @@ def build_pre_match_features_and_states(
         raise ValueError(f"missing required match columns: {sorted(missing)}")
     if config.form_window < 1:
         raise ValueError("form_window must be at least one")
+    if config.max_rest_days < 1 or config.history_gap_reset_days < 1:
+        raise ValueError("rest-day and history-gap limits must be positive")
+    if config.elo_gap_half_life_days <= 0:
+        raise ValueError("Elo gap half-life must be positive")
 
     ordered = matches.copy()
     ordered["match_date"] = pd.to_datetime(ordered["match_date"], format="ISO8601")
@@ -92,6 +98,8 @@ def build_pre_match_features_and_states(
             day_keys.update((home_key, away_key))
             home_state = states[home_key]
             away_state = states[away_key]
+            _prepare_state_after_gap(home_state, match_date.date(), config)
+            _prepare_state_after_gap(away_state, match_date.date(), config)
             feature_rows.append(
                 _feature_row(
                     home_state=home_state,
@@ -198,6 +206,19 @@ def _update_states(
     away_state.elo -= adjustment
     home_state.last_match_date = match_date
     away_state.last_match_date = match_date
+
+
+def _prepare_state_after_gap(state: TeamState, match_date: date, config: FeatureConfig) -> None:
+    if state.last_match_date is None:
+        return
+    gap_days = (match_date - state.last_match_date).days
+    if gap_days <= config.history_gap_reset_days:
+        return
+    state.all_results.clear()
+    state.home_results.clear()
+    state.away_results.clear()
+    regression = 0.5 ** (gap_days / config.elo_gap_half_life_days)
+    state.elo = config.initial_elo + (state.elo - config.initial_elo) * regression
 
 
 def _points_for(goals_for: int, goals_against: int) -> int:

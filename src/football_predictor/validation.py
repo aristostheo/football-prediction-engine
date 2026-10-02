@@ -40,7 +40,10 @@ def validate_match_collection(matches: Iterable[HistoricalMatch]) -> list[Histor
 
 
 def validate_completed_season(
-    matches: Iterable[HistoricalMatch], *, expected_matches_per_team: int
+    matches: Iterable[HistoricalMatch],
+    *,
+    expected_matches_per_team: int,
+    expected_team_count: int | None = None,
 ) -> list[HistoricalMatch]:
     """Require each club in a completed regular season to have a full schedule."""
     if expected_matches_per_team < 1:
@@ -64,4 +67,8 @@ def validate_completed_season(
         )
     if len(appearances) % 2:
         raise ValueError("a completed league season must have an even number of teams")
+    if expected_team_count is not None and len(appearances) != expected_team_count:
+        raise ValueError(
+            f"completed season expected {expected_team_count} teams; got {len(appearances)}"
+        )
     return ordered

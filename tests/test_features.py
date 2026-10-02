@@ -76,3 +76,22 @@ def test_rest_days_are_capped_to_the_training_range() -> None:
     features = build_pre_match_features(matches)
     assert features.iloc[2]["home_days_since_last_match"] == 97.0
     assert features.iloc[2]["away_days_since_last_match"] == 97.0
+    assert features.iloc[2]["home_matches_played"] == 0.0
+    assert features.iloc[2]["home_form_points_per_match"] == 0.0
+    assert abs(features.iloc[2]["home_elo"] - 1500.0) < 3.0
+
+
+def test_changing_a_result_cannot_change_same_day_features() -> None:
+    original = _matches()
+    changed = original.copy()
+    changed.loc[0, ["home_goals", "away_goals", "result"]] = [0, 3, "A"]
+
+    baseline_features = build_pre_match_features(original)
+    changed_features = build_pre_match_features(changed)
+    feature_columns = [column for column in baseline_features if column not in original.columns]
+
+    pd.testing.assert_frame_equal(
+        baseline_features.loc[:1, feature_columns],
+        changed_features.loc[:1, feature_columns],
+    )
+    assert baseline_features.loc[2, "home_elo"] != changed_features.loc[2, "home_elo"]

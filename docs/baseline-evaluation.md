@@ -12,9 +12,8 @@ the production policy, so it is not an independent test set.
 
 | Competition | Matches | Log loss | Brier score | RPS | Accuracy |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Premier League | 1,986 | 0.9810 | 0.5842 | 0.2019 | 54.28% |
-| Super League Greece | 213 | 0.9397 | 0.5540 | 0.1948 | 56.81% |
+| Premier League | 1,986 | 0.9805 | 0.5838 | 0.2017 | 53.98% |
+| Super League Greece | 213 | 0.9650 | 0.5712 | 0.2029 | 56.81% |
 
 See [model comparison](model-comparison.md) for the corresponding candidate
-models and the evaluation limitations. The next evaluation update will add
-expanding season-by-season walk-forward metrics and a climatology baseline.
+models, expanding-season walk-forward metrics, and the evaluation limitations.

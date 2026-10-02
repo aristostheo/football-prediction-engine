@@ -36,6 +36,12 @@ def test_completed_season_validation_checks_every_club_schedule() -> None:
         for match_date, home, away in fixtures
     ]
 
-    assert len(validate_completed_season(matches, expected_matches_per_team=3)) == 6
+    assert len(
+        validate_completed_season(
+            matches, expected_matches_per_team=3, expected_team_count=4
+        )
+    ) == 6
     with pytest.raises(ValueError, match="expected 4 matches per team"):
         validate_completed_season(matches, expected_matches_per_team=4)
+    with pytest.raises(ValueError, match="expected 6 teams"):
+        validate_completed_season(matches, expected_matches_per_team=3, expected_team_count=6)

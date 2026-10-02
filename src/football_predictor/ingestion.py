@@ -34,6 +34,13 @@ GREEK_MATCHES_PER_TEAM = {
     "2023-24": 26,
     "2024-25": 26,
 }
+GREEK_TEAMS_PER_SEASON = {
+    "2018-19": 16,
+    "2019-20": 14,
+    "2020-21": 14,
+    "2023-24": 14,
+    "2024-25": 14,
+}
 
 
 @dataclass(frozen=True)
@@ -45,6 +52,7 @@ class OpenFootballFile:
     path: Path
     source_url: str
     expected_matches_per_team: int | None = None
+    expected_team_count: int | None = None
 
 
 def initial_openfootball_files(
@@ -58,6 +66,7 @@ def initial_openfootball_files(
             path=england_root / season / "1-premierleague.txt",
             source_url=f"{OPENFOOTBALL_ENGLAND_RAW}/{season}/1-premierleague.txt",
             expected_matches_per_team=38,
+            expected_team_count=20,
         )
         for season in PREMIER_LEAGUE_SEASONS
     )
@@ -76,6 +85,7 @@ def initial_openfootball_files(
             path=europe_root / "greece" / f"{season}_gr1.txt",
             source_url=f"{OPENFOOTBALL_EUROPE_RAW}/greece/{season}_gr1.txt",
             expected_matches_per_team=GREEK_MATCHES_PER_TEAM.get(season),
+            expected_team_count=GREEK_TEAMS_PER_SEASON.get(season),
         )
         for season in GREEK_SUPER_LEAGUE_SEASONS
     )
@@ -85,7 +95,7 @@ def initial_openfootball_files(
 def parse_openfootball_files(
     source_files: Iterable[OpenFootballFile], *, retrieved_at: datetime
 ) -> list[HistoricalMatch]:
-    """Parse a fixed set of local source files with one consistent retrieval timestamp."""
+    """Parse local source files with one consistent retrieval timestamp."""
     matches: list[HistoricalMatch] = []
     for source_file in source_files:
         if not source_file.path.is_file():
@@ -99,7 +109,9 @@ def parse_openfootball_files(
         )
         if source_file.expected_matches_per_team is not None:
             parsed = validate_completed_season(
-                parsed, expected_matches_per_team=source_file.expected_matches_per_team
+                parsed,
+                expected_matches_per_team=source_file.expected_matches_per_team,
+                expected_team_count=source_file.expected_team_count,
             )
         else:
             parsed = validate_match_collection(parsed)
@@ -136,6 +148,7 @@ def write_initial_dataset(
                 "season": source_file.season,
                 "source_url": source_file.source_url,
                 "expected_matches_per_team": source_file.expected_matches_per_team,
+                "expected_team_count": source_file.expected_team_count,
                 "complete_season": source_file.expected_matches_per_team is not None,
             }
             for source_file in source_files

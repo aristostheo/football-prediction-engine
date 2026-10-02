@@ -108,8 +108,9 @@ model, validation-selected ensemble, FastAPI service, optional live-fixture
 adapter, and React dashboard are in place. The current production policy uses
 the ensemble for the Premier League and Elo for Super League Greece. The Greek
 policy was chosen after inspecting the final holdout, so that holdout is
-exploratory and is not an independent estimate of future performance. A
-walk-forward evaluation is planned before making further model-selection
-claims. The bundled history is current through September 20, 2026 for both
+exploratory and is not an independent estimate of future performance. The
+project now includes an expanding-season walk-forward evaluation with a
+climatology baseline and season-block uncertainty. The bundled history is
+current through September 20, 2026 for both
 leagues; see [data coverage](docs/data-sources.md) for incomplete Greek seasons
 and gaps.

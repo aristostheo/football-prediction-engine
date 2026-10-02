@@ -16,6 +16,10 @@ This means a late same-day fixture cannot see an early same-day result.
   points per match over the prior five such fixtures.
 - Rest: calendar days since each team's previous league match; the first
   recorded match is missing rather than assigned an invented rest value.
+  Rest is capped at 97 days, the 99th-percentile training range.
+- Long gaps: after more than 180 days without a recorded result, recent-form
+  windows reset and Elo regresses toward 1500 with a 365-day half-life. This
+  avoids carrying stale Greek team form across missing seasons.
 - Elo: each competition has independent 1500-point starting ratings, a 60-point
   home adjustment, and K=20 updates. Ratings are stored before the match.
 
