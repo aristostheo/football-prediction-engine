@@ -85,9 +85,10 @@ uv run uvicorn football_predictor.api:app --reload
 ```
 
 See [live fixture setup](docs/live-fixtures.md) for endpoints, provider setup,
-and the data-freshness policy. Refresh the bundled result history from
-OpenFootball with `uv run python -m football_predictor --refresh` before
-deploying newer results.
+and the data-freshness policy. GitHub Actions checks for new results weekly
+and commits them only when match data changes; Render deploys those updates
+automatically. To check or refresh results locally, run
+`uv run python -m football_predictor --refresh` from the project root.
 
 ## Run the dashboard
 
