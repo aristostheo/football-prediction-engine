@@ -60,9 +60,11 @@ Premier League season and all match rows, records a SHA-256 checksum for each
 source file and the generated dataset, then replaces the local bundle. It
 refuses to update if any previously recorded fixture disappears; review that
 upstream change before retrying with `--allow-removed-matches`. Download or
-validation failures leave the current dataset intact. The command does not
-update a deployed service automatically: commit and deploy the refreshed bundle
-for the hosted predictor to use it.
+validation failures leave the current dataset intact. GitHub Actions runs this
+refresh weekly on Tuesday and can also be started from the Actions tab. It
+commits the dataset and manifest only when match results change. The Render
+service is configured to deploy on a commit, so successful data updates roll
+out with the application.
 
 The original local-repository build remains available:
 
