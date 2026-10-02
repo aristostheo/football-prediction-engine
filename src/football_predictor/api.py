@@ -11,7 +11,7 @@ from threading import Lock
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from football_predictor.domain import Competition
 from football_predictor.live_fixtures import (
@@ -28,6 +28,18 @@ class PredictionRequest(BaseModel):
     kickoff_date: date
     home_team: str = Field(min_length=1)
     away_team: str = Field(min_length=1)
+    odds_home: float | None = Field(default=None, gt=1.0)
+    odds_draw: float | None = Field(default=None, gt=1.0)
+    odds_away: float | None = Field(default=None, gt=1.0)
+
+    @model_validator(mode="after")
+    def market_odds_must_be_complete(self) -> PredictionRequest:
+        supplied = (self.odds_home, self.odds_draw, self.odds_away)
+        if any(value is not None for value in supplied) and any(
+            value is None for value in supplied
+        ):
+            raise ValueError("provide all three decimal odds: home, draw, and away")
+        return self
 
 
 class PredictionResponse(BaseModel):
