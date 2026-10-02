@@ -40,29 +40,32 @@ only when you want to use a different historical dataset.
 
 The response always reports `history_through` and `history_age_days`. The
 service deliberately refuses to back-predict a date at or before the local
-history's latest completed match, preventing future information from entering a
+history's latest recorded match, preventing future information from entering a
 historical prediction. Fixture discovery requires a live-provider key, while a
 prediction only needs the local historical dataset. The predictor resolves
-common provider labels and club suffixes against locally recorded team names,
-while unknown or ambiguous teams remain rejected. Current-result synchronization
-and explicit mapping through provider team IDs remain future hardening steps.
+registered provider labels and club aliases. A registered club with no results
+gets a 1400 Elo starting prior, and its probabilities are shrunk halfway toward
+the league's training-period outcome rates; the `model_policy` response marks
+this with `_promoted_prior`. Unregistered names remain rejected. Current-result
+synchronization and explicit mapping through provider team IDs remain future
+hardening steps.
 
 ## Team-name coverage
 
-`team_names.py` registers all 46 English clubs and 20 Greek clubs represented in
-the bundled history. It handles common English abbreviations (Bournemouth,
+`team_names.py` includes every club label in the bundled history and aliases
+for promoted clubs. It handles common English abbreviations (Bournemouth,
 Brighton, Man Utd, Tottenham, Wolves), Greek transliterations (AEK Athens,
 Olympiacos, PAOK, OFI, Kifisia), Greek-script aliases, capitalization, accents,
 punctuation, and club suffixes. Resolution is scoped to the selected league and
 prefers the recent historical label when a club also has an older label.
 
-Iraklis and Kalamata have recognized names but no results in the bundled dataset;
-their predictions return a clear missing-history error. Unknown or ambiguous
-names are not guessed. The audit tests cover all real clubs in the local dataset
-and the fixture-selection-to-prediction API flow for both leagues. Live API roster
-verification requires a configured provider key; no key was available in the
-development environment during this audit.
+Iraklis and Kalamata now have recorded 2026-27 results. If another registered
+promoted club appears before its first local result, the engine uses the cautious
+prior described above. Unknown or ambiguous names are not guessed. Tests cover
+both leagues' alias resolution and the fixture-selection-to-prediction API flow.
+Live provider rosters still depend on the configured provider.
 
-Two historical awarded-match rows contain malformed parser labels (`[awarded]`
-and combined fixture text). These are not registered as club aliases. Historical
-result cleanup and refreshing the dataset remain separate work.
+The parser now handles OpenFootball's `[awarded]` suffix and canonicalizes team
+labels before validation. The bundled results no longer contain the two phantom
+Greek club names caused by that parsing issue. See [data-source coverage](data-sources.md)
+for current-season completeness and known Greek season gaps.

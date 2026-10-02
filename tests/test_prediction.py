@@ -3,6 +3,7 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 import httpx
+import pandas as pd
 import pytest
 
 from football_predictor.api import create_app
@@ -89,6 +90,59 @@ def test_predict_supports_promoted_club_after_its_first_recorded_matches(
         )
     )
     assert prediction.fixture.home_team == "Kalamata"
+
+
+def test_recognized_team_without_history_uses_a_conservative_prior() -> None:
+    teams = ["AEK Athen", "Olympiakos Piraeus", "PAOK Saloniki", "Aris Saloniki"]
+    rows = []
+    for index in range(120):
+        home_goals, away_goals = ((2, 0), (1, 1), (0, 2))[index % 3]
+        rows.append(
+            {
+                "match_date": date(2020, 1, 1) + timedelta(days=index),
+                "competition": Competition.SUPER_LEAGUE_GREECE.value,
+                "season": "2019-20",
+                "home_team": teams[index % len(teams)],
+                "away_team": teams[(index + 1) % len(teams)],
+                "home_goals": home_goals,
+                "away_goals": away_goals,
+                "result": ("H", "D", "A")[index % 3],
+            }
+        )
+    engine = PredictionEngine(pd.DataFrame(rows))
+    fixture = FixtureToPredict(
+        competition=Competition.SUPER_LEAGUE_GREECE,
+        kickoff_date=date(2020, 5, 1),
+        home_team="Kalamata FC",
+        away_team="Olympiacos",
+    )
+
+    prediction = engine.predict(fixture)
+
+    assert prediction.model_policy == "elo_promoted_prior"
+    assert prediction.fixture.home_team == "Kalamata"
+    assert sum(
+        (
+            prediction.home_win_probability,
+            prediction.draw_probability,
+            prediction.away_win_probability,
+        )
+    ) == pytest.approx(1.0)
+
+
+def test_prediction_still_rejects_unregistered_club_names() -> None:
+    history = pd.read_csv(Path(__file__).parents[1] / "data/model/historical_matches.csv.gz")
+    engine = PredictionEngine(history)
+    with pytest.raises(ValueError, match="Unrecognized teams"):
+        engine.predict(
+            FixtureToPredict(
+                competition=Competition.PREMIER_LEAGUE,
+                kickoff_date=engine.latest_result_date(Competition.PREMIER_LEAGUE)
+                + timedelta(days=1),
+                home_team="Made Up FC",
+                away_team="Arsenal",
+            )
+        )
 
 
 def test_predict_rejects_two_aliases_of_the_same_club(prediction_engine: PredictionEngine) -> None:

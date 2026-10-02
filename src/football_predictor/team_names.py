@@ -129,6 +129,11 @@ def canonical_team_name(name: str, competition: Competition) -> str:
     return _alias_index(competition).get(_identity(name), name)
 
 
+def is_registered_team(name: str, competition: Competition) -> bool:
+    """Whether a name matches a known club or explicit alias for this league."""
+    return _identity(name) in _alias_index(competition)
+
+
 def resolve_team_name(name: str, competition: Competition, known_teams: set[str]) -> str:
     """Resolve aliases only to clubs with results in the selected competition."""
     canonical = canonical_team_name(name, competition)

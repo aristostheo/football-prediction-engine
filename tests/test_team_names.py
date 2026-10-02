@@ -4,7 +4,12 @@ import pandas as pd
 import pytest
 
 from football_predictor.domain import Competition
-from football_predictor.team_names import TEAM_ALIASES, canonical_team_name, resolve_team_name
+from football_predictor.team_names import (
+    TEAM_ALIASES,
+    canonical_team_name,
+    is_registered_team,
+    resolve_team_name,
+)
 
 
 @pytest.fixture(scope="module")
@@ -23,8 +28,9 @@ def test_every_registered_historical_club_and_alias_resolves(
     known = historical_teams[competition]
     for canonical, aliases in TEAM_ALIASES[competition].items():
         if canonical not in known:
-            # Recognition cannot manufacture results for a newly promoted club.
+            # These recognized clubs use a conservative prior until results arrive.
             assert canonical in {"Iraklis", "Kalamata"}
+            assert is_registered_team(canonical, competition)
             continue
         for name in (canonical, *aliases):
             assert resolve_team_name(name, competition, known) == canonical, name
@@ -76,6 +82,8 @@ def test_aliases_do_not_cross_leagues_or_guess_unrelated_clubs() -> None:
     assert resolve_team_name("Arsenal U21", Competition.PREMIER_LEAGUE, {"Arsenal FC"}) == (
         "Arsenal U21"
     )
+    assert is_registered_team("Kalamata FC", Competition.SUPER_LEAGUE_GREECE)
+    assert not is_registered_team("Made Up FC", Competition.PREMIER_LEAGUE)
 
 
 def test_resolver_supports_old_only_history_and_refuses_ambiguous_fallback() -> None:

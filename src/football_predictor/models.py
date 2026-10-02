@@ -433,6 +433,9 @@ def _outcome_probabilities_from_goal_rates(home_rate: float, away_rate: float) -
 def _poisson_probabilities(rate: float, max_goals: int = 12) -> list[float]:
     if rate <= 0:
         raise ValueError("Poisson goal rate must be positive")
+    # The scoreline summation is truncated at 12 goals; extreme extrapolated
+    # rates would underflow before that range and yield an invalid normalizer.
+    rate = min(rate, 8.0)
     probabilities = [exp(-rate)]
     for goals in range(1, max_goals + 1):
         probabilities.append(probabilities[-1] * rate / goals)

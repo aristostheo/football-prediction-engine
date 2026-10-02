@@ -7,10 +7,12 @@ from datetime import date
 from pathlib import Path
 
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
 from football_predictor.domain import Competition
 from football_predictor.evaluation import add_elo_probabilities
 from football_predictor.features import (
+    TeamState,
     build_future_fixture_features,
     build_pre_match_features_and_states,
 )
@@ -20,7 +22,10 @@ from football_predictor.models import (
     _outcome_probabilities_from_goal_rates,
     blend_probabilities,
 )
-from football_predictor.team_names import resolve_team_name
+from football_predictor.team_names import is_registered_team, resolve_team_name
+
+PROMOTED_TEAM_START_ELO = 1400.0
+PROMOTED_TEAM_MODEL_WEIGHT = 0.5
 
 
 @dataclass(frozen=True)
@@ -62,13 +67,18 @@ class PredictionEngine:
         self._history = historical_matches.copy()
         self._history["match_date"] = pd.to_datetime(self._history["match_date"]).dt.date
         self._features, self._final_states = build_pre_match_features_and_states(self._history)
-        self._poisson_models = {
-            competition: (
-                _fit_poisson_model(features, "home_goals"),
-                _fit_poisson_model(features, "away_goals"),
-            )
-            for competition, features in self._features.groupby("competition", sort=False)
+        self._outcome_priors = {
+            competition: _smoothed_outcome_prior(matches["result"])
+            for competition, matches in self._history.groupby("competition", sort=False)
         }
+        with threadpool_limits(limits=1):
+            self._poisson_models = {
+                competition: (
+                    _fit_poisson_model(features, "home_goals"),
+                    _fit_poisson_model(features, "away_goals"),
+                )
+                for competition, features in self._features.groupby("competition", sort=False)
+            }
 
     @classmethod
     def from_csv(cls, path: Path) -> PredictionEngine:
@@ -92,15 +102,23 @@ class PredictionEngine:
         unknown_teams = {canonical_fixture.home_team, canonical_fixture.away_team}.difference(
             known_teams
         )
-        if unknown_teams:
+        unregistered_teams = {
+            team
+            for team in unknown_teams
+            if not is_registered_team(team, fixture.competition)
+        }
+        if unregistered_teams:
             raise ValueError(
-                f"No historical results available for these teams in {competition}: "
-                f"{sorted(unknown_teams)}. Check the team names or update the historical dataset."
+                f"Unrecognized teams in {competition}: {sorted(unregistered_teams)}. "
+                "Check the team names or update the team registry."
             )
         if canonical_fixture.home_team == canonical_fixture.away_team:
             raise ValueError("home and away teams must be different clubs")
 
-        fixture_features = self._fixture_features(canonical_fixture)
+        fixture_states = dict(self._final_states)
+        for team in unknown_teams:
+            fixture_states[(competition, team)] = TeamState(elo=PROMOTED_TEAM_START_ELO)
+        fixture_features = self._fixture_features(canonical_fixture, fixture_states)
         elo = add_elo_probabilities(fixture_features)
         home_model, away_model = self._poisson_models[competition]
         home_rate = float(home_model.predict(fixture_features[list(FEATURE_COLUMNS)])[0])
@@ -115,6 +133,13 @@ class PredictionEngine:
         else:
             probabilities = elo
             policy = "elo"
+        if unknown_teams:
+            probabilities = _shrink_to_prior(
+                probabilities,
+                self._outcome_priors[competition],
+                model_weight=PROMOTED_TEAM_MODEL_WEIGHT,
+            )
+            policy = f"{policy}_promoted_prior"
         prediction = probabilities.iloc[0]
         return MatchPrediction(
             fixture=canonical_fixture,
@@ -133,11 +158,37 @@ class PredictionEngine:
             raise ValueError(f"no historical matches for {competition.value}")
         return max(history["match_date"])
 
-    def _fixture_features(self, fixture: FixtureToPredict) -> pd.DataFrame:
+    def _fixture_features(
+        self,
+        fixture: FixtureToPredict,
+        final_states: dict[tuple[str, str], TeamState] | None = None,
+    ) -> pd.DataFrame:
         return build_future_fixture_features(
             competition=fixture.competition.value,
             match_date=fixture.kickoff_date,
             home_team=fixture.home_team,
             away_team=fixture.away_team,
-            final_states=self._final_states,
+            final_states=final_states or self._final_states,
         )
+
+
+def _smoothed_outcome_prior(results: pd.Series) -> dict[str, float]:
+    counts = results.value_counts()
+    denominator = len(results) + 3
+    return {
+        "p_home_win": float((counts.get("H", 0) + 1) / denominator),
+        "p_draw": float((counts.get("D", 0) + 1) / denominator),
+        "p_away_win": float((counts.get("A", 0) + 1) / denominator),
+    }
+
+
+def _shrink_to_prior(
+    probabilities: pd.DataFrame, prior: dict[str, float], *, model_weight: float
+) -> pd.DataFrame:
+    adjusted = probabilities.copy()
+    for column, prior_probability in prior.items():
+        adjusted[column] = (
+            model_weight * adjusted[column].to_numpy()
+            + (1 - model_weight) * prior_probability
+        )
+    return adjusted

@@ -76,6 +76,12 @@ def test_poisson_scoreline_probabilities_are_normalized() -> None:
     assert probabilities["p_home_win"] > probabilities["p_away_win"]
 
 
+def test_extreme_goal_rates_still_produce_normalized_probabilities() -> None:
+    probabilities = _outcome_probabilities_from_goal_rates(1200.0, 1100.0)
+
+    assert sum(probabilities.values()) == pytest.approx(1.0)
+
+
 def test_probability_blend_is_normalized() -> None:
     elo = pd.DataFrame(
         {"p_home_win": [0.5], "p_draw": [0.3], "p_away_win": [0.2], "result": ["H"]}
