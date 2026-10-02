@@ -10,6 +10,7 @@ data/processed/
 data/model/*
 !data/model/.gitkeep
 !data/model/historical_matches.csv.gz
+!data/model/historical_matches.manifest.json
 .env
 web/node_modules/
 web/dist/
