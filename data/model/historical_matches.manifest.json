@@ -1,0 +1,352 @@
+{
+  "dataset_sha256": "21ce84a7d8973c8ad5c1884c0a74eaeb2ed37089512b791487b4a9a5e63c670a",
+  "generated_at": "2026-10-02T19:11:30.779254+00:00",
+  "matches_by_competition": {
+    "premier_league": 9930,
+    "super_league_greece": 1065
+  },
+  "schema_version": 2,
+  "sources": [
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2000-01",
+      "source_sha256": "1dd213e35461ed12218c0023da15470fe03851ebb498a830923312c6f6130ba0",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2000-01/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2001-02",
+      "source_sha256": "ea746447b3ff93b3b5944a07bcdac75aa468c631028acb951183a0f096f2aa7e",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2001-02/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2002-03",
+      "source_sha256": "73540a221f8bb249b5d2b1b1e623e72ff92de74e573d17891697002cbaefa6e8",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2002-03/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2003-04",
+      "source_sha256": "3810a2adac834fa8ce9f6fa70e49978450c6723b1c8cb320cf90ff77350859ec",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2003-04/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2004-05",
+      "source_sha256": "b95037eea4414b03fd6caa83671e6431d778d3900ebc771ce0d0939710da6001",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2004-05/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2005-06",
+      "source_sha256": "fd1838288f00f5e1521ae84fac229dd1e5c77231371690e0b9c2365d0088500c",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2005-06/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2006-07",
+      "source_sha256": "2b8c43a8642cd059039c86647178ba41758b542ee78598590335e80dce8541d7",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2006-07/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2007-08",
+      "source_sha256": "8181d274e1836c348e62ef336d1ecc4dea0fa62b64b495e0c919ba3ff35c5a9a",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2007-08/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2008-09",
+      "source_sha256": "967f8e785eb24365b6a3d5664db5ce1cda15242cfd52cf18e2e165b05c2d81f9",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2008-09/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2009-10",
+      "source_sha256": "7a24f841ff6d3e6fd9cd88577dcbb4fe39923463c19533054874e436abfc60b2",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2009-10/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2010-11",
+      "source_sha256": "3c46a3dee46ec938ee4242e8b9c27937b0dad5784f86651f81d26dea1ed7be33",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2010-11/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2011-12",
+      "source_sha256": "29baffcfade54caeea9bc62a7b78fe05267500b6fe24153a52a01c2fa46768d2",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2011-12/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2012-13",
+      "source_sha256": "266a2037ae717d1187453c52b8b12499dcdb3bebeb179c857a3cf87115387503",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2012-13/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2013-14",
+      "source_sha256": "96043e4e6343fcc008070e85349212c2563292e68b22e221890a9f903638adf4",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2013-14/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2014-15",
+      "source_sha256": "dd933efc1d5391f24846cc3390a6d9c76cdd1fe7514454d0f769d77572f53c8e",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2014-15/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2015-16",
+      "source_sha256": "65cf56216d8d97d2bcb71f96bd18bc7eccf68303929fecab0e60e21a269f5ad4",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2015-16/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2016-17",
+      "source_sha256": "c59d6fe6613ed72a16036b5ee7a2e1bb7495d05a6a91a07e1df9687b5438ba4f",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2016-17/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2017-18",
+      "source_sha256": "da4eb92aba943ef35998c35e0ded30a4559ed49acff27758c00aa07aae335dfa",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2017-18/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2018-19",
+      "source_sha256": "60de267b8f8ddf375686b16690f41e968584f3b90f1075f72e7e23ce87cbfed1",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2018-19/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2019-20",
+      "source_sha256": "449235ae433c8697d80a68b3cec602891becd72f1a39d99cd9337e5cdce5b521",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2019-20/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2020-21",
+      "source_sha256": "5a3bc3cbe407df02fb826c8786c8ec196a57ae5e07f27392b601eb4ed42eb5f7",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2020-21/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2021-22",
+      "source_sha256": "d040c1a4f66932c213a7709cf699667f18d5825f38fd9eafe183a645bcd7500d",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2021-22/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2022-23",
+      "source_sha256": "96e3587b76682de55248197c7eb8671cbe9a007ae61d13f8d7dbd16b7f59f0a8",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2022-23/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2023-24",
+      "source_sha256": "16f7b1f44c4c97e112ec3673ed559b6b3c5505704d47a4cf539a78931cfce431",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2023-24/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2024-25",
+      "source_sha256": "6c80314d195a688bbd49517c490541c4ee2d7bc08bcc228aa10729743e309d94",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2024-25/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2025-26",
+      "source_sha256": "38c1de56c9e9b6662c7efc1420b7e1fe00dddbb502fe72d8f759e773ba3c093b",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2025-26/1-premierleague.txt"
+    },
+    {
+      "competition": "premier_league",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 50,
+      "season": "2026-27",
+      "source_sha256": "a2366ea9f7f55b8afd666e455666ba9019f9c62da8864f6bcf3adff65300b445",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2026-27/1-premierleague.txt"
+    },
+    {
+      "competition": "super_league_greece",
+      "complete_season": true,
+      "expected_matches_per_team": 30,
+      "expected_team_count": 16,
+      "match_count": 240,
+      "season": "2018-19",
+      "source_sha256": "b23d6de5bb7b84c95e6abd7b2b4198b07bc6534b878b3d36a002af36f8b560a8",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2018-19_gr1.txt"
+    },
+    {
+      "competition": "super_league_greece",
+      "complete_season": true,
+      "expected_matches_per_team": 26,
+      "expected_team_count": 14,
+      "match_count": 182,
+      "season": "2019-20",
+      "source_sha256": "8d9fff8d2d7c333de633a4656af1622f4579bcffc370a422562edc1a4c75a4c5",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2019-20_gr1.txt"
+    },
+    {
+      "competition": "super_league_greece",
+      "complete_season": true,
+      "expected_matches_per_team": 26,
+      "expected_team_count": 14,
+      "match_count": 182,
+      "season": "2020-21",
+      "source_sha256": "be33ff460bf4208d74acb3aba5048880b5551acf3e1006257345327393be17aa",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2020-21_gr1.txt"
+    },
+    {
+      "competition": "super_league_greece",
+      "complete_season": true,
+      "expected_matches_per_team": 26,
+      "expected_team_count": 14,
+      "match_count": 182,
+      "season": "2023-24",
+      "source_sha256": "01c651d2b8c99744fbc0f1948f0ace62667b15265a16d818393fb79dc5c6b315",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2023-24_gr1.txt"
+    },
+    {
+      "competition": "super_league_greece",
+      "complete_season": true,
+      "expected_matches_per_team": 26,
+      "expected_team_count": 14,
+      "match_count": 182,
+      "season": "2024-25",
+      "source_sha256": "63d55393ae653baa663fb227b396ec3012641a5b8bca8ffc2b0e3106ed64d20b",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2024-25_gr1.txt"
+    },
+    {
+      "competition": "super_league_greece",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 62,
+      "season": "2025-26",
+      "source_sha256": "10ee20ddd4f2f89821570819f437e9309458d5e4fde19e7e62677f5c811232ed",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2025-26_gr1.txt"
+    },
+    {
+      "competition": "super_league_greece",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 35,
+      "season": "2026-27",
+      "source_sha256": "672b39e513df59ae9699d0a5f590b23931fc1bdbc122c43d540a4c6ab7dd4883",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2026-27_gr1.txt"
+    }
+  ],
+  "total_matches": 10995
+}
