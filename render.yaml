@@ -4,6 +4,7 @@ services:
     runtime: docker
     plan: free
     healthCheckPath: /health
+    autoDeployTrigger: commit
     envVars:
       - key: GOAL_API_KEY
         sync: false
