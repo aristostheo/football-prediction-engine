@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import mimetypes
 import os
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from threading import Lock
 
@@ -26,6 +26,7 @@ from football_predictor.prediction import FixtureToPredict, MatchPrediction, Pre
 class PredictionRequest(BaseModel):
     competition: Competition
     kickoff_date: date
+    kickoff_at: datetime | None = None
     home_team: str = Field(min_length=1)
     away_team: str = Field(min_length=1)
     odds_home: float | None = Field(default=None, gt=1.0)
@@ -39,12 +40,35 @@ class PredictionRequest(BaseModel):
             value is None for value in supplied
         ):
             raise ValueError("provide all three decimal odds: home, draw, and away")
+        if self.kickoff_at is not None:
+            if self.kickoff_at.tzinfo is None or self.kickoff_at.utcoffset() is None:
+                raise ValueError("kickoff_at must include a timezone offset")
+            if self.kickoff_at.date() != self.kickoff_date:
+                raise ValueError("kickoff_at must fall on kickoff_date")
         return self
+
+
+class ScorecardFixtureRequest(BaseModel):
+    id: str = Field(min_length=1, max_length=200)
+    competition: Competition
+    kickoff_date: date
+    home_team: str = Field(min_length=1)
+    away_team: str = Field(min_length=1)
+
+
+class ScorecardResultsRequest(BaseModel):
+    fixtures: list[ScorecardFixtureRequest] = Field(max_length=500)
+
+
+class ScorecardResultResponse(BaseModel):
+    id: str
+    result: str | None
 
 
 class PredictionResponse(BaseModel):
     competition: Competition
     kickoff_date: date
+    kickoff_at: datetime | None
     home_team: str
     away_team: str
     home_win_probability: float
@@ -53,6 +77,13 @@ class PredictionResponse(BaseModel):
     model_policy: str
     history_through: date
     history_age_days: int
+    forecasted_at: datetime
+    model_home_win_probability: float
+    model_draw_probability: float
+    model_away_win_probability: float
+    market_home_win_probability: float | None
+    market_draw_probability: float | None
+    market_away_win_probability: float | None
 
 
 class LiveFixtureResponse(BaseModel):
@@ -122,6 +153,27 @@ def create_app(
             raise HTTPException(status_code=400, detail=str(error)) from error
         return _prediction_response(prediction)
 
+    @app.post("/scorecard/results", response_model=list[ScorecardResultResponse])
+    def scorecard_results(request: ScorecardResultsRequest) -> list[ScorecardResultResponse]:
+        if len({fixture.id for fixture in request.fixtures}) != len(request.fixtures):
+            raise HTTPException(status_code=422, detail="scorecard fixture ids must be unique")
+        engine = get_engine()
+        keys = [
+            (
+                fixture.id,
+                fixture.competition.value,
+                fixture.kickoff_date,
+                fixture.home_team,
+                fixture.away_team,
+            )
+            for fixture in request.fixtures
+        ]
+        results = engine.find_results(keys)
+        return [
+            ScorecardResultResponse(id=fixture.id, result=results[fixture.id])
+            for fixture in request.fixtures
+        ]
+
     resolved_web_dist = web_dist_path or Path(os.environ.get("WEB_DIST_PATH", "web/dist"))
     if resolved_web_dist.is_dir():
         resolved_web_root = resolved_web_dist.resolve()
@@ -156,6 +208,7 @@ def _prediction_response(prediction: MatchPrediction) -> PredictionResponse:
     return PredictionResponse(
         competition=prediction.fixture.competition,
         kickoff_date=prediction.fixture.kickoff_date,
+        kickoff_at=prediction.fixture.kickoff_at,
         home_team=prediction.fixture.home_team,
         away_team=prediction.fixture.away_team,
         home_win_probability=prediction.home_win_probability,
@@ -164,6 +217,19 @@ def _prediction_response(prediction: MatchPrediction) -> PredictionResponse:
         model_policy=prediction.model_policy,
         history_through=prediction.history_through,
         history_age_days=prediction.history_age_days,
+        forecasted_at=prediction.forecasted_at,
+        model_home_win_probability=prediction.model_probabilities[0],
+        model_draw_probability=prediction.model_probabilities[1],
+        model_away_win_probability=prediction.model_probabilities[2],
+        market_home_win_probability=(
+            prediction.market_probabilities[0] if prediction.market_probabilities else None
+        ),
+        market_draw_probability=(
+            prediction.market_probabilities[1] if prediction.market_probabilities else None
+        ),
+        market_away_win_probability=(
+            prediction.market_probabilities[2] if prediction.market_probabilities else None
+        ),
     )
 
 

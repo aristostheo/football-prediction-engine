@@ -1,11 +1,14 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   Competition,
   getFixtures,
+  getScorecardResults,
   LiveFixture,
+  MatchOutcome,
   predictMatch,
   Prediction,
 } from "./api";
+import { calculateMetrics, loadForecasts, saveForecast, StoredForecast } from "./scorecard";
 
 const LEAGUES: Record<Competition, { name: string; short: string; code: string }> = {
   premier_league: { name: "Premier League", short: "England", code: "PL" },
@@ -28,17 +31,60 @@ function percent(value: number): string {
 function App() {
   const [competition, setCompetition] = useState<Competition>("premier_league");
   const [fixtureDate, setFixtureDate] = useState(today());
+  const [kickoffAt, setKickoffAt] = useState<string | null>(null);
   const [homeTeam, setHomeTeam] = useState("Arsenal FC");
   const [awayTeam, setAwayTeam] = useState("Chelsea FC");
   const [oddsHome, setOddsHome] = useState("");
   const [oddsDraw, setOddsDraw] = useState("");
   const [oddsAway, setOddsAway] = useState("");
   const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [trackingNotice, setTrackingNotice] = useState<string | null>(null);
   const [fixtures, setFixtures] = useState<LiveFixture[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [fixtureNotice, setFixtureNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fixturesLoading, setFixturesLoading] = useState(false);
+  const [forecastLog, setForecastLog] = useState<StoredForecast[]>(loadForecasts);
+  const [settledResults, setSettledResults] = useState<Record<string, MatchOutcome | null>>({});
+  const [scorecardLoading, setScorecardLoading] = useState(false);
+  const [scorecardError, setScorecardError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!forecastLog.length) return;
+    let active = true;
+    getScorecardResults(forecastLog)
+      .then((results) => { if (active) setSettledResults(results); })
+      .catch((caught: unknown) => {
+        if (active) setScorecardError(caught instanceof Error ? caught.message : "Could not load results.");
+      })
+    return () => { active = false; };
+  }, [forecastLog]);
+
+  const scorecardByCompetition = useMemo(
+    () => (Object.keys(LEAGUES) as Competition[]).map((key) => {
+      const leagueForecasts = forecastLog.filter((item) => item.competition === key);
+      const marketForecasts = leagueForecasts.filter((item) => item.market_probabilities !== null);
+      const allModel = calculateMetrics(
+        leagueForecasts, settledResults, (item) => item.model_probabilities,
+      );
+      const pairedModel = calculateMetrics(
+        marketForecasts, settledResults, (item) => item.model_probabilities,
+      );
+      const market = calculateMetrics(
+        marketForecasts, settledResults, (item) => item.market_probabilities,
+      );
+      return {
+        competition: key,
+        allModel,
+        pairedModel,
+        market,
+        pairedLogLossDifference: pairedModel && market
+          ? pairedModel.logLoss - market.logLoss
+          : null,
+      };
+    }),
+    [forecastLog, settledResults],
+  );
 
   const probabilities = useMemo(
     () => prediction
@@ -53,6 +99,7 @@ function App() {
 
   function changeLeague(next: Competition) {
     setCompetition(next);
+    setKickoffAt(null);
     setPrediction(null);
     setOddsHome("");
     setOddsDraw("");
@@ -72,6 +119,7 @@ function App() {
   async function submitPrediction(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    setTrackingNotice(null);
     const odds = [oddsHome, oddsDraw, oddsAway];
     const hasAnyOdds = odds.some((value) => value.trim() !== "");
     if (hasAnyOdds && odds.some((value) => value.trim() === "")) {
@@ -80,9 +128,10 @@ function App() {
     }
     setLoading(true);
     try {
-      setPrediction(await predictMatch({
+      const nextPrediction = await predictMatch({
         competition,
         kickoff_date: fixtureDate,
+        ...(kickoffAt ? { kickoff_at: kickoffAt } : {}),
         home_team: homeTeam.trim(),
         away_team: awayTeam.trim(),
         ...(hasAnyOdds
@@ -92,7 +141,16 @@ function App() {
               odds_away: Number(oddsAway),
             }
           : {}),
-      }));
+      });
+      setPrediction(nextPrediction);
+      if (nextPrediction.kickoff_at && Date.parse(nextPrediction.kickoff_at) > Date.now()) {
+        setForecastLog(saveForecast(nextPrediction));
+        setTrackingNotice("Timestamped forecast saved in this browser.");
+      } else if (nextPrediction.kickoff_at) {
+        setTrackingNotice("Kickoff passed before the forecast reached this browser, so it was not tracked.");
+      } else {
+        setTrackingNotice("Select a fixture from the live list to include it in the prospective scorecard.");
+      }
     } catch (caught) {
       setPrediction(null);
       setError(caught instanceof Error ? caught.message : "Prediction failed.");
@@ -120,6 +178,7 @@ function App() {
     setHomeTeam(fixture.home_team);
     setAwayTeam(fixture.away_team);
     setFixtureDate(fixture.kickoff_at.slice(0, 10));
+    setKickoffAt(fixture.kickoff_at);
     setPrediction(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -135,6 +194,7 @@ function App() {
           <a href="#predict">Predict</a>
           <a href="#fixtures">Fixtures</a>
           <a href="#performance">Performance</a>
+          <a href="#scorecard">Live scorecard</a>
           <a className="github-link" href="https://github.com/aristostheo/football-prediction-engine">GitHub ↗</a>
         </nav>
       </header>
@@ -181,17 +241,17 @@ function App() {
             <form onSubmit={submitPrediction}>
               <label className="date-field">
                 Match date
-                <input type="date" value={fixtureDate} onChange={(event) => setFixtureDate(event.target.value)} required />
+                <input type="date" value={fixtureDate} onChange={(event) => { setFixtureDate(event.target.value); setKickoffAt(null); }} required />
               </label>
               <div className="team-fields">
                 <label>
                   <span>Home team</span>
-                  <input value={homeTeam} onChange={(event) => setHomeTeam(event.target.value)} required />
+                  <input value={homeTeam} onChange={(event) => { setHomeTeam(event.target.value); setKickoffAt(null); }} required />
                 </label>
                 <span className="versus">VS</span>
                 <label>
                   <span>Away team</span>
-                  <input value={awayTeam} onChange={(event) => setAwayTeam(event.target.value)} required />
+                  <input value={awayTeam} onChange={(event) => { setAwayTeam(event.target.value); setKickoffAt(null); }} required />
                 </label>
               </div>
               <fieldset className="market-odds-entry">
@@ -241,6 +301,7 @@ function App() {
                     : `Forecast source: Model · ${prediction.model_policy.replaceAll("_", " ")}`}</span>
                   <span>History through {prediction.history_through} · {prediction.history_age_days} days old</span>
                 </div>
+                {trackingNotice && <p className="scorecard-note">{trackingNotice}</p>}
               </div>
             )}
           </div>
@@ -302,6 +363,64 @@ function App() {
             </article>
           </div>
         </section>
+
+        <section className="scorecard-section" id="scorecard">
+          <div className="section-intro">
+            <span className="section-label">2026–27 prospective test</span>
+            <h2>Track forecasts against results.</h2>
+            <p>Timestamped forecasts stay in this browser. Results are matched after they enter the bundled history.</p>
+          </div>
+          <div className="scorecard-toolbar">
+            <span>{forecastLog.length} tracked · {forecastLog.filter((item) => settledResults[item.id]).length} settled</span>
+            <button className="secondary-button" type="button" disabled={scorecardLoading || !forecastLog.length} onClick={() => {
+              setScorecardError(null);
+              setScorecardLoading(true);
+              getScorecardResults(forecastLog)
+                .then(setSettledResults)
+                .catch((caught: unknown) => setScorecardError(caught instanceof Error ? caught.message : "Could not load results."))
+                .finally(() => setScorecardLoading(false));
+            }}>{scorecardLoading ? "Checking results…" : "Update results"}</button>
+          </div>
+          {scorecardError && <div className="message error-message">{scorecardError}</div>}
+          {scorecardByCompetition.map((group) => (
+            <div className="scorecard-league" key={group.competition}>
+              <h3>{LEAGUES[group.competition].name}</h3>
+              <div className="scorecard-grid">
+                <ScorecardCard title="Model · all tracked fixtures" metrics={group.allModel} />
+                <ScorecardCard title="Model · odds-covered fixtures" metrics={group.pairedModel} />
+                <ScorecardCard title="Market · odds-covered fixtures" metrics={group.market} />
+              </div>
+              {group.pairedLogLossDifference !== null && (
+                <p className="scorecard-comparison">
+                  Paired log-loss difference (model − market): {group.pairedLogLossDifference >= 0 ? "+" : ""}{group.pairedLogLossDifference.toFixed(3)}
+                  {group.pairedLogLossDifference < 0 ? " · lower favors the model" : " · lower favors the market"}
+                </p>
+              )}
+            </div>
+          ))}
+          {forecastLog.length > 0 ? (
+            <div className="scorecard-table-wrap">
+              <table className="scorecard-table">
+                <thead><tr><th>Fixture</th><th>Kickoff</th><th>Saved</th><th>Source</th><th>Actual</th></tr></thead>
+                <tbody>
+                  {[...forecastLog].sort((a, b) => b.forecasted_at.localeCompare(a.forecasted_at)).slice(0, 12).map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.home_team} vs {item.away_team}</td>
+                      <td>{new Date(item.kickoff_at).toLocaleString()}</td>
+                      <td>{new Date(item.forecasted_at).toLocaleString()}</td>
+                      <td>{item.market_probabilities ? "Market + model" : "Model"}</td>
+                      <td>{resultLabel(settledResults[item.id], scorecardLoading)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <small>Showing up to 12 recent forecasts. Re-forecasts replace the saved version for that fixture; the scorecard uses the latest timestamped forecast before kickoff.</small>
+            </div>
+          ) : (
+            <div className="scorecard-empty">Select a future fixture from the live-fixtures list, then generate a forecast to start tracking.</div>
+          )}
+          <p className="scorecard-footnote">A small live sample is noisy; wait for more settled matches before drawing conclusions. History updates are checked weekly.</p>
+        </section>
       </main>
 
       <footer>
@@ -311,6 +430,28 @@ function App() {
       </footer>
     </div>
   );
+}
+
+function ScorecardCard({ title, metrics }: { title: string; metrics: ReturnType<typeof calculateMetrics> }) {
+  return (
+    <article className="scorecard-card">
+      <div className="scorecard-card-heading"><strong>{title}</strong><span>{metrics ? `${metrics.count} matches` : "No settled matches"}</span></div>
+      {metrics ? <>
+        <div className="metric-row"><span>Log loss</span><strong>{metrics.logLoss.toFixed(3)}</strong></div>
+        <div className="metric-row"><span>Brier score</span><strong>{metrics.brier.toFixed(3)}</strong></div>
+        <div className="metric-row"><span>Ranked probability score</span><strong>{metrics.rankedProbabilityScore.toFixed(3)}</strong></div>
+        <div className="metric-row"><span>Accuracy</span><strong>{percent(metrics.accuracy)}</strong></div>
+      </> : <p>Scores appear after tracked fixtures have completed and results are refreshed.</p>}
+    </article>
+  );
+}
+
+function outcomeLabel(outcome: MatchOutcome): string {
+  return outcome === "H" ? "Home win" : outcome === "D" ? "Draw" : "Away win";
+}
+
+function resultLabel(result: MatchOutcome | null | undefined, loading: boolean): string {
+  return result ? outcomeLabel(result) : loading ? "Checking…" : "Pending";
 }
 
 export default App;

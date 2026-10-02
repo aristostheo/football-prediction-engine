@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -35,6 +35,7 @@ class FixtureToPredict:
     kickoff_date: date
     home_team: str
     away_team: str
+    kickoff_at: datetime | None = None
     odds_home: float | None = None
     odds_draw: float | None = None
     odds_away: float | None = None
@@ -49,6 +50,9 @@ class MatchPrediction:
     model_policy: str
     history_through: date
     history_age_days: int
+    forecasted_at: datetime
+    model_probabilities: tuple[float, float, float]
+    market_probabilities: tuple[float, float, float] | None
 
 
 class PredictionEngine:
@@ -70,6 +74,12 @@ class PredictionEngine:
             raise ValueError(f"missing historical columns: {sorted(missing)}")
         self._history = historical_matches.copy()
         self._history["match_date"] = pd.to_datetime(self._history["match_date"]).dt.date
+        self._result_lookup = {
+            (str(row.competition), row.match_date, str(row.home_team), str(row.away_team)): str(
+                row.result
+            )
+            for row in self._history.itertuples(index=False)
+        }
         self._features, self._final_states = build_pre_match_features_and_states(self._history)
         self._outcome_priors = {
             competition: _smoothed_outcome_prior(matches["result"])
@@ -96,12 +106,19 @@ class PredictionEngine:
         history_through = self.latest_result_date(fixture.competition)
         if fixture.kickoff_date <= history_through:
             raise ValueError("fixture date must be after the latest locally recorded result")
+        forecasted_at = datetime.now(UTC)
+        if fixture.kickoff_at is not None:
+            if fixture.kickoff_at.tzinfo is None or fixture.kickoff_at.utcoffset() is None:
+                raise ValueError("kickoff_at must include a timezone offset")
+            if fixture.kickoff_at <= forecasted_at:
+                raise ValueError("cannot create a prospective forecast after kickoff")
         known_teams = set(history["home_team"]) | set(history["away_team"])
         canonical_fixture = FixtureToPredict(
             competition=fixture.competition,
             kickoff_date=fixture.kickoff_date,
             home_team=resolve_team_name(fixture.home_team, fixture.competition, known_teams),
             away_team=resolve_team_name(fixture.away_team, fixture.competition, known_teams),
+            kickoff_at=fixture.kickoff_at,
         )
         unknown_teams = {canonical_fixture.home_team, canonical_fixture.away_team}.difference(
             known_teams
@@ -124,6 +141,7 @@ class PredictionEngine:
             fixture.odds_draw,
             fixture.odds_away,
         )
+        market_probabilities = None
         if any(odds is not None for odds in supplied_odds):
             if any(odds is None for odds in supplied_odds):
                 raise ValueError("provide all three decimal odds: home, draw, and away")
@@ -133,15 +151,6 @@ class PredictionEngine:
                 )
             except (TypeError, ValueError) as error:
                 raise ValueError(f"invalid market odds: {error}") from error
-            return MatchPrediction(
-                fixture=canonical_fixture,
-                home_win_probability=market_probabilities[0],
-                draw_probability=market_probabilities[1],
-                away_win_probability=market_probabilities[2],
-                model_policy="market_implied_odds",
-                history_through=history_through,
-                history_age_days=(fixture.kickoff_date - history_through).days,
-            )
 
         fixture_states = dict(self._final_states)
         for team in unknown_teams:
@@ -169,14 +178,27 @@ class PredictionEngine:
             )
             policy = f"{policy}_promoted_prior"
         prediction = probabilities.iloc[0]
+        forecasted_at = datetime.now(UTC)
+        if fixture.kickoff_at is not None and fixture.kickoff_at <= forecasted_at:
+            raise ValueError("cannot create a prospective forecast after kickoff")
+        model_probabilities = (
+            float(prediction["p_home_win"]),
+            float(prediction["p_draw"]),
+            float(prediction["p_away_win"]),
+        )
+        selected_probabilities = market_probabilities or model_probabilities
+        selected_policy = "market_implied_odds" if market_probabilities else policy
         return MatchPrediction(
             fixture=canonical_fixture,
-            home_win_probability=float(prediction["p_home_win"]),
-            draw_probability=float(prediction["p_draw"]),
-            away_win_probability=float(prediction["p_away_win"]),
-            model_policy=policy,
+            home_win_probability=selected_probabilities[0],
+            draw_probability=selected_probabilities[1],
+            away_win_probability=selected_probabilities[2],
+            model_policy=selected_policy,
             history_through=history_through,
             history_age_days=(fixture.kickoff_date - history_through).days,
+            forecasted_at=forecasted_at,
+            model_probabilities=model_probabilities,
+            market_probabilities=market_probabilities,
         )
 
     def latest_result_date(self, competition: Competition) -> date:
@@ -185,6 +207,15 @@ class PredictionEngine:
         if history.empty:
             raise ValueError(f"no historical matches for {competition.value}")
         return max(history["match_date"])
+
+    def find_results(
+        self, fixtures: list[tuple[str, date, str, str]]
+    ) -> dict[str, str | None]:
+        """Look up completed outcomes for canonical prospective forecast keys."""
+        return {
+            fixture_id: self._result_lookup.get((competition, match_date, home_team, away_team))
+            for fixture_id, competition, match_date, home_team, away_team in fixtures
+        }
 
     def _fixture_features(
         self,

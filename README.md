@@ -126,3 +126,8 @@ without prices, it uses the existing model. Historical sequential tests chose
 100% market weight on every eligible fold, so the current evidence does not
 support a model/market blend. Odds files remain local. See
 [market benchmark setup](docs/market-benchmark.md).
+
+The dashboard also keeps a prospective 2026-27 scorecard in the current
+browser. It scores timestamped fixture forecasts after their results enter the
+refreshed history and compares model versus market probabilities when both
+were recorded; see [live fixture setup](docs/live-fixtures.md) for its limits.

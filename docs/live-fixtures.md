@@ -45,6 +45,24 @@ commits only when match results change; the hosted Render service then deploys
 that commit. The API itself does not fetch results per request. For local
 development, restart the service after refreshing the dataset.
 
+## Prospective scorecard
+
+The dashboard records timestamped forecasts only when an upcoming fixture has
+an exact timezone-aware kickoff time, which comes from live fixture discovery.
+Records stay in that browser's local storage; they are not uploaded as user
+history or shared across browsers. Forecast requests that arrive after kickoff
+are rejected. Manually entered date-only predictions remain available but are
+not included in the prospective scorecard because their timing cannot be
+verified.
+
+The scorecard looks up completed outcomes in the bundled dataset after a
+refresh and reports log loss, Brier score, ranked probability score, and
+accuracy. If odds were entered, it scores the model and margin-removed market
+probabilities on the same fixtures. Re-forecasting a fixture replaces its
+saved entry, so the scorecard uses the latest timestamped forecast before
+kickoff. The live sample is exploratory; historical walk-forward results
+remain the primary evidence until enough prospective matches have completed.
+
 ## Freshness guardrail
 
 The response always reports `history_through` and `history_age_days`. The

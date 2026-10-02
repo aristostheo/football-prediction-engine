@@ -1,11 +1,11 @@
 import asyncio
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import httpx
 import pytest
 
-from football_predictor.api import PredictionRequest, create_app
+from football_predictor.api import PredictionRequest, ScorecardResultsRequest, create_app
 from football_predictor.domain import Competition
 from football_predictor.live_fixtures import LiveFixture
 from football_predictor.prediction import FixtureToPredict, MatchPrediction, PredictionEngine
@@ -21,7 +21,13 @@ class StubEngine:
             model_policy="elo",
             history_through=date(2025, 5, 25),
             history_age_days=7,
+            forecasted_at=datetime(2025, 5, 25, tzinfo=UTC),
+            model_probabilities=(0.5, 0.25, 0.25),
+            market_probabilities=None,
         )
+
+    def find_results(self, fixtures):  # type: ignore[no-untyped-def]
+        return {fixture[0]: "H" for fixture in fixtures}
 
 
 class StubFixtureProvider:
@@ -89,6 +95,23 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
         )
     )
     assert prediction.home_win_probability == 0.5
+    assert prediction.model_home_win_probability == 0.5
+
+    results = routes["/scorecard/results"](
+        ScorecardResultsRequest(
+            fixtures=[
+                {
+                    "id": "forecast-1",
+                    "competition": "premier_league",
+                    "kickoff_date": "2025-06-01",
+                    "home_team": "Arsenal FC",
+                    "away_team": "Chelsea FC",
+                }
+            ]
+        )
+    )
+    assert results[0].id == "forecast-1"
+    assert results[0].result == "H"
 
 
 def test_api_rejects_partial_market_odds() -> None:

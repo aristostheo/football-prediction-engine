@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -59,6 +59,54 @@ def test_market_odds_use_margin_removed_probabilities(
     assert prediction.home_win_probability == pytest.approx(6 / 13)
     assert prediction.draw_probability == pytest.approx(4 / 13)
     assert prediction.away_win_probability == pytest.approx(3 / 13)
+    assert prediction.market_probabilities == pytest.approx((6 / 13, 4 / 13, 3 / 13))
+    assert sum(prediction.model_probabilities) == pytest.approx(1.0)
+
+
+def test_prediction_rejects_a_kickoff_that_has_already_passed(
+    prediction_engine: PredictionEngine,
+) -> None:
+    with pytest.raises(ValueError, match="after kickoff"):
+        prediction_engine.predict(
+            FixtureToPredict(
+                competition=Competition.PREMIER_LEAGUE,
+                kickoff_date=prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE)
+                + timedelta(days=1),
+                kickoff_at=datetime.now(UTC) - timedelta(minutes=1),
+                home_team="Arsenal",
+                away_team="Chelsea",
+            )
+        )
+
+
+def test_result_lookup_returns_only_exact_completed_fixture_keys(
+    prediction_engine: PredictionEngine,
+) -> None:
+    history = pd.read_csv(Path(__file__).parents[1] / "data/model/historical_matches.csv.gz")
+    row = history.iloc[0]
+    match_date = date.fromisoformat(str(row["match_date"]))
+
+    results = prediction_engine.find_results(
+        [
+            (
+                "known",
+                str(row["competition"]),
+                match_date,
+                str(row["home_team"]),
+                str(row["away_team"]),
+            ),
+            (
+                "wrong-venue-order",
+                str(row["competition"]),
+                match_date,
+                str(row["away_team"]),
+                str(row["home_team"]),
+            ),
+        ]
+    )
+
+    assert results["known"] == row["result"]
+    assert results["wrong-venue-order"] is None
 
 
 def test_market_odds_require_all_three_prices(prediction_engine: PredictionEngine) -> None:
