@@ -114,3 +114,8 @@ climatology baseline and season-block uncertainty. The bundled history is
 current through September 20, 2026 for both
 leagues; see [data coverage](docs/data-sources.md) for incomplete Greek seasons
 and gaps.
+
+A closing-odds benchmark pipeline is also available. It matches odds to the
+same walk-forward fixtures, removes the bookmaker margin, and reports coverage
+and season-block intervals. Odds data stays local, and the deployed prediction
+policy is unchanged. See [market benchmark setup](docs/market-benchmark.md).

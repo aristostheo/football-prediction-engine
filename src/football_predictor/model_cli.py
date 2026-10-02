@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from football_predictor.market import compare_models_to_closing_market, load_market_odds_csv
 from football_predictor.models import (
     compare_models_chronologically,
     compare_models_walk_forward,
@@ -26,10 +27,23 @@ def main() -> None:
         action="store_true",
         help="evaluate the most recent complete seasons with expanding training windows",
     )
+    parser.add_argument(
+        "--market-odds",
+        type=Path,
+        help=(
+            "compare walk-forward forecasts with a local licensed CSV containing "
+            "competition, match_date, home_team, away_team, odds_home, odds_draw, odds_away"
+        ),
+    )
     args = parser.parse_args()
 
     features = pd.read_csv(args.input)
-    if args.walk_forward:
+    if args.market_odds:
+        if not args.walk_forward:
+            parser.error("--market-odds requires --walk-forward")
+        odds = load_market_odds_csv(args.market_odds)
+        comparison = compare_models_to_closing_market(features, odds)
+    elif args.walk_forward:
         comparison = compare_models_walk_forward(features)
     else:
         comparison = compare_models_chronologically(features, test_fraction=args.test_fraction)

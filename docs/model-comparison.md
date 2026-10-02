@@ -28,8 +28,9 @@ table must not be described as an untouched independent test. No new policy
 should be selected from these rows.
 
 The single-split table remains for continuity, but the expanding-season results
-below are the preferred comparison. A closing-odds benchmark still requires a
-separately sourced, time-aligned odds dataset and is tracked as follow-up work.
+below are the preferred comparison. The closing-odds benchmark pipeline is
+implemented; a local odds export is still needed before it can produce measured
+results. See [the benchmark guide](market-benchmark.md).
 
 RPS is the three-category ranked probability score with outcomes ordered home
 win, draw, away win; lower scores are better. The climatology probabilities use

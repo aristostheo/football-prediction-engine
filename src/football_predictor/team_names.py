@@ -65,7 +65,7 @@ TEAM_ALIASES: dict[Competition, dict[str, tuple[str, ...]]] = {
     },
     Competition.SUPER_LEAGUE_GREECE: {
         "AE Kifisias": ("Kifisia", "Kifisias", "AE Kifisia", "Κηφισιά"),
-        "AE Lárissa": ("AEL", "Larissa", "Larisa", "AE Larisa", "ΑΕΛ"),
+        "AE Lárissa": ("AEL", "AEL Larissa", "Larissa", "Larisa", "AE Larisa", "ΑΕΛ"),
         "AEK Athen": ("AEK", "AEK Athens", "AEK Athina", "ΑΕΚ"),
         "Apollon Smyrnis": ("Apollon Smirnis", "Apollon Smyrna", "Απόλλων Σμύρνης"),
         "Aris Saloniki": ("Aris", "Aris Thessaloniki", "Άρης"),

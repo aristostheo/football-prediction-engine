@@ -21,6 +21,22 @@ filled or inferred.
 The adapter converts each external file into `HistoricalMatch` records, then
 applies duplicate, team-name, score, and completed-season schedule checks.
 
+## Closing-odds benchmark source
+
+The optional benchmark accepts a local export from
+[Footiqo's historical football database](https://footiqo.com/database/).
+Its league pages offer historical 1X2 closing odds for the Premier League and
+Super League Greece; the site identifies 1xBet as the odds source and describes
+the database as available for independent modelling and backtesting. The
+benchmark removes the quoted margin and compares the odds against models on
+the same walk-forward fixtures.
+
+The raw odds export is not bundled or uploaded. Cite “Footiqo Football Data”
+and link to https://footiqo.com/football-data/ when presenting results. The
+provider's terms prohibit copying or redistributing its content without
+permission. Check [market-benchmark.md](market-benchmark.md) for the expected
+CSV format, method, run command, and limits.
+
 ## Live fixtures
 
 The optional API service prefers Goal API for upcoming fixtures in both
