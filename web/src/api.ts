@@ -5,6 +5,9 @@ export interface PredictionRequest {
   kickoff_date: string;
   home_team: string;
   away_team: string;
+  odds_home?: number;
+  odds_draw?: number;
+  odds_away?: number;
 }
 
 export interface Prediction extends PredictionRequest {
