@@ -58,6 +58,7 @@ def test_registry_covers_all_real_clubs_in_bundled_history(
         ("Aston Villa", "Aston Villa FC"),
         ("Tottenham", "Tottenham Hotspur FC"),
         ("Wolves", "Wolverhampton Wanderers FC"),
+        ("Nottingham", "Nottingham Forest FC"),
     ],
 )
 def test_english_provider_examples_use_recent_historical_labels(

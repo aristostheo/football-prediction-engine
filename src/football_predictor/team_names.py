@@ -47,7 +47,12 @@ TEAM_ALIASES: dict[Competition, dict[str, tuple[str, ...]]] = {
         "Middlesbrough FC": (),
         "Newcastle United FC": ("Newcastle", "Newcastle Utd"),
         "Norwich City FC": ("Norwich",),
-        "Nottingham Forest FC": ("Nottingham Forrest", "Nott'm Forest", "Nottm Forest"),
+        "Nottingham Forest FC": (
+            "Nottingham",
+            "Nottingham Forrest",
+            "Nott'm Forest",
+            "Nottm Forest",
+        ),
         "Portsmouth FC": (),
         "Queens Park Rangers": ("QPR",),
         "Reading FC": (),

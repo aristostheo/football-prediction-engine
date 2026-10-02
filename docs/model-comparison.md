@@ -28,9 +28,12 @@ table must not be described as an untouched independent test. No new policy
 should be selected from these rows.
 
 The single-split table remains for continuity, but the expanding-season results
-below are the preferred comparison. The closing-odds benchmark pipeline is
-implemented; a local odds export is still needed before it can produce measured
-results. See [the benchmark guide](market-benchmark.md).
+below are the preferred comparison. A closing-odds benchmark using local
+Footiqo exports is now available; its measured snapshot, match coverage, and
+uncertainty are documented in [the benchmark guide](market-benchmark.md).
+Because these test seasons have now been inspected, they are exploratory for
+future model selection. Keep future-season results separate when evaluating
+changes selected after this benchmark.
 
 RPS is the three-category ranked probability score with outcomes ordered home
 win, draw, away win; lower scores are better. The climatology probabilities use
@@ -80,6 +83,25 @@ include zero and use only four season blocks. Even the narrower Premier League
 intervals should be treated as provisional because five season blocks provide
 limited evidence for model selection. The deployed policy is not changed based
 on these already-inspected folds.
+
+## Exploratory Elo parameter check
+
+A small development-only sweep rebuilt Premier League Elo features with
+K-factors 15, 20, 25, and 30 and home advantages 60 or 90. It scored the six
+complete seasons from 2015-16 through 2020-21, averaging season log loss.
+The lowest grid score was K=25/home advantage=60 at 0.97998; the current
+K=20/home advantage=60 scored 0.98016. The paired mean difference was only
+-0.00018, with a six-season block-bootstrap 95% interval of [-0.00137,
+0.00105]. This is not evidence of a reliable gain, and choosing the best value
+from the same grid makes its score optimistic. The production parameters remain
+unchanged. Greek parameters were not tuned independently because the available
+continuous complete-season sample is too small.
+
+These historical comparisons and the closing-odds snapshot are now development
+evidence, not untouched final tests. The in-progress 2026-27 season is reserved
+for prospective evaluation after the season is complete. Any parameter or
+calibration choice made from historical seasons must be frozen before that
+evaluation.
 
 Run the season walk-forward comparison locally with:
 
