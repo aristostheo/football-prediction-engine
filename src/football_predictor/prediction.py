@@ -16,6 +16,7 @@ from football_predictor.features import (
     build_future_fixture_features,
     build_pre_match_features_and_states,
 )
+from football_predictor.market import market_probabilities_from_decimal_odds
 from football_predictor.models import (
     FEATURE_COLUMNS,
     _fit_poisson_model,
@@ -34,6 +35,9 @@ class FixtureToPredict:
     kickoff_date: date
     home_team: str
     away_team: str
+    odds_home: float | None = None
+    odds_draw: float | None = None
+    odds_away: float | None = None
 
 
 @dataclass(frozen=True)
@@ -114,6 +118,30 @@ class PredictionEngine:
             )
         if canonical_fixture.home_team == canonical_fixture.away_team:
             raise ValueError("home and away teams must be different clubs")
+
+        supplied_odds = (
+            fixture.odds_home,
+            fixture.odds_draw,
+            fixture.odds_away,
+        )
+        if any(odds is not None for odds in supplied_odds):
+            if any(odds is None for odds in supplied_odds):
+                raise ValueError("provide all three decimal odds: home, draw, and away")
+            try:
+                market_probabilities = market_probabilities_from_decimal_odds(
+                    fixture.odds_home, fixture.odds_draw, fixture.odds_away
+                )
+            except (TypeError, ValueError) as error:
+                raise ValueError(f"invalid market odds: {error}") from error
+            return MatchPrediction(
+                fixture=canonical_fixture,
+                home_win_probability=market_probabilities[0],
+                draw_probability=market_probabilities[1],
+                away_win_probability=market_probabilities[2],
+                model_policy="market_implied_odds",
+                history_through=history_through,
+                history_age_days=(fixture.kickoff_date - history_through).days,
+            )
 
         fixture_states = dict(self._final_states)
         for team in unknown_teams:
