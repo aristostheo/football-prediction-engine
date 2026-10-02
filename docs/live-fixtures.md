@@ -36,12 +36,14 @@ Run the server from the repository root. Predictions load the included
 `data/model/historical_matches.csv.gz` by default. Set `HISTORICAL_MATCHES_PATH`
 only when you want to use a different historical dataset.
 
-To update that bundled history from OpenFootball, run
+To update that bundled history from OpenFootball locally, run
 `uv run python -m football_predictor --refresh` from the repository root. It
 downloads and validates all configured seasons, rejects unexpected fixture
-removals, and writes a provenance manifest. The API does not refresh results on
-each request; after a successful update, restart the local service. A hosted
-service needs the refreshed file deployed with the application.
+removals, and writes a provenance manifest. GitHub Actions also runs the same
+check every Tuesday and can be started manually from the Actions tab. It
+commits only when match results change; the hosted Render service then deploys
+that commit. The API itself does not fetch results per request. For local
+development, restart the service after refreshing the dataset.
 
 ## Freshness guardrail
 
@@ -54,8 +56,8 @@ registered provider labels and club aliases. A registered club with no results
 gets a 1400 Elo starting prior, and its probabilities are shrunk halfway toward
 the league's training-period outcome rates; the `model_policy` response marks
 this with `_promoted_prior`. Unregistered names remain rejected. Results can be
-refreshed manually from OpenFootball; automatic scheduled synchronization and
-explicit mapping through provider team IDs remain future hardening steps.
+refreshed weekly from OpenFootball; explicit mapping through provider team IDs
+remains future hardening work.
 
 ## Team-name coverage
 
