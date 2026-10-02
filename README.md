@@ -115,7 +115,11 @@ current through September 20, 2026 for both
 leagues; see [data coverage](docs/data-sources.md) for incomplete Greek seasons
 and gaps.
 
-A closing-odds benchmark pipeline is also available. It matches odds to the
-same walk-forward fixtures, removes the bookmaker margin, and reports coverage
-and season-block intervals. Odds data stays local, and the deployed prediction
-policy is unchanged. See [market benchmark setup](docs/market-benchmark.md).
+A closing-odds benchmark and optional odds-based forecast are available. The
+benchmark matches odds to walk-forward fixtures, removes the bookmaker margin,
+and reports coverage and season-block intervals. The dashboard accepts all
+three 1X2 prices and displays margin-removed market-implied probabilities;
+without prices, it uses the existing model. Historical sequential tests chose
+100% market weight on every eligible fold, so the current evidence does not
+support a model/market blend. Odds files remain local. See
+[market benchmark setup](docs/market-benchmark.md).
