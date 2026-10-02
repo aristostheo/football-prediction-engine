@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import log
+from math import isfinite, log
 from pathlib import Path
 from random import Random
 from statistics import mean
@@ -23,6 +23,7 @@ from football_predictor.models import (
     _quantile,
     _score,
     add_elo_probabilities,
+    blend_probabilities,
 )
 from football_predictor.team_names import canonical_team_name
 
@@ -41,6 +42,30 @@ class MarketBenchmarkComparison:
     odds_coverage: float
     model_scores: dict[str, ModelScore]
     paired_log_loss_differences: dict[str, dict[str, float]]
+
+
+@dataclass(frozen=True)
+class MarketAssistFoldScore:
+    """A test-season score with the odds weight selected from earlier OOF rows."""
+
+    season: str
+    test_matches: int
+    tuning_matches: int
+    tuning_seasons: tuple[str, ...]
+    market_weight: float
+    model_score: ModelScore
+    closing_market_score: ModelScore
+    market_assisted_score: ModelScore
+
+
+@dataclass(frozen=True)
+class MarketAssistComparison:
+    """Sequential test folds for a probability blend selected from past OOF data."""
+
+    folds: tuple[MarketAssistFoldScore, ...]
+    pooled_model_score: ModelScore
+    pooled_closing_market_score: ModelScore
+    pooled_market_assisted_score: ModelScore
 
 
 def load_market_odds_csv(path: str | Path) -> pd.DataFrame:
@@ -140,6 +165,265 @@ def prepare_market_odds(odds: pd.DataFrame) -> pd.DataFrame:
     prepared["p_draw"] = inverse["odds_draw"] / denominator
     prepared["p_away_win"] = inverse["odds_away"] / denominator
     return prepared.reset_index(drop=True)
+
+
+def market_probabilities_from_decimal_odds(
+    odds_home: float, odds_draw: float, odds_away: float
+) -> tuple[float, float, float]:
+    """Remove the bookmaker margin from three decimal 1X2 prices."""
+    prices = (float(odds_home), float(odds_draw), float(odds_away))
+    if any(not isfinite(price) or price <= 1.0 for price in prices):
+        raise ValueError("all decimal odds must be greater than 1.0")
+    inverse = tuple(1.0 / price for price in prices)
+    total = sum(inverse)
+    return tuple(price / total for price in inverse)
+
+
+def blend_market_probabilities(
+    model_probabilities: tuple[float, float, float],
+    market_probabilities: tuple[float, float, float],
+    *,
+    market_weight: float,
+) -> tuple[float, float, float]:
+    """Blend home/draw/away probabilities with a specified market share."""
+    if not 0.0 <= market_weight <= 1.0:
+        raise ValueError("market_weight must be between zero and one")
+    if len(model_probabilities) != 3 or len(market_probabilities) != 3:
+        raise ValueError("model and market probabilities must each contain three outcomes")
+    if any(value <= 0.0 or value >= 1.0 for value in (*model_probabilities, *market_probabilities)):
+        raise ValueError("all probabilities must be strictly between zero and one")
+    if abs(sum(model_probabilities) - 1.0) > 1e-9 or abs(sum(market_probabilities) - 1.0) > 1e-9:
+        raise ValueError("model and market probabilities must each sum to one")
+    return tuple(
+        (1.0 - market_weight) * model + market_weight * market
+        for model, market in zip(model_probabilities, market_probabilities, strict=True)
+    )
+
+
+def select_market_weight(
+    prior_predictions: pd.DataFrame, *, step: float = 0.01
+) -> float:
+    """Select a market share from prior out-of-fold forecasts using log loss."""
+    required = {
+        "result",
+        *(f"model_p_{outcome}" for outcome in ("home_win", "draw", "away_win")),
+        *(f"market_p_{outcome}" for outcome in ("home_win", "draw", "away_win")),
+    }
+    missing = required.difference(prior_predictions.columns)
+    if missing:
+        raise ValueError(f"missing prior forecast columns: {sorted(missing)}")
+    if prior_predictions.empty or not 0.0 < step <= 1.0:
+        raise ValueError("prior forecasts must be non-empty and step must be in (0, 1]")
+
+    labels = prior_predictions["result"].map({"H": 0, "D": 1, "A": 2})
+    if labels.isna().any():
+        raise ValueError("prior forecasts contain unsupported result labels")
+    actual_indices = labels.to_numpy(dtype=int)
+    model = prior_predictions[
+        [f"model_p_{outcome}" for outcome in ("home_win", "draw", "away_win")]
+    ].to_numpy(dtype=float)
+    market = prior_predictions[
+        [f"market_p_{outcome}" for outcome in ("home_win", "draw", "away_win")]
+    ].to_numpy(dtype=float)
+    if (
+        not pd.notna(model).all()
+        or not pd.notna(market).all()
+        or (model <= 0.0).any()
+        or (model >= 1.0).any()
+        or (market <= 0.0).any()
+        or (market >= 1.0).any()
+    ):
+        raise ValueError("prior forecasts must contain probabilities strictly between zero and one")
+
+    candidate_count = int(round(1.0 / step))
+    weights = [index / candidate_count for index in range(candidate_count + 1)]
+    scores = []
+    for weight in weights:
+        blended = (1.0 - weight) * model + weight * market
+        losses = -blended[range(len(actual_indices)), actual_indices]
+        scores.append(float(losses.mean()))
+    return weights[min(range(len(scores)), key=scores.__getitem__)]
+
+
+def compare_market_assisted_walk_forward(
+    features: pd.DataFrame,
+    odds: pd.DataFrame,
+    *,
+    max_test_seasons: int = 5,
+    minimum_training_matches: int = 200,
+    minimum_tuning_matches: int = 400,
+    minimum_tuning_seasons: int = 2,
+) -> dict[str, MarketAssistComparison]:
+    """Test a model/market blend with its weight fit only on earlier OOF matches.
+
+    A single market share is selected across the two leagues using earlier
+    out-of-fold forecasts. Every historical row used to select a test-fold
+    weight predates that fold's first fixture. Folds without enough prior
+    matches and season blocks are omitted from the assisted comparison.
+    """
+    if (
+        max_test_seasons < 1
+        or minimum_training_matches < 1
+        or minimum_tuning_matches < 1
+        or minimum_tuning_seasons < 1
+    ):
+        raise ValueError("walk-forward limits and minimum sample sizes must be positive")
+    required = {
+        "competition",
+        "match_date",
+        "season",
+        "result",
+        "home_team",
+        "away_team",
+        "home_goals",
+        "away_goals",
+        *FEATURE_COLUMNS,
+    }
+    missing = required.difference(features.columns)
+    if missing:
+        raise ValueError(f"missing model columns: {sorted(missing)}")
+    prepared_features = features.copy()
+    prepared_features["match_date"] = pd.to_datetime(
+        prepared_features["match_date"], errors="raise"
+    ).dt.normalize()
+    market = prepare_market_odds(odds).rename(
+        columns={
+            "p_home_win": "market_p_home_win",
+            "p_draw": "market_p_draw",
+            "p_away_win": "market_p_away_win",
+        }
+    )
+
+    test_seasons: dict[str, tuple[str, ...]] = {}
+    out_of_fold: list[pd.DataFrame] = []
+    for competition, league in prepared_features.groupby("competition", sort=True):
+        ordered = league.sort_values("match_date", kind="stable").reset_index(drop=True)
+        complete_seasons = _complete_season_order(ordered)
+        test_seasons[str(competition)] = tuple(complete_seasons[-max_test_seasons:])
+        for season in complete_seasons:
+            test = ordered[ordered["season"] == season].copy()
+            first_date = test["match_date"].min()
+            train = ordered[ordered["match_date"] < first_date].copy()
+            if len(train) < minimum_training_matches:
+                continue
+            joined = test.merge(
+                market,
+                on=list(MARKET_KEY_COLUMNS),
+                how="inner",
+                validate="one_to_one",
+            )
+            if joined.empty:
+                continue
+            with threadpool_limits(limits=1):
+                model = _deployed_model_probabilities(train, joined, str(competition))
+            predictions = joined[["competition", "season", "match_date", "result"]].copy()
+            for outcome in ("home_win", "draw", "away_win"):
+                model_column = f"p_{outcome}"
+                market_column = f"market_p_{outcome}"
+                predictions[f"model_{model_column}"] = model[model_column].to_numpy()
+                predictions[market_column] = joined[market_column].to_numpy()
+            out_of_fold.append(predictions)
+
+    if not out_of_fold:
+        raise ValueError("no historical out-of-fold forecasts matched the supplied odds")
+    oof = pd.concat(out_of_fold, ignore_index=True)
+    results: dict[str, MarketAssistComparison] = {}
+    for competition, seasons in test_seasons.items():
+        comp_features = prepared_features[prepared_features["competition"] == competition]
+        scored_folds: list[MarketAssistFoldScore] = []
+        fold_predictions: dict[str, list[pd.DataFrame]] = {
+            "model": [],
+            "closing_market": [],
+            "market_assisted": [],
+        }
+        for season in seasons:
+            test_oof = oof[(oof["competition"] == competition) & (oof["season"] == season)]
+            if test_oof.empty:
+                continue
+            cutoff = comp_features.loc[
+                comp_features["season"] == season, "match_date"
+            ].min()
+            prior = oof[oof["match_date"] < cutoff].copy()
+            prior_seasons = tuple(
+                f"{row.competition}:{row.season}"
+                for row in prior[["competition", "season"]]
+                .drop_duplicates()
+                .itertuples(index=False)
+            )
+            if (
+                len(prior) < minimum_tuning_matches
+                or len(prior_seasons) < minimum_tuning_seasons
+            ):
+                continue
+            weight = select_market_weight(prior)
+            model_frame = _forecast_frame(test_oof, "model_")
+            market_frame = _forecast_frame(test_oof, "market_")
+            assist_frame = model_frame.copy()
+            for column in PROBABILITY_COLUMNS:
+                assist_frame[column] = (
+                    (1.0 - weight) * model_frame[column].to_numpy()
+                    + weight * market_frame[column].to_numpy()
+                )
+            scored_folds.append(
+                MarketAssistFoldScore(
+                    season=season,
+                    test_matches=len(test_oof),
+                    tuning_matches=len(prior),
+                    tuning_seasons=prior_seasons,
+                    market_weight=weight,
+                    model_score=_score(model_frame),
+                    closing_market_score=_score(market_frame),
+                    market_assisted_score=_score(assist_frame),
+                )
+            )
+            for name, frame in (
+                ("model", model_frame),
+                ("closing_market", market_frame),
+                ("market_assisted", assist_frame),
+            ):
+                fold_predictions[name].append(frame.assign(season=season))
+        if not scored_folds:
+            continue
+        pooled = {
+            name: _score(pd.concat(frames, ignore_index=True))
+            for name, frames in fold_predictions.items()
+        }
+        results[competition] = MarketAssistComparison(
+            folds=tuple(scored_folds),
+            pooled_model_score=pooled["model"],
+            pooled_closing_market_score=pooled["closing_market"],
+            pooled_market_assisted_score=pooled["market_assisted"],
+        )
+    if not results:
+        raise ValueError(
+            "no test fold had enough earlier out-of-fold data to tune the market blend"
+        )
+    return results
+
+
+def _deployed_model_probabilities(
+    train: pd.DataFrame, test: pd.DataFrame, competition: str
+) -> pd.DataFrame:
+    elo = add_elo_probabilities(test)
+    if competition != "premier_league":
+        return elo
+    poisson = _fit_predict_poisson(train, test)
+    return blend_probabilities(elo, poisson, elo_weight=0.25)
+
+
+def _forecast_frame(source: pd.DataFrame, prefix: str) -> pd.DataFrame:
+    frame = source[["result"]].copy()
+    for outcome, column in zip(
+        PROBABILITY_COLUMNS, ("home_win", "draw", "away_win"), strict=True
+    ):
+        frame[outcome] = source[f"{prefix}p_{column}"].to_numpy()
+    return frame.rename(
+        columns={
+            "home_win": "p_home_win",
+            "draw": "p_draw",
+            "away_win": "p_away_win",
+        }
+    )
 
 
 def compare_models_to_closing_market(
