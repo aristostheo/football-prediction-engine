@@ -13,10 +13,11 @@ text-based results format:
   2020-21, 2023-24, and 2024-25, plus partial results from 2025-26 and 2026-27.
 
 Each canonical row retains its exact source URL and retrieval timestamp. The
-Greek 2025-26 file currently contains 62 scored regular-season matches, and the
-2026-27 file contains 35; neither is treated as a completed season. Coverage
-also has explicit gaps for 2021-22 and 2022-23. The missing results are not
-filled or inferred.
+October 2, 2026 snapshot contains 50 Premier League and 35 Greek matches from
+2026-27. The Greek 2025-26 file contains 62 scored regular-season matches and
+remains incomplete in the upstream data. Coverage also has explicit gaps for
+2021-22 and 2022-23. Missing results are not filled or inferred. The October 2
+refresh found no new results beyond September 20, 2026.
 
 The adapter converts each external file into `HistoricalMatch` records, then
 applies duplicate, team-name, score, and completed-season schedule checks.
@@ -46,6 +47,24 @@ source of model inputs and each prediction exposes its history date. See
 [live-fixtures.md](live-fixtures.md) for setup and endpoint details.
 
 ## Rebuilding the dataset
+
+From the repository root, refresh the compressed model history and its
+provenance manifest directly from the public source files:
+
+```bash
+uv run python -m football_predictor --refresh
+```
+
+The command chooses the season from the current date, validates every completed
+Premier League season and all match rows, records a SHA-256 checksum for each
+source file and the generated dataset, then replaces the local bundle. It
+refuses to update if any previously recorded fixture disappears; review that
+upstream change before retrying with `--allow-removed-matches`. Download or
+validation failures leave the current dataset intact. The command does not
+update a deployed service automatically: commit and deploy the refreshed bundle
+for the hosted predictor to use it.
+
+The original local-repository build remains available:
 
 Clone `openfootball/england` and `openfootball/europe` outside this repository,
 then run:
