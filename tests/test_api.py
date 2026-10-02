@@ -100,6 +100,28 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
     asyncio.run(exercise_api())
 
 
+def test_api_rejects_partial_market_odds() -> None:
+    async def exercise() -> None:
+        app = create_app(engine=StubEngine())
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/predict",
+                json={
+                    "competition": "premier_league",
+                    "kickoff_date": "2025-06-01",
+                    "home_team": "Arsenal FC",
+                    "away_team": "Chelsea FC",
+                    "odds_home": 2.0,
+                },
+            )
+            assert response.status_code == 422
+            assert "all three decimal odds" in response.text
+
+    asyncio.run(exercise())
+
+
 def test_api_serves_built_dashboard(tmp_path: Path) -> None:
     (tmp_path / "assets").mkdir()
     (tmp_path / "index.html").write_text("<main>Match Forecast</main>")
