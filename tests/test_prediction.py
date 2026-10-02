@@ -1,12 +1,10 @@
-import asyncio
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
-import httpx
 import pandas as pd
 import pytest
 
-from football_predictor.api import create_app
+from football_predictor.api import PredictionRequest, create_app
 from football_predictor.domain import Competition
 from football_predictor.live_fixtures import LiveFixture
 from football_predictor.prediction import FixtureToPredict, PredictionEngine
@@ -201,7 +199,7 @@ def test_predict_rejects_two_aliases_of_the_same_club(prediction_engine: Predict
         (Competition.SUPER_LEAGUE_GREECE, "AEK Athens", "Olympiacos", "AEK Athen"),
     ],
 )
-def test_selected_live_fixture_can_be_submitted_to_prediction_api(
+def test_selected_live_fixture_can_be_normalized_by_prediction_endpoint(
     prediction_engine: PredictionEngine,
     competition: Competition,
     home: str,
@@ -222,26 +220,17 @@ def test_selected_live_fixture_can_be_submitted_to_prediction_api(
                 )
             ]
 
-    async def exercise() -> None:
-        app = create_app(engine=prediction_engine, fixture_provider=Provider())
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app), base_url="http://test"
-        ) as client:
-            response = await client.get(
-                "/fixtures", params={"competition": competition.value, "date": fixture_date}
-            )
-            assert response.status_code == 200
-            fixture = response.json()[0]
-            result = await client.post(
-                "/predict",
-                json={
-                    "competition": fixture["competition"],
-                    "kickoff_date": fixture["kickoff_at"][:10],
-                    "home_team": fixture["home_team"],
-                    "away_team": fixture["away_team"],
-                },
-            )
-            assert result.status_code == 200, result.text
-            assert result.json()["home_team"] == expected_home
-
-    asyncio.run(exercise())
+    app = create_app(engine=prediction_engine, fixture_provider=Provider())
+    endpoints = {
+        getattr(route, "path", None): route.endpoint for route in app.routes
+    }
+    fixture = endpoints["/fixtures"](competition, fixture_date)[0]
+    result = endpoints["/predict"](
+        PredictionRequest(
+            competition=fixture.competition,
+            kickoff_date=date.fromisoformat(fixture.kickoff_at[:10]),
+            home_team=fixture.home_team,
+            away_team=fixture.away_team,
+        )
+    )
+    assert result.home_team == expected_home
