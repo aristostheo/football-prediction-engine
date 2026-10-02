@@ -30,9 +30,10 @@ def main() -> None:
     parser.add_argument(
         "--market-odds",
         type=Path,
+        nargs="+",
         help=(
-            "compare walk-forward forecasts with a local licensed CSV containing "
-            "competition, match_date, home_team, away_team, odds_home, odds_draw, odds_away"
+            "compare walk-forward forecasts with one or more local CSV odds exports "
+            "(canonical columns or Footiqo 1X2 export columns)"
         ),
     )
     args = parser.parse_args()
@@ -41,7 +42,10 @@ def main() -> None:
     if args.market_odds:
         if not args.walk_forward:
             parser.error("--market-odds requires --walk-forward")
-        odds = load_market_odds_csv(args.market_odds)
+        odds = pd.concat(
+            [load_market_odds_csv(path) for path in args.market_odds],
+            ignore_index=True,
+        )
         comparison = compare_models_to_closing_market(features, odds)
     elif args.walk_forward:
         comparison = compare_models_walk_forward(features)
