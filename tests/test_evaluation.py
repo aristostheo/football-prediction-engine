@@ -26,6 +26,21 @@ def test_elo_probabilities_are_normalized_and_evaluable() -> None:
     assert 0 <= metrics.accuracy <= 1
     assert metrics.log_loss > 0
     assert metrics.brier_score > 0
+    assert 0 <= metrics.ranked_probability_score <= 1
+
+
+def test_ranked_probability_score_is_zero_for_perfect_probabilities() -> None:
+    probabilities = pd.DataFrame(
+        {
+            "result": ["H", "D", "A"],
+            "p_home_win": [0.999, 0.0005, 0.0005],
+            "p_draw": [0.0005, 0.999, 0.0005],
+            "p_away_win": [0.0005, 0.0005, 0.999],
+        }
+    )
+    assert evaluate_probabilities(probabilities).ranked_probability_score == pytest.approx(
+        0, abs=1e-6
+    )
 
 
 def test_chronological_holdout_uses_the_latest_rows_per_competition() -> None:

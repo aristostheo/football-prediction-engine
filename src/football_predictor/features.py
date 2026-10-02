@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import date
 from math import nan
@@ -19,6 +19,7 @@ class FeatureConfig:
     initial_elo: float = 1500.0
     elo_k_factor: float = 20.0
     elo_home_advantage: float = 60.0
+    max_rest_days: int = 97
 
 
 @dataclass
@@ -53,6 +54,14 @@ def build_pre_match_features(
     same prior state. Their outcomes are committed only after every feature row
     for that date has been emitted, preventing accidental same-day leakage.
     """
+    features, _ = build_pre_match_features_and_states(matches, config=config)
+    return features
+
+
+def build_pre_match_features_and_states(
+    matches: pd.DataFrame, *, config: FeatureConfig = FeatureConfig()
+) -> tuple[pd.DataFrame, dict[tuple[str, str], TeamState]]:
+    """Build leakage-safe features and the terminal per-team states in one pass."""
     missing = _REQUIRED_COLUMNS.difference(matches.columns)
     if missing:
         raise ValueError(f"missing required match columns: {sorted(missing)}")
@@ -103,7 +112,31 @@ def build_pre_match_features(
             )
 
     features = pd.DataFrame(feature_rows)
-    return pd.concat([ordered, features], axis=1)
+    return pd.concat([ordered, features], axis=1), dict(states)
+
+
+def build_future_fixture_features(
+    *,
+    competition: str,
+    match_date: date,
+    home_team: str,
+    away_team: str,
+    final_states: Mapping[tuple[str, str], TeamState],
+    config: FeatureConfig = FeatureConfig(),
+) -> pd.DataFrame:
+    """Build one future row from cached team states without replaying match history."""
+    try:
+        home_state = final_states[(competition, home_team)]
+        away_state = final_states[(competition, away_team)]
+    except KeyError as error:
+        raise ValueError(f"team state is unavailable for {error.args[0][1]}") from error
+    return pd.DataFrame(
+        [
+            _feature_row(
+                home_state=home_state, away_state=away_state, match_date=match_date, config=config
+            )
+        ]
+    )
 
 
 def _feature_row(
@@ -122,8 +155,12 @@ def _feature_row(
         "away_form_goals_against_per_match": _goals_per_match(away_state.all_results, index=1),
         "home_home_points_per_match": _points_per_match(home_state.home_results),
         "away_away_points_per_match": _points_per_match(away_state.away_results),
-        "home_days_since_last_match": _days_since(home_state.last_match_date, match_date),
-        "away_days_since_last_match": _days_since(away_state.last_match_date, match_date),
+        "home_days_since_last_match": _days_since(
+            home_state.last_match_date, match_date, config.max_rest_days
+        ),
+        "away_days_since_last_match": _days_since(
+            away_state.last_match_date, match_date, config.max_rest_days
+        ),
         "home_elo": home_elo,
         "away_elo": away_elo,
         "elo_difference": home_elo + config.elo_home_advantage - away_elo,
@@ -181,8 +218,8 @@ def _goals_per_match(results: Iterable[tuple[int, int, int]], *, index: int) -> 
     return sum(result[index] for result in values) / len(values) if values else 0.0
 
 
-def _days_since(previous_date: date | None, match_date: date) -> float:
-    return float((match_date - previous_date).days) if previous_date else nan
+def _days_since(previous_date: date | None, match_date: date, cap: int) -> float:
+    return float(min((match_date - previous_date).days, cap)) if previous_date else nan
 
 
 def _expected_home_score(home_elo: float, away_elo: float, home_advantage: float) -> float:

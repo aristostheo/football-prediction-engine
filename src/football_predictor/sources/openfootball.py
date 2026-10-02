@@ -6,6 +6,7 @@ from typing import Final
 
 from football_predictor.domain import Competition, HistoricalMatch
 from football_predictor.normalization import normalize_season, normalize_team_name
+from football_predictor.team_names import canonical_team_name
 
 _DATE_LINE: Final = re.compile(
     r"^\s*(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+"
@@ -14,7 +15,8 @@ _DATE_LINE: Final = re.compile(
 _MATCH_LINE: Final = re.compile(
     r"^\s*(?:\d{1,2}:\d{2}\s+)?"
     r"(?P<home>.+?)\s+v\s+(?P<away>.+?)\s+"
-    r"(?P<home_goals>\d+)-(?P<away_goals>\d+)(?:\s+\([^)]*\))?\s*$"
+    r"(?P<home_goals>\d+)-(?P<away_goals>\d+)(?:\s+\([^)]*\))?"
+    r"(?:\s+\[awarded\])?\s*$"
 )
 _MATCH_LINE_HOME_SCORE_AWAY: Final = re.compile(
     r"^\s*(?:\d{1,2}:\d{2}\s+)?"
@@ -73,8 +75,12 @@ def parse_openfootball_results(
                 match_date=current_date,
                 competition=competition,
                 season=normalized_season,
-                home_team=normalize_team_name(result_match.group("home")),
-                away_team=normalize_team_name(result_match.group("away")),
+                home_team=canonical_team_name(
+                    normalize_team_name(result_match.group("home")), competition
+                ),
+                away_team=canonical_team_name(
+                    normalize_team_name(result_match.group("away")), competition
+                ),
                 home_goals=int(result_match.group("home_goals")),
                 away_goals=int(result_match.group("away_goals")),
                 source_name="OpenFootball",

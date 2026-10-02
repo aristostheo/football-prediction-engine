@@ -1,5 +1,5 @@
 import asyncio
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 import httpx
@@ -24,7 +24,8 @@ def test_predict_resolves_provider_team_names_to_historical_labels(
     prediction = prediction_engine.predict(
         FixtureToPredict(
             competition=Competition.PREMIER_LEAGUE,
-            kickoff_date=date(2026, 10, 18),
+            kickoff_date=prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE)
+            + timedelta(days=1),
             home_team=home_team,
             away_team="Arsenal",
         )
@@ -45,6 +46,7 @@ def test_predict_resolves_provider_team_names_to_historical_labels(
         ("AEK Athens", "Olympiacos", "AEK Athen", "Olympiakos Piraeus"),
         ("PAOK", "Aris", "PAOK Saloniki", "Aris Saloniki"),
         ("OFI", "Asteras Aktor", "OFI Heraklion", "Asteras Tripolis"),
+        ("Kalamata FC", "Iraklis 1908", "Kalamata", "Iraklis"),
     ],
 )
 def test_predict_resolves_greek_provider_names(
@@ -57,7 +59,8 @@ def test_predict_resolves_greek_provider_names(
     prediction = prediction_engine.predict(
         FixtureToPredict(
             competition=Competition.SUPER_LEAGUE_GREECE,
-            kickoff_date=date(2026, 10, 18),
+            kickoff_date=prediction_engine.latest_result_date(Competition.SUPER_LEAGUE_GREECE)
+            + timedelta(days=1),
             home_team=home_team,
             away_team=away_team,
         )
@@ -73,18 +76,19 @@ def test_predict_resolves_greek_provider_names(
     ) == pytest.approx(1.0)
 
 
-def test_predict_explains_missing_history_for_a_recognized_club(
+def test_predict_supports_promoted_club_after_its_first_recorded_matches(
     prediction_engine: PredictionEngine,
 ) -> None:
-    with pytest.raises(ValueError, match="No historical results available.*Kalamata"):
-        prediction_engine.predict(
-            FixtureToPredict(
-                competition=Competition.SUPER_LEAGUE_GREECE,
-                kickoff_date=date(2026, 10, 18),
-                home_team="Kalamata FC",
-                away_team="Olympiacos",
-            )
+    prediction = prediction_engine.predict(
+        FixtureToPredict(
+            competition=Competition.SUPER_LEAGUE_GREECE,
+            kickoff_date=prediction_engine.latest_result_date(Competition.SUPER_LEAGUE_GREECE)
+            + timedelta(days=1),
+            home_team="Kalamata FC",
+            away_team="Olympiacos",
         )
+    )
+    assert prediction.fixture.home_team == "Kalamata"
 
 
 def test_predict_rejects_two_aliases_of_the_same_club(prediction_engine: PredictionEngine) -> None:
@@ -92,7 +96,8 @@ def test_predict_rejects_two_aliases_of_the_same_club(prediction_engine: Predict
         prediction_engine.predict(
             FixtureToPredict(
                 competition=Competition.PREMIER_LEAGUE,
-                kickoff_date=date(2026, 10, 18),
+                kickoff_date=prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE)
+                + timedelta(days=1),
                 home_team="Manchester United",
                 away_team="Man Utd",
             )
@@ -113,13 +118,15 @@ def test_selected_live_fixture_can_be_submitted_to_prediction_api(
     away: str,
     expected_home: str,
 ) -> None:
+    fixture_date = prediction_engine.latest_result_date(competition) + timedelta(days=1)
+
     class Provider:
         def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
             return [
                 LiveFixture(
                     fixture_id="example",
                     competition=competition,
-                    kickoff_at=datetime(2026, 10, 18, 15),
+                    kickoff_at=datetime.combine(fixture_date, time(15)),
                     home_team=home,
                     away_team=away,
                 )
@@ -131,7 +138,7 @@ def test_selected_live_fixture_can_be_submitted_to_prediction_api(
             transport=httpx.ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.get(
-                "/fixtures", params={"competition": competition.value, "date": "2026-10-18"}
+                "/fixtures", params={"competition": competition.value, "date": fixture_date}
             )
             assert response.status_code == 200
             fixture = response.json()[0]

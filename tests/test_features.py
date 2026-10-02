@@ -68,3 +68,11 @@ def test_features_reject_duplicate_same_day_team_appearances() -> None:
 
     with pytest.raises(ValueError, match="more than once"):
         build_pre_match_features(matches)
+
+
+def test_rest_days_are_capped_to_the_training_range() -> None:
+    matches = _matches()
+    matches.loc[2, "match_date"] = "2026-10-01"
+    features = build_pre_match_features(matches)
+    assert features.iloc[2]["home_days_since_last_match"] == 97.0
+    assert features.iloc[2]["away_days_since_last_match"] == 97.0

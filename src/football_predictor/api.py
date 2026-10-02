@@ -6,6 +6,7 @@ import mimetypes
 import os
 from datetime import date
 from pathlib import Path
+from threading import Lock
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -65,14 +66,19 @@ def create_app(
     )
     configured_engine = engine
     configured_provider = fixture_provider
+    engine_lock = Lock()
 
     def get_engine() -> PredictionEngine:
         nonlocal configured_engine
         if configured_engine is None:
-            history_path = Path(
-                os.environ.get("HISTORICAL_MATCHES_PATH", "data/model/historical_matches.csv.gz")
-            )
-            configured_engine = PredictionEngine.from_csv(history_path)
+            with engine_lock:
+                if configured_engine is None:
+                    history_path = Path(
+                        os.environ.get(
+                            "HISTORICAL_MATCHES_PATH", "data/model/historical_matches.csv.gz"
+                        )
+                    )
+                    configured_engine = PredictionEngine.from_csv(history_path)
         return configured_engine
 
     def get_fixture_provider() -> FixtureProvider:
@@ -86,7 +92,7 @@ def create_app(
         return {"status": "ok"}
 
     @app.get("/fixtures", response_model=list[LiveFixtureResponse])
-    async def fixtures(
+    def fixtures(
         competition: Competition,
         fixture_date: date = Query(alias="date"),
     ) -> list[LiveFixtureResponse]:
@@ -97,7 +103,7 @@ def create_app(
         return [_fixture_response(fixture) for fixture in live_fixtures]
 
     @app.post("/predict", response_model=PredictionResponse)
-    async def predict(request: PredictionRequest) -> PredictionResponse:
+    def predict(request: PredictionRequest) -> PredictionResponse:
         try:
             prediction = get_engine().predict(FixtureToPredict(**request.model_dump()))
         except (FileNotFoundError, ValueError) as error:

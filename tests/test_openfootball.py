@@ -31,8 +31,7 @@ def test_parser_handles_season_boundary_and_excludes_playoffs() -> None:
     )
 
     actual = [
-        (match.match_date.isoformat(), match.home_team, match.result.value)
-        for match in matches
+        (match.match_date.isoformat(), match.home_team, match.result.value) for match in matches
     ]
     assert actual == [
         ("2024-08-17", "Volos NFC", "A"),
@@ -95,5 +94,41 @@ Sat Aug 19
     )
 
     assert [(match.home_team, match.away_team, match.result.value) for match in matches] == [
-        ("Charlton Athletic", "Manchester City", "H")
+        ("Charlton Athletic", "Manchester City FC", "H")
+    ]
+
+
+def test_parser_reads_awarded_greek_results_without_creating_phantom_teams() -> None:
+    text = """Sun Mar 17 2019
+  19:00  Panathinaikos v Olympiakos Piraeus 0-3 [awarded]
+"""
+    matches = parse_openfootball_results(
+        text,
+        competition=Competition.SUPER_LEAGUE_GREECE,
+        season="2018-19",
+        source_url=SOURCE_URL,
+    )
+
+    assert len(matches) == 1
+    assert (matches[0].home_team, matches[0].away_team, matches[0].result.value) == (
+        "Panathinaikos",
+        "Olympiakos Piraeus",
+        "A",
+    )
+
+
+def test_parser_canonicalizes_historical_english_club_labels() -> None:
+    text = """▪ Matchday 1
+  Sat Aug 17 2024
+    20:00  Aston Villa v Ipswich Town 2-0
+"""
+    matches = parse_openfootball_results(
+        text,
+        competition=Competition.PREMIER_LEAGUE,
+        season="2024-25",
+        source_url=ENGLAND_SOURCE_URL,
+    )
+
+    assert [(match.home_team, match.away_team) for match in matches] == [
+        ("Aston Villa FC", "Ipswich Town FC")
     ]

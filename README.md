@@ -105,6 +105,11 @@ one deployable service. See [deployment setup](docs/deployment.md).
 The foundation, canonical match schema, source selection, leakage-safe feature
 engine, Elo probability baseline, calibrated logistic comparison, Poisson goal
 model, validation-selected ensemble, FastAPI service, optional live-fixture
-adapter, and React dashboard are in place. The current policy uses the ensemble
-for the Premier League and Elo for Super League Greece, selected without tuning
-on the final holdout.
+adapter, and React dashboard are in place. The current production policy uses
+the ensemble for the Premier League and Elo for Super League Greece. The Greek
+policy was chosen after inspecting the final holdout, so that holdout is
+exploratory and is not an independent estimate of future performance. A
+walk-forward evaluation is planned before making further model-selection
+claims. The bundled history is current through September 20, 2026 for both
+leagues; see [data coverage](docs/data-sources.md) for incomplete Greek seasons
+and gaps.

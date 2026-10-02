@@ -10,7 +10,10 @@ import pandas as pd
 
 from football_predictor.domain import Competition
 from football_predictor.evaluation import add_elo_probabilities
-from football_predictor.features import build_pre_match_features
+from football_predictor.features import (
+    build_future_fixture_features,
+    build_pre_match_features_and_states,
+)
 from football_predictor.models import (
     FEATURE_COLUMNS,
     _fit_poisson_model,
@@ -58,7 +61,7 @@ class PredictionEngine:
             raise ValueError(f"missing historical columns: {sorted(missing)}")
         self._history = historical_matches.copy()
         self._history["match_date"] = pd.to_datetime(self._history["match_date"]).dt.date
-        self._features = build_pre_match_features(self._history)
+        self._features, self._final_states = build_pre_match_features_and_states(self._history)
         self._poisson_models = {
             competition: (
                 _fit_poisson_model(features, "home_goals"),
@@ -76,7 +79,7 @@ class PredictionEngine:
         history = self._history[self._history["competition"] == competition]
         if history.empty:
             raise ValueError(f"no historical matches for {competition}")
-        history_through = max(history["match_date"])
+        history_through = self.latest_result_date(fixture.competition)
         if fixture.kickoff_date <= history_through:
             raise ValueError("fixture date must be after the latest locally recorded result")
         known_teams = set(history["home_team"]) | set(history["away_team"])
@@ -97,7 +100,7 @@ class PredictionEngine:
         if canonical_fixture.home_team == canonical_fixture.away_team:
             raise ValueError("home and away teams must be different clubs")
 
-        fixture_features = self._fixture_features(history, canonical_fixture)
+        fixture_features = self._fixture_features(canonical_fixture)
         elo = add_elo_probabilities(fixture_features)
         home_model, away_model = self._poisson_models[competition]
         home_rate = float(home_model.predict(fixture_features[list(FEATURE_COLUMNS)])[0])
@@ -123,13 +126,18 @@ class PredictionEngine:
             history_age_days=(fixture.kickoff_date - history_through).days,
         )
 
-    def _fixture_features(self, history: pd.DataFrame, fixture: FixtureToPredict) -> pd.DataFrame:
-        placeholder = history.iloc[[-1]].copy()
-        placeholder["match_date"] = fixture.kickoff_date
-        placeholder["home_team"] = fixture.home_team
-        placeholder["away_team"] = fixture.away_team
-        placeholder["home_goals"] = 0
-        placeholder["away_goals"] = 0
-        placeholder["result"] = "D"
-        feature_history = pd.concat([history, placeholder], ignore_index=True)
-        return build_pre_match_features(feature_history).tail(1)
+    def latest_result_date(self, competition: Competition) -> date:
+        """Return the latest locally recorded result for one competition."""
+        history = self._history[self._history["competition"] == competition.value]
+        if history.empty:
+            raise ValueError(f"no historical matches for {competition.value}")
+        return max(history["match_date"])
+
+    def _fixture_features(self, fixture: FixtureToPredict) -> pd.DataFrame:
+        return build_future_fixture_features(
+            competition=fixture.competition.value,
+            match_date=fixture.kickoff_date,
+            home_team=fixture.home_team,
+            away_team=fixture.away_team,
+            final_states=self._final_states,
+        )

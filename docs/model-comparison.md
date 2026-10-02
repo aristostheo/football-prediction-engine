@@ -1,43 +1,38 @@
-# Elo versus calibrated logistic regression
+# Model comparison (exploratory chronological split)
 
-The first model comparison uses the exact same leakage-safe feature set and the
-final chronological 20% of each competition. Models are fit independently per
-league. The logistic pipeline median-imputes missing first-match rest values,
-standardizes features, fits L2-regularized multinomial logistic regression, and
-uses three time-ordered calibration folds on training data only.
+This snapshot reports a single chronological 80/20 split for each league. Each
+model is trained on earlier rows and evaluated on later rows. The features use
+same-day batching, so every match on a date sees results strictly before that
+date. The metrics are descriptive, not reliable rankings: there is one test
+period, the Greek sample is small, and the historical Greek schedule has gaps.
 
-The Poisson candidate separately models home and away expected goals. Its
-regularization is selected with three chronological training folds, then
-independent Poisson scorelines from 0-0 to 12-12 are summed and normalized into
-W/D/L probabilities.
+| Competition | Model | Train | Test | Log loss | Brier | RPS | Accuracy |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Premier League | Training-rate climatology | 7,944 | 1,986 | 1.0706 | 0.6479 | 0.2332 | 43.96% |
+| Premier League | Elo | 7,944 | 1,986 | 0.9810 | 0.5842 | 0.2019 | 54.28% |
+| Premier League | Calibrated logistic | 7,944 | 1,986 | 0.9818 | 0.5850 | 0.2021 | 53.47% |
+| Premier League | Poisson | 7,944 | 1,986 | 0.9788 | 0.5831 | 0.2015 | 53.63% |
+| Premier League | Validation-selected ensemble | 7,944 | 1,986 | 0.9785 | 0.5828 | 0.2013 | 53.73% |
+| Super League Greece | Training-rate climatology | 852 | 213 | 1.0657 | 0.6448 | 0.2390 | 44.13% |
+| Super League Greece | Elo | 852 | 213 | 0.9397 | 0.5540 | 0.1948 | 56.81% |
+| Super League Greece | Calibrated logistic | 852 | 213 | 0.9575 | 0.5653 | 0.1989 | 56.81% |
+| Super League Greece | Poisson | 852 | 213 | 0.9658 | 0.5725 | 0.2034 | 54.93% |
+| Super League Greece | Validation-selected ensemble | 852 | 213 | 0.9504 | 0.5613 | 0.1982 | 56.34% |
 
-| Competition | Model | Log loss | Brier score | Accuracy |
-| --- | --- | ---: | ---: | ---: |
-| Premier League | Elo baseline | 0.9888 | 0.5892 | 54.11% |
-| Premier League | Calibrated logistic | 0.9914 | 0.5907 | 52.89% |
-| Premier League | Poisson goal model | 0.9886 | 0.5893 | 53.26% |
-| Super League Greece | Elo baseline | 0.9857 | 0.5860 | 51.03% |
-| Super League Greece | Calibrated logistic | 1.0021 | 0.5967 | 51.03% |
-| Super League Greece | Poisson goal model | 1.0080 | 0.6019 | 48.45% |
-| Premier League | Validation-selected ensemble | **0.9879** | **0.5888** | 53.63% |
-| Super League Greece | Validation-selected ensemble | 0.9893 | 0.5887 | 51.03% |
+The ensemble weight is selected on the late 20% of the training period, then
+applied to the final test period. That procedure is implemented without direct
+test-score optimization. However, the production policy for Greece was changed
+to pure Elo after inspecting the earlier final-holdout result. Therefore the
+historical model choice has been influenced by holdout performance, and the
+table must not be described as an untouched independent test. No new policy
+should be selected from these rows.
 
-The logistic model does not beat Elo. The Poisson goal model narrowly improves
-Premier League log loss by 0.0002 but is worse on its Brier score and on every
-reported Greek metric. The validation-selected ensemble improves both Premier
-League probability metrics, while pure Elo remains better for Greece. These
-results are intentionally retained: later candidates must improve the same fixed
-metrics and split, not merely accuracy.
+The next evaluation checkpoint replaces this single split with expanding
+season-by-season walk-forward predictions, includes a base-rate climatology
+baseline and Ranked Probability Score, and estimates paired uncertainty. A
+closing-odds comparison requires a separately sourced, time-aligned odds
+dataset and is tracked as follow-up work.
 
-## Ensemble selection without holdout tuning
-
-For each league, the initial 80% pre-holdout training period is divided again:
-the earliest 80% fits Poisson and the latest 20% selects one of five fixed Elo
-weights (`1.0`, `0.75`, `0.5`, `0.25`, `0.0`) by validation log loss. The chosen
-weight is then used once on the untouched final 20% holdout, with Poisson
-refitted on all pre-holdout training rows.
-
-| Competition | Selected Elo weight | Final policy |
-| --- | ---: | --- |
-| Premier League | 0.25 | Use the 25% Elo / 75% Poisson ensemble. |
-| Super League Greece | 0.75 | Keep pure Elo; the ensemble is worse on final holdout. |
+RPS is the three-category ranked probability score with outcomes ordered home
+win, draw, away win; lower scores are better. The climatology probabilities use
+smoothed outcome frequencies from the training rows only.

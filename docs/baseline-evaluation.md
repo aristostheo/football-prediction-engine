@@ -1,19 +1,20 @@
 # Initial Elo baseline evaluation
 
-The V1 baseline converts pre-match Elo ratings into home-win, draw, and away-win
-probabilities. It is an online benchmark: each prediction uses only ratings from
-earlier match dates, while previous test-period results may update later ratings.
-That mirrors how the model would operate after deployment and introduces no
-future leakage.
+The V1 Elo baseline turns each match's pre-match ratings into home-win, draw,
+and away-win probabilities. Ratings update online after each match date, so a
+later test match may use results from an earlier test-period date. No row
+shuffling is used.
 
-The holdout is the final 20% of each competition, selected chronologically with
-no row shuffling.
+The current snapshot reports a single final-20% chronological split. These
+results are descriptive and should not be used alone to claim that one model
+will outperform another. The final Greek holdout was inspected when choosing
+the production policy, so it is not an independent test set.
 
-| Competition | Matches | Log loss | Brier score | Accuracy |
-| --- | ---: | ---: | ---: | ---: |
-| Premier League | 1,900 | 0.9888 | 0.5892 | 54.11% |
-| Super League Greece | 194 | 0.9857 | 0.5860 | 51.03% |
+| Competition | Matches | Log loss | Brier score | RPS | Accuracy |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Premier League | 1,986 | 0.9810 | 0.5842 | 0.2019 | 54.28% |
+| Super League Greece | 213 | 0.9397 | 0.5540 | 0.1948 | 56.81% |
 
-These are baseline measurements, not the final model. The next comparison will
-use the same time-aware split and metrics for calibrated statistical and
-machine-learning candidates.
+See [model comparison](model-comparison.md) for the corresponding candidate
+models and the evaluation limitations. The next evaluation update will add
+expanding season-by-season walk-forward metrics and a climatology baseline.

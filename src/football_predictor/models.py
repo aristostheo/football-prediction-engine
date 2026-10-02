@@ -58,6 +58,7 @@ class LeagueModelComparison:
     train_matches: int
     test_matches: int
     elo_baseline: ModelScore
+    climatology_baseline: ModelScore
     calibrated_logistic_regression: ModelScore
     poisson_goal_model: ModelScore
     validation_selected_elo_poisson_ensemble: ValidationSelectedEnsembleScore
@@ -91,6 +92,7 @@ def compare_models_chronologically(
             raise ValueError(f"not enough chronological data for {competition}")
 
         baseline_predictions = add_elo_probabilities(test)
+        climatology_predictions = _climatology_probabilities(train, test)
         logistic_predictions = _fit_predict_logistic(train, test)
         poisson_predictions = _fit_predict_poisson(train, test)
         ensemble_score = _select_and_score_ensemble(train, test)
@@ -98,11 +100,26 @@ def compare_models_chronologically(
             train_matches=len(train),
             test_matches=len(test),
             elo_baseline=_score(baseline_predictions),
+            climatology_baseline=_score(climatology_predictions),
             calibrated_logistic_regression=_score(logistic_predictions),
             poisson_goal_model=_score(poisson_predictions),
             validation_selected_elo_poisson_ensemble=ensemble_score,
         )
     return comparisons
+
+
+def _climatology_probabilities(train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:
+    """Predict each outcome at its pre-test training-period frequency."""
+    probabilities = test.copy()
+    counts = train["result"].value_counts()
+    denominator = len(train) + 3
+    for result, column in (
+        ("H", "p_home_win"),
+        ("D", "p_draw"),
+        ("A", "p_away_win"),
+    ):
+        probabilities[column] = float((counts.get(result, 0) + 1) / denominator)
+    return probabilities
 
 
 def _fit_predict_logistic(train: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:

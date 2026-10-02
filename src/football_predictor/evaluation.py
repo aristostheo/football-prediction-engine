@@ -15,6 +15,7 @@ class EvaluationMetrics:
     matches: int
     log_loss: float
     brier_score: float
+    ranked_probability_score: float
     accuracy: float
 
 
@@ -109,6 +110,7 @@ def evaluate_probabilities(matches: pd.DataFrame) -> EvaluationMetrics:
     labels = (MatchResult.HOME_WIN.value, MatchResult.DRAW.value, MatchResult.AWAY_WIN.value)
     log_losses: list[float] = []
     brier_scores: list[float] = []
+    ranked_probability_scores: list[float] = []
     correct = 0
     for match in matches.itertuples(index=False):
         probabilities = {
@@ -125,6 +127,21 @@ def evaluate_probabilities(matches: pd.DataFrame) -> EvaluationMetrics:
         brier_scores.append(
             sum((probabilities[label] - float(label == actual)) ** 2 for label in labels)
         )
+        home_observed = float(actual == MatchResult.HOME_WIN.value)
+        draw_observed = float(actual == MatchResult.DRAW.value)
+        ranked_probability_scores.append(
+            (
+                (probabilities[MatchResult.HOME_WIN.value] - home_observed) ** 2
+                + (
+                    probabilities[MatchResult.HOME_WIN.value]
+                    + probabilities[MatchResult.DRAW.value]
+                    - home_observed
+                    - draw_observed
+                )
+                ** 2
+            )
+            / 2.0
+        )
         predicted = max(labels, key=probabilities.__getitem__)
         correct += int(predicted == actual)
 
@@ -132,5 +149,6 @@ def evaluate_probabilities(matches: pd.DataFrame) -> EvaluationMetrics:
         matches=len(matches),
         log_loss=sum(log_losses) / len(log_losses),
         brier_score=sum(brier_scores) / len(brier_scores),
+        ranked_probability_score=sum(ranked_probability_scores) / len(ranked_probability_scores),
         accuracy=correct / len(matches),
     )

@@ -90,7 +90,7 @@ TEAM_ALIASES: dict[Competition, dict[str, tuple[str, ...]]] = {
         "Panserraikos": ("Πανσερραϊκός",),
         "Volos NFC": ("Volos", "NPS Volos", "Βόλος"),
         "Xanthi FC": ("Skoda Xanthi", "Ξάνθη"),
-        "Iraklis": ("Iraklis Thessaloniki", "P.O.T. Iraklis", "Ηρακλής"),
+        "Iraklis": ("Iraklis Thessaloniki", "Iraklis 1908", "P.O.T. Iraklis", "Ηρακλής"),
         "Kalamata": ("Καλαμάτα",),
     },
 }
