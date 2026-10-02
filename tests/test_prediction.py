@@ -41,6 +41,42 @@ def test_predict_resolves_provider_team_names_to_historical_labels(
     ) == pytest.approx(1.0)
 
 
+def test_market_odds_use_margin_removed_probabilities(
+    prediction_engine: PredictionEngine,
+) -> None:
+    prediction = prediction_engine.predict(
+        FixtureToPredict(
+            competition=Competition.PREMIER_LEAGUE,
+            kickoff_date=prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE)
+            + timedelta(days=1),
+            home_team="Arsenal",
+            away_team="Chelsea",
+            odds_home=2.0,
+            odds_draw=3.0,
+            odds_away=4.0,
+        )
+    )
+
+    assert prediction.model_policy == "market_implied_odds"
+    assert prediction.home_win_probability == pytest.approx(6 / 13)
+    assert prediction.draw_probability == pytest.approx(4 / 13)
+    assert prediction.away_win_probability == pytest.approx(3 / 13)
+
+
+def test_market_odds_require_all_three_prices(prediction_engine: PredictionEngine) -> None:
+    with pytest.raises(ValueError, match="all three decimal odds"):
+        prediction_engine.predict(
+            FixtureToPredict(
+                competition=Competition.PREMIER_LEAGUE,
+                kickoff_date=prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE)
+                + timedelta(days=1),
+                home_team="Arsenal",
+                away_team="Chelsea",
+                odds_home=2.0,
+            )
+        )
+
+
 @pytest.mark.parametrize(
     ("home_team", "away_team", "expected_home", "expected_away"),
     [
