@@ -30,6 +30,9 @@ function App() {
   const [fixtureDate, setFixtureDate] = useState(today());
   const [homeTeam, setHomeTeam] = useState("Arsenal FC");
   const [awayTeam, setAwayTeam] = useState("Chelsea FC");
+  const [oddsHome, setOddsHome] = useState("");
+  const [oddsDraw, setOddsDraw] = useState("");
+  const [oddsAway, setOddsAway] = useState("");
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [fixtures, setFixtures] = useState<LiveFixture[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +54,9 @@ function App() {
   function changeLeague(next: Competition) {
     setCompetition(next);
     setPrediction(null);
+    setOddsHome("");
+    setOddsDraw("");
+    setOddsAway("");
     setFixtures([]);
     setError(null);
     setFixtureNotice(null);
@@ -66,6 +72,12 @@ function App() {
   async function submitPrediction(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    const odds = [oddsHome, oddsDraw, oddsAway];
+    const hasAnyOdds = odds.some((value) => value.trim() !== "");
+    if (hasAnyOdds && odds.some((value) => value.trim() === "")) {
+      setError("Enter all three decimal odds, or leave all three blank.");
+      return;
+    }
     setLoading(true);
     try {
       setPrediction(await predictMatch({
@@ -73,6 +85,13 @@ function App() {
         kickoff_date: fixtureDate,
         home_team: homeTeam.trim(),
         away_team: awayTeam.trim(),
+        ...(hasAnyOdds
+          ? {
+              odds_home: Number(oddsHome),
+              odds_draw: Number(oddsDraw),
+              odds_away: Number(oddsAway),
+            }
+          : {}),
       }));
     } catch (caught) {
       setPrediction(null);
@@ -175,10 +194,28 @@ function App() {
                   <input value={awayTeam} onChange={(event) => setAwayTeam(event.target.value)} required />
                 </label>
               </div>
+              <fieldset className="market-odds-entry">
+                <legend>Market odds <span>Optional</span></legend>
+                <p>Enter all three decimal prices to use margin-removed market probabilities.</p>
+                <div className="market-odds-fields">
+                  <label>
+                    <span>Home</span>
+                    <input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => setOddsHome(event.target.value)} />
+                  </label>
+                  <label>
+                    <span>Draw</span>
+                    <input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => setOddsDraw(event.target.value)} />
+                  </label>
+                  <label>
+                    <span>Away</span>
+                    <input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => setOddsAway(event.target.value)} />
+                  </label>
+                </div>
+              </fieldset>
               <button className="primary-button" disabled={loading} type="submit">
                 {loading ? "Training model…" : "Generate forecast"}<span>→</span>
               </button>
-              <p className="training-note">The first forecast trains and caches the league models in memory.</p>
+              <p className="training-note">Without odds, the forecast uses the model. With all three prices, it uses market-implied probabilities.</p>
             </form>
 
             {error && <div className="message error-message">{error}</div>}
@@ -199,7 +236,9 @@ function App() {
                   ))}
                 </div>
                 <div className="freshness">
-                  <span>Model: {prediction.model_policy.replaceAll("_", " ")}</span>
+                  <span>{prediction.model_policy === "market_implied_odds"
+                    ? "Forecast source: Market odds · margin removed"
+                    : `Forecast source: Model · ${prediction.model_policy.replaceAll("_", " ")}`}</span>
                   <span>History through {prediction.history_through} · {prediction.history_age_days} days old</span>
                 </div>
               </div>
