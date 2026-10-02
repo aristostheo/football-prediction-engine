@@ -9,7 +9,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from football_predictor.market import compare_models_to_closing_market, load_market_odds_csv
+from football_predictor.market import (
+    compare_market_assisted_walk_forward,
+    compare_models_to_closing_market,
+    load_market_odds_csv,
+)
 from football_predictor.models import (
     compare_models_chronologically,
     compare_models_walk_forward,
@@ -36,9 +40,16 @@ def main() -> None:
             "(canonical columns or Footiqo 1X2 export columns)"
         ),
     )
+    parser.add_argument(
+        "--market-assist",
+        action="store_true",
+        help="evaluate an odds/model blend with its weight selected from earlier forecasts",
+    )
     args = parser.parse_args()
 
     features = pd.read_csv(args.input)
+    if args.market_assist and not args.market_odds:
+        parser.error("--market-assist requires --market-odds")
     if args.market_odds:
         if not args.walk_forward:
             parser.error("--market-odds requires --walk-forward")
@@ -46,7 +57,10 @@ def main() -> None:
             [load_market_odds_csv(path) for path in args.market_odds],
             ignore_index=True,
         )
-        comparison = compare_models_to_closing_market(features, odds)
+        if args.market_assist:
+            comparison = compare_market_assisted_walk_forward(features, odds)
+        else:
+            comparison = compare_models_to_closing_market(features, odds)
     elif args.walk_forward:
         comparison = compare_models_walk_forward(features)
     else:
