@@ -71,6 +71,22 @@ Build the historical features as in the model-comparison guide, then run:
 The JSON output is aggregate scores and uncertainty only; the odds rows and
 source file stay local.
 
+To evaluate a market-assisted policy, add `--market-assist`:
+
+    uv run python -m football_predictor.model_cli \
+      --input /tmp/historical_match_features.csv \
+      --walk-forward \
+      --market-odds /path/to/premier_league_odds.csv /path/to/greece_odds.csv \
+      --market-assist
+
+For each test season, this selects a single market weight using only earlier
+out-of-fold forecasts with usable odds, then scores that fixed weight on the
+test season. At least 400 earlier matched forecasts from two season blocks are
+required. The live prediction form accepts optional decimal home, draw, and
+away prices; all three must be supplied together. It removes the overround
+and returns market-implied probabilities. The no-odds path continues to use
+the model.
+
 ## Benchmark snapshot (2026-10-02)
 
 The attached Footiqo exports were matched against the same complete-season
@@ -108,3 +124,26 @@ as an independent improvement. In particular, do not tune against these
 test-season odds and then report the same seasons as untouched evaluation.
 This is a single-provider benchmark, not a multi-bookmaker consensus, and the
 small number of season blocks makes the uncertainty intervals coarse.
+
+## Sequential market-assist check (2026-10-02)
+
+The market weight was selected by log loss using only earlier out-of-fold
+forecasts, requiring at least 400 prior matched fixtures across two season
+blocks. The most recent four eligible Premier League seasons and two eligible
+Greek seasons were scored. Every fold selected a market weight of 1.00, so the
+market-assisted score is identical to the closing-market score. This is
+evidence to expose market-implied probabilities as an optional forecast when
+users have odds; it is not evidence that a model/market blend improves on the
+odds alone.
+
+| Competition | Test seasons | Matches | Model log loss | Closing odds log loss | Selected market weight |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Premier League | 2022-23 to 2025-26 | 1,520 | 0.9781 | 0.9616 | 1.00 on all 4 folds |
+| Greece Super League | 2023-24 to 2024-25 | 361 | 1.0001 | 0.9252 | 1.00 on both folds |
+
+For this sequential evaluation, the deployed-style comparison is Elo/Poisson
+blend for the Premier League and Elo for Greece. The test fixture sets are
+limited to seasons with enough earlier data to choose a market weight; they
+therefore differ from the broader benchmark table above. Odds remain local,
+and these historical outcomes were used for development decisions, so they
+are not an untouched future test.
