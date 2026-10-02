@@ -60,6 +60,12 @@ input { width: 100%; border: 1px solid #d6dcd2; border-radius: 12px; background:
 input:focus { border-color: #4a6959; box-shadow: 0 0 0 3px rgba(74,105,89,.1); }
 .date-field { margin-bottom: 14px; }
 .team-fields { display: grid; grid-template-columns: 1fr 30px 1fr; gap: 8px; align-items: end; }
+.market-odds-entry { min-width: 0; margin: 16px 0 0; padding: 12px; border: 1px solid #d9ded5; border-radius: 12px; }
+.market-odds-entry legend { padding: 0 5px; color: #39463e; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.market-odds-entry legend span { margin-left: 5px; color: #909891; font-weight: 500; }
+.market-odds-entry p { margin: 0 0 10px; color: #818a83; font-size: 10px; line-height: 1.5; }
+.market-odds-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.market-odds-fields input { padding: 10px 9px; }
 .versus { display: grid; place-items: center; height: 46px; color: #929b95; font: 500 10px "DM Mono", monospace; }
 .primary-button { width: 100%; margin-top: 18px; border: 0; border-radius: 13px; padding: 15px 18px; display: flex; align-items: center; justify-content: space-between; background: #0b1812; color: #fff; cursor: pointer; font-weight: 700; }
 .primary-button span { color: var(--lime); font-size: 20px; }
