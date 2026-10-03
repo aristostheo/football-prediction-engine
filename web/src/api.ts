@@ -40,6 +40,16 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
     home_venue_points_per_match: number;
     away_venue_points_per_match: number;
   };
+  components: {
+    elo_probabilities: [number, number, number];
+    goal_probabilities: [number, number, number] | null;
+    core_model_probabilities: [number, number, number];
+    home_goal_rate: number | null;
+    away_goal_rate: number | null;
+    elo_weight: number;
+    base_model_weight: number;
+    league_prior_probabilities: [number, number, number] | null;
+  };
 }
 
 export interface LiveFixture {

@@ -54,6 +54,7 @@ class MatchPrediction:
     model_probabilities: tuple[float, float, float]
     market_probabilities: tuple[float, float, float] | None
     context: PredictionContext
+    components: PredictionComponents
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,19 @@ class PredictionContext:
     away_form_goals_against_per_match: float
     home_venue_points_per_match: float
     away_venue_points_per_match: float
+
+@dataclass(frozen=True)
+class PredictionComponents:
+    """Probability components and weights that produce the model forecast."""
+
+    elo_probabilities: tuple[float, float, float]
+    goal_probabilities: tuple[float, float, float] | None
+    core_model_probabilities: tuple[float, float, float]
+    home_goal_rate: float | None
+    away_goal_rate: float | None
+    elo_weight: float
+    base_model_weight: float
+    league_prior_probabilities: tuple[float, float, float] | None
 
 
 class PredictionEngine:
@@ -191,24 +205,38 @@ class PredictionEngine:
             away_venue_points_per_match=float(feature["away_away_points_per_match"]),
         )
         elo = add_elo_probabilities(fixture_features)
+        elo_probabilities = _probability_tuple(elo.iloc[0])
         home_model, away_model = self._poisson_models[competition]
         home_rate = float(home_model.predict(fixture_features[list(FEATURE_COLUMNS)])[0])
         away_rate = float(away_model.predict(fixture_features[list(FEATURE_COLUMNS)])[0])
         poisson = fixture_features.copy()
-        for column, value in _outcome_probabilities_from_goal_rates(home_rate, away_rate).items():
+        goal_probability_frame = _outcome_probabilities_from_goal_rates(home_rate, away_rate)
+        for column, value in goal_probability_frame.items():
             poisson[column] = value
-
+        goal_probabilities = _probability_tuple(poisson.iloc[0])
+        elo_weight = 1.0
         if fixture.competition is Competition.PREMIER_LEAGUE:
-            probabilities = blend_probabilities(elo, poisson, elo_weight=0.25)
+            elo_weight = 0.25
+            probabilities = blend_probabilities(elo, poisson, elo_weight=elo_weight)
             policy = "elo_poisson_25_75"
         else:
             probabilities = elo
             policy = "elo"
+        core_model_probabilities = _probability_tuple(probabilities.iloc[0])
+        base_model_weight = 1.0
+        prior_probabilities = None
         if unknown_teams:
+            prior = self._outcome_priors[competition]
+            prior_probabilities = (
+                prior["p_home_win"],
+                prior["p_draw"],
+                prior["p_away_win"],
+            )
+            base_model_weight = PROMOTED_TEAM_MODEL_WEIGHT
             probabilities = _shrink_to_prior(
                 probabilities,
-                self._outcome_priors[competition],
-                model_weight=PROMOTED_TEAM_MODEL_WEIGHT,
+                prior,
+                model_weight=base_model_weight,
             )
             policy = f"{policy}_promoted_prior"
         prediction = probabilities.iloc[0]
@@ -234,6 +262,24 @@ class PredictionEngine:
             model_probabilities=model_probabilities,
             market_probabilities=market_probabilities,
             context=context,
+            components=PredictionComponents(
+                elo_probabilities=elo_probabilities,
+                goal_probabilities=(
+                    goal_probabilities
+                    if fixture.competition is Competition.PREMIER_LEAGUE
+                    else None
+                ),
+                core_model_probabilities=core_model_probabilities,
+                home_goal_rate=(
+                    home_rate if fixture.competition is Competition.PREMIER_LEAGUE else None
+                ),
+                away_goal_rate=(
+                    away_rate if fixture.competition is Competition.PREMIER_LEAGUE else None
+                ),
+                elo_weight=elo_weight,
+                base_model_weight=base_model_weight,
+                league_prior_probabilities=prior_probabilities,
+            ),
         )
 
     def latest_result_date(self, competition: Competition) -> date:
@@ -264,6 +310,14 @@ class PredictionEngine:
             away_team=fixture.away_team,
             final_states=final_states or self._final_states,
         )
+
+
+def _probability_tuple(values: pd.Series) -> tuple[float, float, float]:
+    return (
+        float(values["p_home_win"]),
+        float(values["p_draw"]),
+        float(values["p_away_win"]),
+    )
 
 
 def _smoothed_outcome_prior(results: pd.Series) -> dict[str, float]:

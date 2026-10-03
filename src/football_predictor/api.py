@@ -23,6 +23,7 @@ from football_predictor.live_fixtures import (
 from football_predictor.prediction import (
     FixtureToPredict,
     MatchPrediction,
+    PredictionComponents,
     PredictionContext,
     PredictionEngine,
 )
@@ -90,6 +91,7 @@ class PredictionResponse(BaseModel):
     market_draw_probability: float | None
     market_away_win_probability: float | None
     context: PredictionContext
+    components: PredictionComponents
 
 
 class LiveFixtureResponse(BaseModel):
@@ -237,6 +239,7 @@ def _prediction_response(prediction: MatchPrediction) -> PredictionResponse:
             prediction.market_probabilities[2] if prediction.market_probabilities else None
         ),
         context=prediction.context,
+        components=prediction.components,
     )
 
 

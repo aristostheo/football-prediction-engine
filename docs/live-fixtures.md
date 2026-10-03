@@ -95,6 +95,15 @@ headline probabilities use margin-removed market prices, and the model-only
 probabilities remain visible separately. Injuries, lineups, weather, and odds
 are not features in the current model.
 
+The response's `components` object makes the model calculation auditable. For
+Premier League forecasts it returns the Elo and goal-model outcome distributions,
+the expected-goal rates, their 25%/75% weights, and the combined model
+probabilities. For Greece it returns the Elo distribution used by the current
+policy. If a club has no recorded results, it also returns the pre-adjustment
+core probabilities, league prior, and 50%/50% mixture weight. These components
+show how the model assembled its output; they are not causal effects of
+individual features.
+
 ## Team-name coverage
 
 `team_names.py` includes every club label in the bundled history and aliases

@@ -11,6 +11,7 @@ from football_predictor.live_fixtures import LiveFixture
 from football_predictor.prediction import (
     FixtureToPredict,
     MatchPrediction,
+    PredictionComponents,
     PredictionContext,
     PredictionEngine,
 )
@@ -30,6 +31,16 @@ class StubEngine:
             model_probabilities=(0.5, 0.25, 0.25),
             market_probabilities=None,
             context=PredictionContext(home_elo=1500, away_elo=1500, home_form_matches=5, away_form_matches=5, home_form_points_per_match=1.5, away_form_points_per_match=1.2, home_form_goals_for_per_match=1.4, away_form_goals_for_per_match=1.1, home_form_goals_against_per_match=1.0, away_form_goals_against_per_match=1.3, home_venue_points_per_match=1.8, away_venue_points_per_match=1.0),
+            components=PredictionComponents(
+                elo_probabilities=(0.5, 0.25, 0.25),
+                goal_probabilities=None,
+                core_model_probabilities=(0.5, 0.25, 0.25),
+                home_goal_rate=None,
+                away_goal_rate=None,
+                elo_weight=1.0,
+                base_model_weight=1.0,
+                league_prior_probabilities=None,
+            ),
         )
 
     def find_results(self, fixtures):  # type: ignore[no-untyped-def]
@@ -103,6 +114,7 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
     assert prediction.home_win_probability == 0.5
     assert prediction.model_home_win_probability == 0.5
     assert prediction.context.home_elo == 1500
+    assert prediction.components.elo_probabilities == (0.5, 0.25, 0.25)
 
     results = routes["/scorecard/results"](
         ScorecardResultsRequest(

@@ -32,6 +32,10 @@ function perMatch(value: number): string {
   return value.toFixed(2);
 }
 
+function outcomeSummary(values: [number, number, number]): string {
+  return `Home ${percent(values[0])} · Draw ${percent(values[1])} · Away ${percent(values[2])}`;
+}
+
 function App() {
   const [competition, setCompetition] = useState<Competition>("premier_league");
   const [fixtureDate, setFixtureDate] = useState(today());
@@ -330,6 +334,37 @@ function App() {
                     <strong>Home at home {perMatch(prediction.context.home_venue_points_per_match)} · away away {perMatch(prediction.context.away_venue_points_per_match)}</strong>
                   </div>
                   <small>The current version does not use injuries, lineups, weather, or live odds as model inputs.</small>
+                </div>
+                <div className="component-panel">
+                  <h3>How the model builds its probabilities</h3>
+                  {prediction.components.goal_probabilities ? (
+                    <>
+                      <p>The Premier League model combines these two probability sets using the displayed weights.</p>
+                      <div className="context-grid">
+                        <span>Elo component ({percent(prediction.components.elo_weight)})</span>
+                        <strong>{outcomeSummary(prediction.components.elo_probabilities)}</strong>
+                        <span>Goal model ({percent(1 - prediction.components.elo_weight)})</span>
+                        <strong>{outcomeSummary(prediction.components.goal_probabilities)}</strong>
+                        <span>Expected goals · home / away</span>
+                        <strong>{prediction.components.home_goal_rate?.toFixed(2)} / {prediction.components.away_goal_rate?.toFixed(2)}</strong>
+                        <span>Combined model probabilities</span>
+                        <strong>{outcomeSummary(prediction.components.core_model_probabilities)}</strong>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p>The Greek model uses the Elo probability set directly, including home advantage.</p>
+                      <div className="context-grid">
+                        <span>Elo model probabilities</span>
+                        <strong>{outcomeSummary(prediction.components.elo_probabilities)}</strong>
+                      </div>
+                    </>
+                  )}
+                  {prediction.components.league_prior_probabilities && (
+                    <p className="component-prior">
+                      Promoted-team adjustment: {percent(prediction.components.base_model_weight)} core model ({outcomeSummary(prediction.components.core_model_probabilities)}) + {percent(1 - prediction.components.base_model_weight)} league prior ({outcomeSummary(prediction.components.league_prior_probabilities)}) = model probabilities ({outcomeSummary([prediction.model_home_win_probability, prediction.model_draw_probability, prediction.model_away_probability])}).
+                    </p>
+                  )}
                 </div>
                 {trackingNotice && <p className="scorecard-note">{trackingNotice}</p>}
               </div>

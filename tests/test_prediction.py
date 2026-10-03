@@ -61,6 +61,19 @@ def test_market_odds_use_margin_removed_probabilities(
     assert prediction.away_win_probability == pytest.approx(3 / 13)
     assert prediction.market_probabilities == pytest.approx((6 / 13, 4 / 13, 3 / 13))
     assert sum(prediction.model_probabilities) == pytest.approx(1.0)
+    components = prediction.components
+    assert components.elo_weight == pytest.approx(0.25)
+    assert components.goal_probabilities is not None
+    assert components.home_goal_rate is not None and components.home_goal_rate > 0
+    assert components.away_goal_rate is not None and components.away_goal_rate > 0
+    assert prediction.model_probabilities == pytest.approx(
+        tuple(
+            0.25 * elo + 0.75 * goal
+            for elo, goal in zip(
+                components.elo_probabilities, components.goal_probabilities, strict=True
+            )
+        )
+    )
     assert 0 <= prediction.context.home_form_matches <= 5
     assert 0 <= prediction.context.away_form_matches <= 5
     assert prediction.context.home_elo > 0
@@ -154,6 +167,9 @@ def test_predict_resolves_greek_provider_names(
     )
     assert prediction.fixture.home_team == expected_home
     assert prediction.fixture.away_team == expected_away
+    assert prediction.components.goal_probabilities is None
+    assert prediction.components.elo_weight == pytest.approx(1.0)
+    assert prediction.model_probabilities == pytest.approx(prediction.components.elo_probabilities)
     assert sum(
         (
             prediction.home_win_probability,
@@ -207,6 +223,18 @@ def test_recognized_team_without_history_uses_a_conservative_prior() -> None:
 
     assert prediction.model_policy == "elo_promoted_prior"
     assert prediction.fixture.home_team == "Kalamata"
+    assert prediction.components.league_prior_probabilities is not None
+    assert prediction.components.base_model_weight == pytest.approx(0.5)
+    assert prediction.model_probabilities == pytest.approx(
+        tuple(
+            0.5 * core + 0.5 * prior
+            for core, prior in zip(
+                prediction.components.core_model_probabilities,
+                prediction.components.league_prior_probabilities,
+                strict=True,
+            )
+        )
+    )
     assert sum(
         (
             prediction.home_win_probability,
