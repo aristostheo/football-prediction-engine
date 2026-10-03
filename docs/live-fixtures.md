@@ -56,8 +56,8 @@ not included in the prospective scorecard because their timing cannot be
 verified.
 
 The scorecard looks up completed outcomes in the bundled dataset after a
-refresh and reports log loss, Brier score, ranked probability score, and
-accuracy. If odds were entered, it scores the model and margin-removed market
+refresh and reports log loss, Brier score, ranked probability score, classwise
+calibration error, and accuracy. If odds were entered, it scores the model and margin-removed market
 probabilities on the same fixtures. Re-forecasting a fixture replaces its
 saved entry, so the scorecard uses the latest timestamped forecast before
 kickoff. The live sample is exploratory; historical walk-forward results
@@ -76,6 +76,10 @@ the league's training-period outcome rates; the `model_policy` response marks
 this with `_promoted_prior`. Unregistered names remain rejected. Results can be
 refreshed weekly from OpenFootball; explicit mapping through provider team IDs
 remains future hardening work.
+
+The live calibration gap is a five-bin, classwise expected calibration error over
+home-win, draw, and away-win probabilities; lower is better. It is descriptive
+only, and can move substantially with a small prospective sample.
 
 ## Forecast context
 

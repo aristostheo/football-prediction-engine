@@ -1,4 +1,4 @@
-import { MatchOutcome, Prediction } from "./api";
+import type { MatchOutcome, Prediction } from "./api";
 
 const STORAGE_KEY = "match-forecast.prospective-scorecard.v1";
 const MAX_FORECASTS = 1000;
@@ -22,6 +22,7 @@ export interface ScoreMetrics {
   logLoss: number;
   brier: number;
   rankedProbabilityScore: number;
+  calibrationError: number;
   accuracy: number;
 }
 
@@ -100,6 +101,7 @@ export function calculateMetrics(
   let logLoss = 0;
   let brier = 0;
   let rankedProbabilityScore = 0;
+  let calibrationError = 0;
   let correct = 0;
   for (const { actual, probs } of scored) {
     const actualIndex = outcomeIndex[actual];
@@ -115,13 +117,36 @@ export function calculateMetrics(
     ) / 2;
     if (probs.indexOf(Math.max(...probs)) === actualIndex) correct += 1;
   }
+  const binCount = 5;
+  for (let outcomeIndex = 0; outcomeIndex < 3; outcomeIndex += 1) {
+    for (let bin = 0; bin < binCount; bin += 1) {
+      const lower = bin / binCount;
+      const upper = (bin + 1) / binCount;
+      const members = scored.filter(({ probs }) => (
+        probs[outcomeIndex] >= lower
+        && (probs[outcomeIndex] < upper || (bin === binCount - 1 && probs[outcomeIndex] <= upper))
+      ));
+      if (!members.length) continue;
+      const meanProbability = members.reduce((sum, item) => sum + item.probs[outcomeIndex], 0)
+        / members.length;
+      const observedRate = members.filter((item) => outcomeIndex === outcomeIndexOf(item.actual))
+        .length / members.length;
+      calibrationError += members.length / (scored.length * 3)
+        * Math.abs(meanProbability - observedRate);
+    }
+  }
   return {
     count: scored.length,
     logLoss: logLoss / scored.length,
     brier: brier / scored.length,
     rankedProbabilityScore: rankedProbabilityScore / scored.length,
+    calibrationError,
     accuracy: correct / scored.length,
   };
+}
+
+function outcomeIndexOf(outcome: MatchOutcome): number {
+  return outcome === "H" ? 0 : outcome === "D" ? 1 : 2;
 }
 
 function isStoredForecast(value: unknown): value is StoredForecast {

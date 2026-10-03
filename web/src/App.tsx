@@ -449,7 +449,7 @@ function App() {
           ) : (
             <div className="scorecard-empty">Select a future fixture from the live-fixtures list, then generate a forecast to start tracking.</div>
           )}
-          <p className="scorecard-footnote">A small live sample is noisy; wait for more settled matches before drawing conclusions. History updates are checked weekly.</p>
+          <p className="scorecard-footnote">A small live sample is noisy; wait for more settled matches before drawing conclusions. Calibration gap is a five-bin, three-outcome expected calibration error (lower is better). History updates are checked weekly.</p>
         </section>
       </main>
 
@@ -470,6 +470,7 @@ function ScorecardCard({ title, metrics }: { title: string; metrics: ReturnType<
         <div className="metric-row"><span>Log loss</span><strong>{metrics.logLoss.toFixed(3)}</strong></div>
         <div className="metric-row"><span>Brier score</span><strong>{metrics.brier.toFixed(3)}</strong></div>
         <div className="metric-row"><span>Ranked probability score</span><strong>{metrics.rankedProbabilityScore.toFixed(3)}</strong></div>
+        <div className="metric-row" title="Five-bin classwise expected calibration error; lower is better."><span>Calibration gap (ECE)</span><strong>{metrics.calibrationError.toFixed(3)}</strong></div>
         <div className="metric-row"><span>Accuracy</span><strong>{percent(metrics.accuracy)}</strong></div>
       </> : <p>Scores appear after tracked fixtures have completed and results are refreshed.</p>}
     </article>
