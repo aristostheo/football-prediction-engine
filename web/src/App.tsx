@@ -314,7 +314,10 @@ function App() {
                 <div className="context-panel">
                   <h3>What informs the model</h3>
                   <p>
-                    Pre-match snapshot through {prediction.history_through}. The {prediction.competition === "premier_league" ? "Premier League model combines Elo with recent-form and goal-rate features" : "Greek league model uses Elo ratings, which summarize past results"}. Home advantage is included in the rating comparison. Other figures give context; they are not individual causal explanations.
+                    {prediction.competition === "premier_league"
+                      ? `Premier League probabilities combine Elo with a Poisson goal model. Both use pre-match history; the goal model also uses recent form, scoring/conceding rates, venue form, and rest. This summary does not assign an exact probability change to each factor.`
+                      : "Greek league probabilities currently use team Elo ratings and home advantage. The form, goal, and venue figures below are context only; they do not directly change these probabilities."}
+                    {` Snapshot through ${prediction.history_through}.`}
                   </p>
                   <div className="context-grid">
                     <span>Team strength (Elo)</span>
