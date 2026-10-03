@@ -53,6 +53,25 @@ class MatchPrediction:
     forecasted_at: datetime
     model_probabilities: tuple[float, float, float]
     market_probabilities: tuple[float, float, float] | None
+    context: PredictionContext
+
+
+@dataclass(frozen=True)
+class PredictionContext:
+    """Observed pre-match inputs shown to users; not a causal attribution."""
+
+    home_elo: float
+    away_elo: float
+    home_form_matches: int
+    away_form_matches: int
+    home_form_points_per_match: float
+    away_form_points_per_match: float
+    home_form_goals_for_per_match: float
+    away_form_goals_for_per_match: float
+    home_form_goals_against_per_match: float
+    away_form_goals_against_per_match: float
+    home_venue_points_per_match: float
+    away_venue_points_per_match: float
 
 
 class PredictionEngine:
@@ -156,6 +175,21 @@ class PredictionEngine:
         for team in unknown_teams:
             fixture_states[(competition, team)] = TeamState(elo=PROMOTED_TEAM_START_ELO)
         fixture_features = self._fixture_features(canonical_fixture, fixture_states)
+        feature = fixture_features.iloc[0]
+        context = PredictionContext(
+            home_elo=float(feature["home_elo"]),
+            away_elo=float(feature["away_elo"]),
+            home_form_matches=int(feature["home_matches_played"]),
+            away_form_matches=int(feature["away_matches_played"]),
+            home_form_points_per_match=float(feature["home_form_points_per_match"]),
+            away_form_points_per_match=float(feature["away_form_points_per_match"]),
+            home_form_goals_for_per_match=float(feature["home_form_goals_for_per_match"]),
+            away_form_goals_for_per_match=float(feature["away_form_goals_for_per_match"]),
+            home_form_goals_against_per_match=float(feature["home_form_goals_against_per_match"]),
+            away_form_goals_against_per_match=float(feature["away_form_goals_against_per_match"]),
+            home_venue_points_per_match=float(feature["home_home_points_per_match"]),
+            away_venue_points_per_match=float(feature["away_away_points_per_match"]),
+        )
         elo = add_elo_probabilities(fixture_features)
         home_model, away_model = self._poisson_models[competition]
         home_rate = float(home_model.predict(fixture_features[list(FEATURE_COLUMNS)])[0])
@@ -199,6 +233,7 @@ class PredictionEngine:
             forecasted_at=forecasted_at,
             model_probabilities=model_probabilities,
             market_probabilities=market_probabilities,
+            context=context,
         )
 
     def latest_result_date(self, competition: Competition) -> date:

@@ -61,6 +61,10 @@ def test_market_odds_use_margin_removed_probabilities(
     assert prediction.away_win_probability == pytest.approx(3 / 13)
     assert prediction.market_probabilities == pytest.approx((6 / 13, 4 / 13, 3 / 13))
     assert sum(prediction.model_probabilities) == pytest.approx(1.0)
+    assert 0 <= prediction.context.home_form_matches <= 5
+    assert 0 <= prediction.context.away_form_matches <= 5
+    assert prediction.context.home_elo > 0
+    assert prediction.context.away_elo > 0
 
 
 def test_prediction_rejects_a_kickoff_that_has_already_passed(

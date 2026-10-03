@@ -28,6 +28,10 @@ function percent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function perMatch(value: number): string {
+  return value.toFixed(2);
+}
+
 function App() {
   const [competition, setCompetition] = useState<Competition>("premier_league");
   const [fixtureDate, setFixtureDate] = useState(today());
@@ -300,6 +304,29 @@ function App() {
                     ? "Forecast source: Market odds · margin removed"
                     : `Forecast source: Model · ${prediction.model_policy.replaceAll("_", " ")}`}</span>
                   <span>History through {prediction.history_through} · {prediction.history_age_days} days old</span>
+                </div>
+                {prediction.model_policy === "market_implied_odds" && (
+                  <p className="model-market-note">
+                    Model-only probabilities: {percent(prediction.model_home_win_probability)} home · {percent(prediction.model_draw_probability)} draw · {percent(prediction.model_away_probability)} away.
+                    The headline probabilities above come from the odds.
+                  </p>
+                )}
+                <div className="context-panel">
+                  <h3>What informs the model</h3>
+                  <p>
+                    Pre-match snapshot through {prediction.history_through}. The {prediction.competition === "premier_league" ? "Premier League model combines Elo with recent-form and goal-rate features" : "Greek league model uses Elo ratings, which summarize past results"}. Home advantage is included in the rating comparison. Other figures give context; they are not individual causal explanations.
+                  </p>
+                  <div className="context-grid">
+                    <span>Team strength (Elo)</span>
+                    <strong>{prediction.home_team} {prediction.context.home_elo.toFixed(0)} · {prediction.context.away_elo.toFixed(0)} {prediction.away_team}</strong>
+                    <span>Recent form · points per match</span>
+                    <strong>{perMatch(prediction.context.home_form_points_per_match)} ({prediction.context.home_form_matches} matches) · {perMatch(prediction.context.away_form_points_per_match)} ({prediction.context.away_form_matches} matches)</strong>
+                    <span>Recent goals · scored / conceded per match</span>
+                    <strong>{perMatch(prediction.context.home_form_goals_for_per_match)} / {perMatch(prediction.context.home_form_goals_against_per_match)} · {perMatch(prediction.context.away_form_goals_for_per_match)} / {perMatch(prediction.context.away_form_goals_against_per_match)}</strong>
+                    <span>Venue form · points per match</span>
+                    <strong>Home at home {perMatch(prediction.context.home_venue_points_per_match)} · away away {perMatch(prediction.context.away_venue_points_per_match)}</strong>
+                  </div>
+                  <small>The current version does not use injuries, lineups, weather, or live odds as model inputs.</small>
                 </div>
                 {trackingNotice && <p className="scorecard-note">{trackingNotice}</p>}
               </div>

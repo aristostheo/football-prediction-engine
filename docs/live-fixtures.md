@@ -77,6 +77,20 @@ this with `_promoted_prior`. Unregistered names remain rejected. Results can be
 refreshed weekly from OpenFootball; explicit mapping through provider team IDs
 remains future hardening work.
 
+## Forecast context
+
+`POST /predict` also returns a `context` object with both teams' Elo ratings,
+last-five (or fewer, after a long gap) points and goal rates, and home/away
+venue points per match. The dashboard shows this snapshot alongside the
+probabilities. These values describe the pre-match inputs; they are not an
+exact causal decomposition of the predicted probability. The Premier League
+policy combines Elo with recent-form and goal-rate features. The current Greek
+policy uses Elo only; its recent-form and venue figures are contextual. Home
+advantage is included in the Elo comparison. If three odds are entered, the
+headline probabilities use margin-removed market prices, and the model-only
+probabilities remain visible separately. Injuries, lineups, weather, and odds
+are not features in the current model.
+
 ## Team-name coverage
 
 `team_names.py` includes every club label in the bundled history and aliases

@@ -20,7 +20,12 @@ from football_predictor.live_fixtures import (
     LiveFixture,
     fixture_provider_from_environment,
 )
-from football_predictor.prediction import FixtureToPredict, MatchPrediction, PredictionEngine
+from football_predictor.prediction import (
+    FixtureToPredict,
+    MatchPrediction,
+    PredictionContext,
+    PredictionEngine,
+)
 
 
 class PredictionRequest(BaseModel):
@@ -84,6 +89,7 @@ class PredictionResponse(BaseModel):
     market_home_win_probability: float | None
     market_draw_probability: float | None
     market_away_win_probability: float | None
+    context: PredictionContext
 
 
 class LiveFixtureResponse(BaseModel):
@@ -230,6 +236,7 @@ def _prediction_response(prediction: MatchPrediction) -> PredictionResponse:
         market_away_win_probability=(
             prediction.market_probabilities[2] if prediction.market_probabilities else None
         ),
+        context=prediction.context,
     )
 
 

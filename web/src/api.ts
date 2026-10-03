@@ -26,6 +26,20 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
   market_home_win_probability: number | null;
   market_draw_probability: number | null;
   market_away_probability: number | null;
+  context: {
+    home_elo: number;
+    away_elo: number;
+    home_form_matches: number;
+    away_form_matches: number;
+    home_form_points_per_match: number;
+    away_form_points_per_match: number;
+    home_form_goals_for_per_match: number;
+    away_form_goals_for_per_match: number;
+    home_form_goals_against_per_match: number;
+    away_form_goals_against_per_match: number;
+    home_venue_points_per_match: number;
+    away_venue_points_per_match: number;
+  };
 }
 
 export interface LiveFixture {
