@@ -89,6 +89,20 @@ export async function predictMatch(request: PredictionRequest): Promise<Predicti
   return parseResponse<Prediction>(response);
 }
 
+export async function getTeams(competition: Competition): Promise<string[]> {
+  const response = await fetch(`${API_ROOT}/teams?${new URLSearchParams({ competition })}`);
+  return parseResponse<string[]>(response);
+}
+
+export async function getNextFixture(
+  competition: Competition,
+  fromDate: string,
+): Promise<LiveFixture | null> {
+  const params = new URLSearchParams({ competition, from: fromDate, days_ahead: "21" });
+  const response = await fetch(`${API_ROOT}/fixtures/next?${params}`);
+  return parseResponse<LiveFixture | null>(response);
+}
+
 export async function getFixtures(
   competition: Competition,
   fixtureDate: string,

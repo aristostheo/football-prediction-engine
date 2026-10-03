@@ -13,6 +13,15 @@ uv run uvicorn football_predictor.api:app --reload
 - `POST /predict` accepts canonical names or registered club aliases and a fixture date after
   the local historical dataset's final result.
 
+- `GET /fixtures/next?competition=...&from=YYYY-MM-DD` checks upcoming dates in order and returns the earliest future fixture in its three-week search window.
+- `GET /teams?competition=...` returns teams from that league's most recent recorded season for searchable hypothetical matchups.
+
+The dashboard opens on the next scheduled match for the selected league. Use
+**Explore matchup** to choose any two teams from searchable league-specific
+options. Those forecasts use the latest available results and are labeled
+hypothetical. Odds are optional and collapsed until requested. If no fixture is
+found in the initial three-week window, users can search the following window.
+
 ## Provider decision
 
 V1 prefers the optional [Goal API](https://goal-api.com/) adapter for current
@@ -51,9 +60,8 @@ The dashboard records timestamped forecasts only when an upcoming fixture has
 an exact timezone-aware kickoff time, which comes from live fixture discovery.
 Records stay in that browser's local storage; they are not uploaded as user
 history or shared across browsers. Forecast requests that arrive after kickoff
-are rejected. Manually entered date-only predictions remain available but are
-not included in the prospective scorecard because their timing cannot be
-verified.
+are rejected. Hypothetical matchup forecasts have no scheduled kickoff and are
+not included in the prospective scorecard.
 
 The scorecard looks up completed outcomes in the bundled dataset after a
 refresh and reports log loss, Brier score, ranked probability score, classwise

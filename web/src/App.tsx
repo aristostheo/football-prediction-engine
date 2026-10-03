@@ -1,8 +1,9 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useState } from "react";
 import {
   Competition,
-  getFixtures,
+  getNextFixture,
   getScorecardResults,
+  getTeams,
   LiveFixture,
   MatchOutcome,
   predictMatch,
@@ -21,7 +22,26 @@ const METRICS = {
 };
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function dateAfter(value: string, days: number): string {
+  const date = new Date(`${value}T12:00:00`);
+  date.setDate(date.getDate() + days);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function fixtureTime(value: string): string {
+  return new Date(value).toLocaleString([], {
+    weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+  });
 }
 
 function percent(value: number): string {
@@ -36,22 +56,112 @@ function outcomeSummary(values: [number, number, number]): string {
   return `Home ${percent(values[0])} · Draw ${percent(values[1])} · Away ${percent(values[2])}`;
 }
 
+function TeamPicker({
+  label,
+  value,
+  teams,
+  exclude,
+  loading,
+  onSelect,
+}: {
+  label: string;
+  value: string;
+  teams: string[];
+  exclude: string;
+  loading: boolean;
+  onSelect: (team: string) => void;
+}) {
+  const listboxId = useId();
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const filtered = teams
+    .filter((team) => team !== exclude && team.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
+    .slice(0, 8);
+
+  function choose(team: string) {
+    onSelect(team);
+    setQuery("");
+    setOpen(false);
+  }
+
+  return (
+    <label className="team-picker-label">
+      <span>{label}</span>
+      <div className="team-picker">
+        <input
+          role="combobox"
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-label={label}
+          autoComplete="off"
+          placeholder={loading ? "Loading teams…" : "Search teams"}
+          value={query || value}
+          onFocus={() => setOpen(true)}
+          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            onSelect("");
+            setActive(0);
+            setOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setOpen(true);
+              setActive((index) => Math.min(index + 1, Math.max(filtered.length - 1, 0)));
+            } else if (event.key === "ArrowUp") {
+              event.preventDefault();
+              setActive((index) => Math.max(index - 1, 0));
+            } else if (event.key === "Enter" && open && filtered[active]) {
+              event.preventDefault();
+              choose(filtered[active]);
+            } else if (event.key === "Escape") {
+              setOpen(false);
+              setQuery("");
+            }
+          }}
+        />
+        {open && (
+          <div className="team-picker-options" id={listboxId} role="listbox">
+            {filtered.length ? filtered.map((team, index) => (
+              <button
+                aria-selected={index === active}
+                key={team}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => choose(team)}
+                role="option"
+                type="button"
+              >
+                {team}
+              </button>
+            )) : (
+              <span className="team-picker-empty">{loading ? "Loading teams…" : "No matching teams"}</span>
+            )}
+          </div>
+        )}
+      </div>
+    </label>
+  );
+}
+
 function App() {
   const [competition, setCompetition] = useState<Competition>("premier_league");
-  const [fixtureDate, setFixtureDate] = useState(today());
-  const [kickoffAt, setKickoffAt] = useState<string | null>(null);
-  const [homeTeam, setHomeTeam] = useState("Arsenal FC");
-  const [awayTeam, setAwayTeam] = useState("Chelsea FC");
+  const [homeTeam, setHomeTeam] = useState("");
+  const [awayTeam, setAwayTeam] = useState("");
+  const [mode, setMode] = useState<"upcoming" | "explore">("upcoming");
+  const [teamCatalog, setTeamCatalog] = useState<{ competition: Competition; teams: string[]; error?: string } | null>(null);
+  const [nextFixtureResult, setNextFixtureResult] = useState<{ competition: Competition; search: number; fixture: LiveFixture | null; error?: string } | null>(null);
+  const [nextFixtureSearch, setNextFixtureSearch] = useState(0);
+  const [nextFixtureStart, setNextFixtureStart] = useState(today);
   const [oddsHome, setOddsHome] = useState("");
   const [oddsDraw, setOddsDraw] = useState("");
   const [oddsAway, setOddsAway] = useState("");
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [trackingNotice, setTrackingNotice] = useState<string | null>(null);
-  const [fixtures, setFixtures] = useState<LiveFixture[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [fixtureNotice, setFixtureNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [fixturesLoading, setFixturesLoading] = useState(false);
   const [forecastLog, setForecastLog] = useState<StoredForecast[]>(loadForecasts);
   const [settledResults, setSettledResults] = useState<Record<string, MatchOutcome | null>>({});
   const [scorecardLoading, setScorecardLoading] = useState(false);
@@ -67,6 +177,46 @@ function App() {
       })
     return () => { active = false; };
   }, [forecastLog]);
+
+  useEffect(() => {
+    let active = true;
+    getTeams(competition)
+      .then((teams) => {
+        if (!active) return;
+        setTeamCatalog({ competition, teams });
+        setHomeTeam((current) => teams.includes(current) ? current : teams[0] ?? "");
+        setAwayTeam((current) => teams.includes(current) && current !== teams[0] ? current : teams[1] ?? "");
+      })
+      .catch((caught: unknown) => {
+        if (active) setTeamCatalog({ competition, teams: [], error: caught instanceof Error ? caught.message : "Could not load teams." });
+      });
+    return () => { active = false; };
+  }, [competition]);
+
+  const currentTeamCatalog = teamCatalog?.competition === competition ? teamCatalog : null;
+  const teamOptions = currentTeamCatalog?.teams ?? [];
+  const teamsLoading = currentTeamCatalog === null;
+  const teamCatalogError = currentTeamCatalog?.error ?? null;
+
+  useEffect(() => {
+    let active = true;
+    getNextFixture(competition, nextFixtureStart)
+      .then((fixture) => { if (active) setNextFixtureResult({ competition, search: nextFixtureSearch, fixture }); })
+      .catch((caught: unknown) => {
+        const raw = caught instanceof Error ? caught.message : "Upcoming fixtures are unavailable.";
+        const message = raw.includes("must be configured")
+          ? "Live fixture search needs a provider key. You can still explore a matchup."
+          : raw;
+        if (active) setNextFixtureResult({ competition, search: nextFixtureSearch, fixture: null, error: message });
+      });
+    return () => { active = false; };
+  }, [competition, nextFixtureSearch, nextFixtureStart]);
+
+  const currentFixtureResult = nextFixtureResult?.competition === competition
+    && nextFixtureResult.search === nextFixtureSearch ? nextFixtureResult : null;
+  const nextFixture = currentFixtureResult?.fixture ?? null;
+  const nextFixtureError = currentFixtureResult?.error ?? null;
+  const nextFixtureLoading = currentFixtureResult === null;
 
   const scorecardByCompetition = useMemo(
     () => (Object.keys(LEAGUES) as Competition[]).map((key) => {
@@ -106,26 +256,32 @@ function App() {
   );
 
   function changeLeague(next: Competition) {
+    if (next === competition) return;
     setCompetition(next);
-    setKickoffAt(null);
+    setHomeTeam("");
+    setAwayTeam("");
+    setNextFixtureStart(today());
+    setNextFixtureSearch(0);
     setPrediction(null);
+    setError(null);
+    setTrackingNotice(null);
     setOddsHome("");
     setOddsDraw("");
     setOddsAway("");
-    setFixtures([]);
-    setError(null);
-    setFixtureNotice(null);
-    if (next === "premier_league") {
-      setHomeTeam("Arsenal FC");
-      setAwayTeam("Chelsea FC");
-    } else {
-      setHomeTeam("Olympiakos Piraeus");
-      setAwayTeam("PAOK Saloniki");
-    }
   }
 
-  async function submitPrediction(event: FormEvent) {
-    event.preventDefault();
+  function changeMode(next: "upcoming" | "explore") {
+    setMode(next);
+    setPrediction(null);
+    setError(null);
+    setTrackingNotice(null);
+    setOddsHome("");
+    setOddsDraw("");
+    setOddsAway("");
+  }
+
+  async function generateForecast(event?: FormEvent, fixture?: LiveFixture) {
+    event?.preventDefault();
     setError(null);
     setTrackingNotice(null);
     const odds = [oddsHome, oddsDraw, oddsAway];
@@ -134,14 +290,26 @@ function App() {
       setError("Enter all three decimal odds, or leave all three blank.");
       return;
     }
+    const selectedHome = fixture?.home_team ?? homeTeam.trim();
+    const selectedAway = fixture?.away_team ?? awayTeam.trim();
+    if (!selectedHome || !selectedAway) {
+      setError("Choose both teams from the search suggestions.");
+      return;
+    }
+    if (selectedHome === selectedAway) {
+      setError("Choose two different teams.");
+      return;
+    }
+    const selectedKickoff = fixture?.kickoff_at ?? null;
+    const selectedDate = selectedKickoff?.slice(0, 10) ?? today();
     setLoading(true);
     try {
       const nextPrediction = await predictMatch({
         competition,
-        kickoff_date: fixtureDate,
-        ...(kickoffAt ? { kickoff_at: kickoffAt } : {}),
-        home_team: homeTeam.trim(),
-        away_team: awayTeam.trim(),
+        kickoff_date: selectedDate,
+        ...(selectedKickoff ? { kickoff_at: selectedKickoff } : {}),
+        home_team: selectedHome,
+        away_team: selectedAway,
         ...(hasAnyOdds
           ? {
               odds_home: Number(oddsHome),
@@ -153,11 +321,9 @@ function App() {
       setPrediction(nextPrediction);
       if (nextPrediction.kickoff_at && Date.parse(nextPrediction.kickoff_at) > Date.now()) {
         setForecastLog(saveForecast(nextPrediction));
-        setTrackingNotice("Timestamped forecast saved in this browser.");
-      } else if (nextPrediction.kickoff_at) {
-        setTrackingNotice("Kickoff passed before the forecast reached this browser, so it was not tracked.");
+        setTrackingNotice("Forecast saved and will be scored after this scheduled match.");
       } else {
-        setTrackingNotice("Select a fixture from the live list to include it in the prospective scorecard.");
+        setTrackingNotice("Hypothetical matchup · based on the latest available results. It is not tracked in the live scorecard.");
       }
     } catch (caught) {
       setPrediction(null);
@@ -167,29 +333,6 @@ function App() {
     }
   }
 
-  async function loadFixtures() {
-    setFixtureNotice(null);
-    setFixturesLoading(true);
-    try {
-      const nextFixtures = await getFixtures(competition, fixtureDate);
-      setFixtures(nextFixtures);
-      setFixtureNotice(nextFixtures.length ? null : "No scheduled fixtures were returned for this date.");
-    } catch (caught) {
-      setFixtures([]);
-      setFixtureNotice(caught instanceof Error ? caught.message : "Live fixtures are unavailable.");
-    } finally {
-      setFixturesLoading(false);
-    }
-  }
-
-  function chooseFixture(fixture: LiveFixture) {
-    setHomeTeam(fixture.home_team);
-    setAwayTeam(fixture.away_team);
-    setFixtureDate(fixture.kickoff_at.slice(0, 10));
-    setKickoffAt(fixture.kickoff_at);
-    setPrediction(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
 
   return (
     <div className="app-shell">
@@ -200,7 +343,6 @@ function App() {
         </a>
         <nav aria-label="Main navigation">
           <a href="#predict">Predict</a>
-          <a href="#fixtures">Fixtures</a>
           <a href="#performance">Performance</a>
           <a href="#scorecard">Live scorecard</a>
           <a className="github-link" href="https://github.com/aristostheo/football-prediction-engine">GitHub ↗</a>
@@ -246,52 +388,76 @@ function App() {
               ))}
             </div>
 
-            <form onSubmit={submitPrediction}>
-              <label className="date-field">
-                Match date
-                <input type="date" value={fixtureDate} onChange={(event) => { setFixtureDate(event.target.value); setKickoffAt(null); }} required />
-              </label>
-              <div className="team-fields">
-                <label>
-                  <span>Home team</span>
-                  <input value={homeTeam} onChange={(event) => { setHomeTeam(event.target.value); setKickoffAt(null); }} required />
-                </label>
-                <span className="versus">VS</span>
-                <label>
-                  <span>Away team</span>
-                  <input value={awayTeam} onChange={(event) => { setAwayTeam(event.target.value); setKickoffAt(null); }} required />
-                </label>
-              </div>
-              <fieldset className="market-odds-entry">
-                <legend>Market odds <span>Optional</span></legend>
-                <p>Enter all three decimal prices to use margin-removed market probabilities.</p>
-                <div className="market-odds-fields">
-                  <label>
-                    <span>Home</span>
-                    <input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => setOddsHome(event.target.value)} />
-                  </label>
-                  <label>
-                    <span>Draw</span>
-                    <input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => setOddsDraw(event.target.value)} />
-                  </label>
-                  <label>
-                    <span>Away</span>
-                    <input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => setOddsAway(event.target.value)} />
-                  </label>
-                </div>
-              </fieldset>
-              <button className="primary-button" disabled={loading} type="submit">
-                {loading ? "Training model…" : "Generate forecast"}<span>→</span>
+            <div className="forecast-modes" role="group" aria-label="Choose forecast type">
+              <button className={mode === "upcoming" ? "active" : ""} onClick={() => changeMode("upcoming")} aria-pressed={mode === "upcoming"} type="button">
+                Next match
               </button>
-              <p className="training-note">Without odds, the forecast uses the model. With all three prices, it uses market-implied probabilities.</p>
-            </form>
+              <button className={mode === "explore" ? "active" : ""} onClick={() => changeMode("explore")} aria-pressed={mode === "explore"} type="button">
+                Explore matchup
+              </button>
+            </div>
 
-            {error && <div className="message error-message">{error}</div>}
+            {mode === "upcoming" ? (
+              <section className="upcoming-card" aria-live="polite">
+                <div className="upcoming-card-heading">
+                  <div><span className="section-label">Up next · {LEAGUES[competition].short}</span><h3>{LEAGUES[competition].name}</h3></div>
+                  <span className={nextFixtureLoading ? "fixture-status searching" : "fixture-status"}>
+                    {nextFixtureLoading ? "Finding match" : nextFixture ? "Fixture found" : "No fixture"}
+                  </span>
+                </div>
+                {nextFixtureLoading ? (
+                  <div className="upcoming-empty"><span className="search-spinner" /><p>Checking today and upcoming dates…</p></div>
+                ) : nextFixture ? (
+                  <>
+                    <p className="fixture-kickoff">{fixtureTime(nextFixture.kickoff_at)}</p>
+                    <div className="upcoming-teams"><strong>{nextFixture.home_team}</strong><span>vs</span><strong>{nextFixture.away_team}</strong></div>
+                    <button className="primary-button" disabled={loading} onClick={() => void generateForecast(undefined, nextFixture)} type="button">
+                      {loading ? "Generating forecast…" : "Predict this match"}<span>→</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="upcoming-empty">
+                    <p>{nextFixtureError ?? `No upcoming fixture was found from in the next three weeks.`}</p>
+                    {nextFixtureError ? (
+                      <button className="text-button" onClick={() => setNextFixtureSearch((value) => value + 1)} type="button">Try again</button>
+                    ) : (
+                      <button className="text-button" onClick={() => { setNextFixtureStart((value) => dateAfter(value, 21)); setNextFixtureSearch((value) => value + 1); }} type="button">Search the following three weeks →</button>
+                    )}
+                    <button className="text-button" onClick={() => changeMode("explore")} type="button">Explore a matchup instead →</button>
+                  </div>
+                )}
+              </section>
+            ) : (
+              <form className="explore-form" onSubmit={(event) => void generateForecast(event)}>
+                <p className="mode-description">Choose any two teams. This hypothetical forecast uses their latest available results.</p>
+                <div className="team-fields">
+                  <TeamPicker key={`${competition}-home`} label="Home team" value={homeTeam} teams={teamOptions} exclude={awayTeam} loading={teamsLoading} onSelect={(team) => { setHomeTeam(team); setPrediction(null); }} />
+                  <span className="versus">VS</span>
+                  <TeamPicker key={`${competition}-away`} label="Away team" value={awayTeam} teams={teamOptions} exclude={homeTeam} loading={teamsLoading} onSelect={(team) => { setAwayTeam(team); setPrediction(null); }} />
+                </div>
+                <button className="primary-button" disabled={loading || teamsLoading || teamOptions.length < 2} type="submit">
+                  {loading ? "Generating forecast…" : "Generate hypothetical forecast"}<span>→</span>
+                </button>
+              </form>
+            )}
+
+            <details className="odds-details">
+              <summary>Add market odds <span>Optional</span></summary>
+              <p>Enter all three decimal prices to compare with the market. Leave blank to use the model forecast.</p>
+              <div className="market-odds-fields">
+                <label><span>Home</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => setOddsHome(event.target.value)} /></label>
+                <label><span>Draw</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => setOddsDraw(event.target.value)} /></label>
+                <label><span>Away</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => setOddsAway(event.target.value)} /></label>
+              </div>
+              <small>With all three prices entered, headline probabilities use margin-removed market odds.</small>
+            </details>
+
+            {(error || (mode === "explore" && teamCatalogError)) && <div className="message error-message">{error ?? teamCatalogError}</div>}
 
             {prediction && (
               <div className="result-panel" aria-live="polite">
                 <div className="result-title">
-                  <span>Forecast result</span>
+                  <span>Forecast result · {prediction.kickoff_at ? "Scheduled fixture" : "Hypothetical matchup"}</span>
                   <strong>{LEAGUES[prediction.competition].name}</strong>
                 </div>
                 <div className="probabilities">
@@ -367,40 +533,6 @@ function App() {
                   )}
                 </div>
                 {trackingNotice && <p className="scorecard-note">{trackingNotice}</p>}
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="fixtures-section" id="fixtures">
-          <div className="section-intro">
-            <span className="section-label">Fixture discovery</span>
-            <h2>Choose what plays next.</h2>
-            <p>Pull the selected date from the optional live provider, then send a fixture into the predictor.</p>
-          </div>
-          <div className="fixture-browser">
-            <div className="fixture-browser-head">
-              <div><strong>{LEAGUES[competition].name}</strong><span>{fixtureDate}</span></div>
-              <button className="secondary-button" onClick={loadFixtures} disabled={fixturesLoading} type="button">
-                {fixturesLoading ? "Loading…" : "Load live fixtures"}
-              </button>
-            </div>
-            {fixtureNotice && <div className="message">{fixtureNotice}</div>}
-            {fixtures.length > 0 ? (
-              <div className="fixture-list">
-                {fixtures.map((fixture) => (
-                  <button onClick={() => chooseFixture(fixture)} key={fixture.fixture_id} type="button">
-                    <span>{new Date(fixture.kickoff_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                    <strong>{fixture.home_team}<i>vs</i>{fixture.away_team}</strong>
-                    <em>Predict →</em>
-                  </button>
-                ))}
-              </div>
-            ) : !fixtureNotice && (
-              <div className="fixture-empty">
-                <span>⌁</span>
-                <strong>Live fixtures are optional</strong>
-                <p>Manual forecasts above work from the local model. Add a Goal API key to enable this feed.</p>
               </div>
             )}
           </div>
@@ -482,7 +614,7 @@ function App() {
               <small>Showing up to 12 recent forecasts. Re-forecasts replace the saved version for that fixture; the scorecard uses the latest timestamped forecast before kickoff.</small>
             </div>
           ) : (
-            <div className="scorecard-empty">Select a future fixture from the live-fixtures list, then generate a forecast to start tracking.</div>
+            <div className="scorecard-empty">Predict a scheduled upcoming match to start tracking.</div>
           )}
           <p className="scorecard-footnote">A small live sample is noisy; wait for more settled matches before drawing conclusions. Calibration gap is a five-bin, three-outcome expected calibration error (lower is better). History updates are checked weekly.</p>
         </section>

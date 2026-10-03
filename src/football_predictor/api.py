@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import mimetypes
 import os
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from threading import Lock
 
@@ -142,6 +142,35 @@ def create_app(
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    @app.get("/teams", response_model=list[str])
+    def teams(competition: Competition) -> list[str]:
+        try:
+            return get_engine().available_teams(competition)
+        except (FileNotFoundError, ValueError) as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+
+    @app.get("/fixtures/next", response_model=LiveFixtureResponse | None)
+    def next_fixture(
+        competition: Competition,
+        from_date: date = Query(alias="from"),
+        days_ahead: int = Query(default=21, ge=1, le=31),
+    ) -> LiveFixtureResponse | None:
+        now = datetime.now(UTC)
+        try:
+            for offset in range(days_ahead):
+                match_date = from_date + timedelta(days=offset)
+                fixtures_for_day = get_fixture_provider().list_fixtures(competition, match_date)
+                upcoming = [
+                    fixture for fixture in fixtures_for_day
+                    if _as_utc(fixture.kickoff_at) > now
+                ]
+                if upcoming:
+                    first_fixture = min(upcoming, key=lambda item: _as_utc(item.kickoff_at))
+                    return _fixture_response(first_fixture)
+        except FixtureProviderError as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
+        return None
+
     @app.get("/fixtures", response_model=list[LiveFixtureResponse])
     def fixtures(
         competition: Competition,
@@ -200,6 +229,10 @@ def create_app(
             return Response(index_file.read_bytes(), media_type="text/html")
 
     return app
+
+
+def _as_utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
 def _fixture_response(fixture: LiveFixture) -> LiveFixtureResponse:

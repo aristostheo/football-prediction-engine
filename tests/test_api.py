@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -30,7 +30,20 @@ class StubEngine:
             forecasted_at=datetime(2025, 5, 25, tzinfo=UTC),
             model_probabilities=(0.5, 0.25, 0.25),
             market_probabilities=None,
-            context=PredictionContext(home_elo=1500, away_elo=1500, home_form_matches=5, away_form_matches=5, home_form_points_per_match=1.5, away_form_points_per_match=1.2, home_form_goals_for_per_match=1.4, away_form_goals_for_per_match=1.1, home_form_goals_against_per_match=1.0, away_form_goals_against_per_match=1.3, home_venue_points_per_match=1.8, away_venue_points_per_match=1.0),
+            context=PredictionContext(
+                home_elo=1500,
+                away_elo=1500,
+                home_form_matches=5,
+                away_form_matches=5,
+                home_form_points_per_match=1.5,
+                away_form_points_per_match=1.2,
+                home_form_goals_for_per_match=1.4,
+                away_form_goals_for_per_match=1.1,
+                home_form_goals_against_per_match=1.0,
+                away_form_goals_against_per_match=1.3,
+                home_venue_points_per_match=1.8,
+                away_venue_points_per_match=1.0,
+            ),
             components=PredictionComponents(
                 elo_probabilities=(0.5, 0.25, 0.25),
                 goal_probabilities=None,
@@ -42,6 +55,9 @@ class StubEngine:
                 league_prior_probabilities=None,
             ),
         )
+
+    def available_teams(self, competition):  # type: ignore[no-untyped-def]
+        return ["Arsenal FC", "Chelsea FC"]
 
     def find_results(self, fixtures):  # type: ignore[no-untyped-def]
         return {fixture[0]: "H" for fixture in fixtures}
@@ -99,6 +115,7 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
     app = create_app(engine=StubEngine(), fixture_provider=StubFixtureProvider())
     routes = {getattr(route, "path", None): route.endpoint for route in app.routes}
     assert asyncio.run(routes["/health"]()) == {"status": "ok"}
+    assert routes["/teams"](Competition.PREMIER_LEAGUE) == ["Arsenal FC", "Chelsea FC"]
 
     fixtures = routes["/fixtures"](Competition.PREMIER_LEAGUE, date(2025, 6, 1))
     assert fixtures[0].fixture_id == "123"
@@ -131,6 +148,39 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
     )
     assert results[0].id == "forecast-1"
     assert results[0].result == "H"
+
+
+def test_next_fixture_scans_forward_and_returns_the_first_future_match() -> None:
+    start = datetime.now(UTC).date() + timedelta(days=1)
+    target_date = start + timedelta(days=2)
+    scanned: list[date] = []
+
+    class ScanningProvider:
+        def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
+            scanned.append(fixture_date)
+            if fixture_date != target_date:
+                return []
+            return [
+                LiveFixture(
+                    fixture_id="next-1",
+                    competition=competition,
+                    kickoff_at=datetime.combine(fixture_date, datetime.min.time(), UTC)
+                    + timedelta(hours=18),
+                    home_team="Arsenal FC",
+                    away_team="Chelsea FC",
+                )
+            ]
+
+    app = create_app(engine=StubEngine(), fixture_provider=ScanningProvider())
+    endpoint = next(
+        route.endpoint for route in app.routes
+        if getattr(route, "path", None) == "/fixtures/next"
+    )
+    fixture = endpoint(Competition.PREMIER_LEAGUE, start, 5)
+
+    assert fixture is not None
+    assert fixture.fixture_id == "next-1"
+    assert scanned == [start, start + timedelta(days=1), target_date]
 
 
 def test_api_rejects_partial_market_odds() -> None:

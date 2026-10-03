@@ -289,6 +289,15 @@ class PredictionEngine:
             raise ValueError(f"no historical matches for {competition.value}")
         return max(history["match_date"])
 
+    def available_teams(self, competition: Competition) -> list[str]:
+        """Return teams recorded in the most recent available season for a league."""
+        history = self._history[self._history["competition"] == competition.value]
+        if history.empty:
+            raise ValueError(f"no historical matches for {competition.value}")
+        latest_season = history["season"].astype(str).max()
+        latest = history[history["season"].astype(str) == latest_season]
+        return sorted(set(latest["home_team"].astype(str)) | set(latest["away_team"].astype(str)))
+
     def find_results(
         self, fixtures: list[tuple[str, date, str, str]]
     ) -> dict[str, str | None]:

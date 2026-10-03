@@ -16,6 +16,18 @@ def prediction_engine() -> PredictionEngine:
     return PredictionEngine.from_csv(data_path)
 
 
+def test_available_teams_uses_the_latest_recorded_season(
+    prediction_engine: PredictionEngine,
+) -> None:
+    history = pd.read_csv(Path(__file__).parents[1] / "data/model/historical_matches.csv.gz")
+    league = history[history["competition"] == Competition.PREMIER_LEAGUE.value]
+    latest_season = league["season"].astype(str).max()
+    latest = league[league["season"].astype(str) == latest_season]
+    expected = sorted(set(latest["home_team"].astype(str)) | set(latest["away_team"].astype(str)))
+
+    assert prediction_engine.available_teams(Competition.PREMIER_LEAGUE) == expected
+
+
 @pytest.mark.parametrize("home_team", ["Nottingham Forest", "Nottingham Forrest"])
 def test_predict_resolves_provider_team_names_to_historical_labels(
     prediction_engine: PredictionEngine, home_team: str
