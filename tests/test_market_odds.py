@@ -78,6 +78,29 @@ def test_odds_provider_requires_exact_match_and_kickoff_window(monkeypatch) -> N
         )
 
 
+def test_odds_provider_resolves_greek_club_aliases(monkeypatch) -> None:
+    payload = json.dumps([{
+        "home_team": "Olympiacos",
+        "away_team": "PAOK Thessaloniki",
+        "commence_time": "2026-10-18T17:00:00Z",
+        "bookmakers": [{
+            "markets": [{"key": "h2h", "outcomes": [
+                {"name": "Olympiacos", "price": 1.9},
+                {"name": "Draw", "price": 3.3},
+                {"name": "PAOK Thessaloniki", "price": 4.0},
+            ]}],
+        }],
+    }]).encode()
+    monkeypatch.setattr(market_odds, "urlopen", lambda request, timeout: io.BytesIO(payload))
+    quote = TheOddsApiProvider("secret").get_match_odds(
+        Competition.SUPER_LEAGUE_GREECE,
+        "Olympiakos Piraeus",
+        "PAOK Saloniki",
+        datetime(2026, 10, 18, 17, 0, tzinfo=UTC),
+    )
+    assert quote.bookmaker_count == 1
+
+
 def test_odds_provider_requires_configuration(monkeypatch) -> None:
     monkeypatch.delenv("THE_ODDS_API_KEY", raising=False)
     with pytest.raises(MarketOddsError, match="THE_ODDS_API_KEY"):
