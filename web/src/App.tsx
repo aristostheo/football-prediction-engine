@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useId, useMemo, useState } from "react";
 import {
   Competition,
+  getFixtures,
   getNextFixture,
   getScorecardResults,
   getTeams,
