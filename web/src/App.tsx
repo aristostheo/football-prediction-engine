@@ -300,6 +300,7 @@ function App() {
     setOddsHome("");
     setOddsDraw("");
     setOddsAway("");
+    setMarketOddsNote(null);
   }
 
   async function loadFixturesForDate() {
