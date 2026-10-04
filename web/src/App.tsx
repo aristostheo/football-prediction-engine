@@ -448,15 +448,7 @@ function App() {
                 </div>
                 {nextFixtureLoading ? (
                   <div className="upcoming-empty"><span className="search-spinner" /><p>Checking today and upcoming dates…</p></div>
-                ) : nextFixture ? (
-                  <>
-                    <p className="fixture-kickoff">{fixtureTime(nextFixture.kickoff_at)}</p>
-                    <div className="upcoming-teams"><strong>{nextFixture.home_team}</strong><span>vs</span><strong>{nextFixture.away_team}</strong></div>
-                    <button className="primary-button" disabled={loading} onClick={() => void generateForecast(undefined, nextFixture)} type="button">
-                      {loading ? "Generating forecast…" : "Predict this match"}<span>→</span>
-                    </button>
-                  </>
-                ) : (
+                ) : nextFixture ? null : (
                   <div className="upcoming-empty">
                     <p>{nextFixtureError ?? `No upcoming fixture was found from in the next three weeks.`}</p>
                     {nextFixtureError ? (
