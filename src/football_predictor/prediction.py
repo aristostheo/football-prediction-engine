@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from math import exp
 from pathlib import Path
 
 import pandas as pd
@@ -73,6 +74,19 @@ class PredictionContext:
     away_form_goals_against_per_match: float
     home_venue_points_per_match: float
     away_venue_points_per_match: float
+    head_to_head_matches: int = 0
+    head_to_head_home_wins: int = 0
+    head_to_head_draws: int = 0
+    head_to_head_away_wins: int = 0
+    head_to_head_recent: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ScorelineForecast:
+    home_goals: int
+    away_goals: int
+    probability: float
+
 
 @dataclass(frozen=True)
 class PredictionComponents:
@@ -83,6 +97,7 @@ class PredictionComponents:
     core_model_probabilities: tuple[float, float, float]
     home_goal_rate: float | None
     away_goal_rate: float | None
+    top_scorelines: tuple[ScorelineForecast, ...]
     elo_weight: float
     base_model_weight: float
     league_prior_probabilities: tuple[float, float, float] | None
@@ -190,6 +205,10 @@ class PredictionEngine:
             fixture_states[(competition, team)] = TeamState(elo=PROMOTED_TEAM_START_ELO)
         fixture_features = self._fixture_features(canonical_fixture, fixture_states)
         feature = fixture_features.iloc[0]
+        h2h = _head_to_head_summary(
+            history, canonical_fixture.home_team, canonical_fixture.away_team,
+            canonical_fixture.kickoff_date,
+        )
         context = PredictionContext(
             home_elo=float(feature["home_elo"]),
             away_elo=float(feature["away_elo"]),
@@ -203,6 +222,7 @@ class PredictionEngine:
             away_form_goals_against_per_match=float(feature["away_form_goals_against_per_match"]),
             home_venue_points_per_match=float(feature["home_home_points_per_match"]),
             away_venue_points_per_match=float(feature["away_away_points_per_match"]),
+            **h2h,
         )
         elo = add_elo_probabilities(fixture_features)
         elo_probabilities = _probability_tuple(elo.iloc[0])
@@ -210,6 +230,7 @@ class PredictionEngine:
         home_rate = float(home_model.predict(fixture_features[list(FEATURE_COLUMNS)])[0])
         away_rate = float(away_model.predict(fixture_features[list(FEATURE_COLUMNS)])[0])
         poisson = fixture_features.copy()
+        scorelines = _top_scorelines_from_goal_rates(home_rate, away_rate)
         goal_probability_frame = _outcome_probabilities_from_goal_rates(home_rate, away_rate)
         for column, value in goal_probability_frame.items():
             poisson[column] = value
@@ -273,9 +294,8 @@ class PredictionEngine:
                 home_goal_rate=(
                     home_rate if fixture.competition is Competition.PREMIER_LEAGUE else None
                 ),
-                away_goal_rate=(
-                    away_rate if fixture.competition is Competition.PREMIER_LEAGUE else None
-                ),
+                away_goal_rate=away_rate,
+                top_scorelines=scorelines,
                 elo_weight=elo_weight,
                 base_model_weight=base_model_weight,
                 league_prior_probabilities=prior_probabilities,
@@ -319,6 +339,68 @@ class PredictionEngine:
             away_team=fixture.away_team,
             final_states=final_states or self._final_states,
         )
+
+
+def _top_scorelines_from_goal_rates(
+    home_rate: float, away_rate: float, *, count: int = 3
+) -> tuple[ScorelineForecast, ...]:
+    """Return the most likely scorelines from the separate Poisson goal model."""
+    home = _poisson_score_probabilities(home_rate)
+    away = _poisson_score_probabilities(away_rate)
+    candidates = [
+        ScorelineForecast(home_goals, away_goals, home_probability * away_probability)
+        for home_goals, home_probability in enumerate(home)
+        for away_goals, away_probability in enumerate(away)
+    ]
+    total = sum(item.probability for item in candidates)
+    return tuple(
+        ScorelineForecast(item.home_goals, item.away_goals, item.probability / total)
+        for item in sorted(candidates, key=lambda item: item.probability, reverse=True)[:count]
+    )
+
+
+def _poisson_score_probabilities(rate: float, max_goals: int = 12) -> list[float]:
+    if rate <= 0:
+        raise ValueError("Poisson goal rate must be positive")
+    rate = min(rate, 8.0)
+    probabilities = [exp(-rate)]
+    for goals in range(1, max_goals + 1):
+        probabilities.append(probabilities[-1] * rate / goals)
+    return probabilities
+
+
+def _head_to_head_summary(
+    history: pd.DataFrame, home_team: str, away_team: str, before_date: date
+) -> dict[str, object]:
+    meetings = history[
+        (history["match_date"] < before_date)
+        & (
+            ((history["home_team"] == home_team) & (history["away_team"] == away_team))
+            | ((history["home_team"] == away_team) & (history["away_team"] == home_team))
+        )
+    ].sort_values("match_date")
+    home_wins = draws = away_wins = 0
+    descriptions: list[str] = []
+    for row in meetings.itertuples(index=False):
+        if row.result == "D":
+            draws += 1
+            outcome = "D"
+        elif row.home_team == home_team:
+            home_wins += 1
+            outcome = "H"
+        else:
+            away_wins += 1
+            outcome = "A"
+        descriptions.append(
+            f"{row.match_date}: {row.home_team} {int(row.home_goals)}–{int(row.away_goals)} {row.away_team} ({outcome} for {home_team})"
+        )
+    return {
+        "head_to_head_matches": len(meetings),
+        "head_to_head_home_wins": home_wins,
+        "head_to_head_draws": draws,
+        "head_to_head_away_wins": away_wins,
+        "head_to_head_recent": tuple(descriptions[-5:][::-1]),
+    }
 
 
 def _probability_tuple(values: pd.Series) -> tuple[float, float, float]:
