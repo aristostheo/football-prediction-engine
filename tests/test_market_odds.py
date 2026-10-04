@@ -50,6 +50,7 @@ def test_odds_provider_matches_fixture_removes_vig_and_caches(monkeypatch) -> No
     )
 
     assert first.bookmaker_count == 2
+    assert second.bookmaker_count == first.bookmaker_count
     assert first.home_fair_odds > 1
     assert first.draw_fair_odds > 1
     assert first.away_fair_odds > 1
