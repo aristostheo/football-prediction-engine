@@ -12,6 +12,9 @@ uv run uvicorn football_predictor.api:app --reload
   fixtures from Goal API when `GOAL_API_KEY` is configured.
 - `POST /predict` accepts canonical names or registered club aliases and a fixture date after
   the local historical dataset's final result.
+- `GET /odds` retrieves upcoming 1X2 market odds for a scheduled fixture when
+  `THE_ODDS_API_KEY` is configured. Results are a bookmaker consensus with each
+  book's margin removed and are cached for 10 minutes.
 
 - `GET /fixtures/next?competition=...&from=YYYY-MM-DD` checks upcoming dates in order and returns the earliest future fixture in its three-week search window.
 - `GET /teams?competition=...` returns teams from that league's most recent recorded season for searchable hypothetical matchups.
@@ -39,7 +42,20 @@ the Premier League and 178 for Super League Greece).
 
 Keys are read only by the backend from environment variables and must never be
 committed or exposed to the browser. Manual prediction remains available with
-no provider key.
+no fixture-provider key. Live market odds are optional; set `THE_ODDS_API_KEY`
+in the backend environment (including the Render service environment) to enable
+the dashboard's **Load live market odds** control. The user interface can still
+accept manually entered 1X2 odds without this key.
+
+The live odds adapter uses The Odds API's Premier League and Greece Super League
+sport keys, European bookmaker region, and 1X2 h2h market. It averages
+per-book margin-removed probabilities across books that quote all three
+outcomes, then presents fair decimal prices for the existing market forecast
+path. A fixture must match both teams and kickoff time. A missing quote or
+provider error is shown in the dashboard; no quote is guessed. The adapter is
+for prospective dashboard use only: its free-tier data is not used for
+historical training or walk-forward evaluation. Quotes are fetched on demand
+and cached in memory for ten minutes.
 
 Run the server from the repository root. Predictions load the included
 `data/model/historical_matches.csv.gz` by default. Set `HISTORICAL_MATCHES_PATH`
