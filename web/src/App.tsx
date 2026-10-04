@@ -633,8 +633,15 @@ function App() {
                     <strong>{perMatch(prediction.context.home_form_goals_for_per_match)} / {perMatch(prediction.context.home_form_goals_against_per_match)} · {perMatch(prediction.context.away_form_goals_for_per_match)} / {perMatch(prediction.context.away_form_goals_against_per_match)}</strong>
                     <span>Venue form · points per match</span>
                     <strong>Home at home {perMatch(prediction.context.home_venue_points_per_match)} · away away {perMatch(prediction.context.away_venue_points_per_match)}</strong>
+                    <span>Head-to-head · home team perspective</span>
+                    <strong>{prediction.context.head_to_head_matches} meetings · {prediction.context.head_to_head_home_wins} wins · {prediction.context.head_to_head_draws} draws · {prediction.context.head_to_head_away_wins} losses</strong>
                   </div>
-                  <small>The current version does not use injuries, lineups, weather, or live odds as model inputs.</small>
+                  <small>Head-to-head is shown as historical context and does not currently change the W/D/L probabilities. The current version does not use injuries, lineups, weather, or live odds as model inputs.</small>
+                  {prediction.context.head_to_head_recent.length > 0 && (
+                    <ul className="h2h-list" aria-label="Most recent head-to-head results">
+                      {prediction.context.head_to_head_recent.map((meeting) => <li key={meeting}>{meeting}</li>)}
+                    </ul>
+                  )}
                 </div>
                 <div className="component-panel">
                   <h3>How the model builds its probabilities</h3>
@@ -665,6 +672,21 @@ function App() {
                     <p className="component-prior">
                       Promoted-team adjustment: {percent(prediction.components.base_model_weight)} core model ({outcomeSummary(prediction.components.core_model_probabilities)}) + {percent(1 - prediction.components.base_model_weight)} league prior ({outcomeSummary(prediction.components.league_prior_probabilities)}) = model probabilities ({outcomeSummary([prediction.model_home_win_probability, prediction.model_draw_probability, prediction.model_away_win_probability])}).
                     </p>
+                  )}
+                </div>
+                <div className="component-panel scoreline-panel">
+                  <h3>Most likely scorelines</h3>
+                  <p>Separate estimate from the goal model, based on each team’s expected goals. Each scoreline is individually unlikely; these are the model’s three most likely outcomes.</p>
+                  <div className="scoreline-list">
+                    {prediction.components.top_scorelines.map((scoreline) => (
+                      <div className="scoreline-row" key={`${scoreline.home_goals}-${scoreline.away_goals}`}>
+                        <strong>{prediction.home_team} {scoreline.home_goals}–{scoreline.away_goals} {prediction.away_team}</strong>
+                        <span>{percent(scoreline.probability)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {prediction.competition === "super_league_greece" && (
+                    <small>Scorelines use the goal model; the Greek W/D/L probabilities continue to use Elo.</small>
                   )}
                 </div>
                 {trackingNotice && <p className="scorecard-note">{trackingNotice}</p>}
