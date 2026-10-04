@@ -155,6 +155,11 @@ function App() {
   const [nextFixtureResult, setNextFixtureResult] = useState<{ competition: Competition; search: number; fixture: LiveFixture | null; error?: string } | null>(null);
   const [nextFixtureSearch, setNextFixtureSearch] = useState(0);
   const [nextFixtureStart, setNextFixtureStart] = useState(today);
+  const [selectedFixture, setSelectedFixture] = useState<LiveFixture | null>(null);
+  const [browseDate, setBrowseDate] = useState(today());
+  const [dateFixtures, setDateFixtures] = useState<LiveFixture[]>([]);
+  const [dateFixturesLoading, setDateFixturesLoading] = useState(false);
+  const [dateFixturesNotice, setDateFixturesNotice] = useState<string | null>(null);
   const [oddsHome, setOddsHome] = useState("");
   const [oddsDraw, setOddsDraw] = useState("");
   const [oddsAway, setOddsAway] = useState("");
@@ -201,7 +206,11 @@ function App() {
   useEffect(() => {
     let active = true;
     getNextFixture(competition, nextFixtureStart)
-      .then((fixture) => { if (active) setNextFixtureResult({ competition, search: nextFixtureSearch, fixture }); })
+      .then((fixture) => {
+        if (!active) return;
+        setNextFixtureResult({ competition, search: nextFixtureSearch, fixture });
+        if (fixture) setBrowseDate(fixture.kickoff_at.slice(0, 10));
+      })
       .catch((caught: unknown) => {
         const raw = caught instanceof Error ? caught.message : "Upcoming fixtures are unavailable.";
         const message = raw.includes("must be configured")
@@ -262,6 +271,10 @@ function App() {
     setAwayTeam("");
     setNextFixtureStart(today());
     setNextFixtureSearch(0);
+    setSelectedFixture(null);
+    setBrowseDate(today());
+    setDateFixtures([]);
+    setDateFixturesNotice(null);
     setPrediction(null);
     setError(null);
     setTrackingNotice(null);
@@ -278,6 +291,30 @@ function App() {
     setOddsHome("");
     setOddsDraw("");
     setOddsAway("");
+  }
+
+  async function loadFixturesForDate() {
+    setDateFixturesNotice(null);
+    setDateFixturesLoading(true);
+    try {
+      const fixturesForDate = await getFixtures(competition, browseDate);
+      const upcoming = fixturesForDate
+        .filter((fixture) => Date.parse(fixture.kickoff_at) > Date.now())
+        .sort((first, second) => Date.parse(first.kickoff_at) - Date.parse(second.kickoff_at));
+      setDateFixtures(upcoming);
+      setDateFixturesNotice(upcoming.length ? null : "No upcoming fixtures were found on this date. Try another date.");
+    } catch (caught) {
+      setDateFixtures([]);
+      setDateFixturesNotice(caught instanceof Error ? caught.message : "Fixtures are unavailable for this date.");
+    } finally {
+      setDateFixturesLoading(false);
+    }
+  }
+
+  function chooseScheduledFixture(fixture: LiveFixture) {
+    setSelectedFixture(fixture);
+    setPrediction(null);
+    setError(null);
   }
 
   async function generateForecast(event?: FormEvent, fixture?: LiveFixture) {
@@ -399,6 +436,10 @@ function App() {
 
             {mode === "upcoming" ? (
               <section className="upcoming-card" aria-live="polite">
+                {(() => {
+                  const activeFixture = selectedFixture?.competition === competition ? selectedFixture : nextFixture;
+                  const isAlternative = Boolean(activeFixture && nextFixture && activeFixture.fixture_id !== nextFixture.fixture_id);
+                  return (
                 <div className="upcoming-card-heading">
                   <div><span className="section-label">Up next · {LEAGUES[competition].short}</span><h3>{LEAGUES[competition].name}</h3></div>
                   <span className={nextFixtureLoading ? "fixture-status searching" : "fixture-status"}>
@@ -426,7 +467,48 @@ function App() {
                     <button className="text-button" onClick={() => changeMode("explore")} type="button">Explore a matchup instead →</button>
                   </div>
                 )}
-              </section>
+                  {activeFixture && (
+                    <>
+                      <div className="upcoming-card-heading selected-fixture-heading">
+                        <div><span className="section-label">{isAlternative ? "Selected scheduled match" : "Soonest scheduled match"}</span><h3>{LEAGUES[competition].name}</h3></div>
+                        {isAlternative && <button className="text-button" onClick={() => { setSelectedFixture(null); setPrediction(null); }} type="button">Use soonest</button>}
+                      </div>
+                      <p className="fixture-kickoff">{fixtureTime(activeFixture.kickoff_at)}</p>
+                      <div className="upcoming-teams"><strong>{activeFixture.home_team}</strong><span>vs</span><strong>{activeFixture.away_team}</strong></div>
+                      <button className="primary-button" disabled={loading} onClick={() => void generateForecast(undefined, activeFixture)} type="button">
+                        {loading ? "Generating forecast…" : "Predict this match"}<span>→</span>
+                      </button>
+                    </>
+                  )}
+                  <details className="date-fixture-browser">
+                    <summary>Choose another scheduled match <span>Browse by date</span></summary>
+                    <p>Pick a match day to see every upcoming fixture listed by the provider.</p>
+                    <div className="date-fixture-controls">
+                      <label htmlFor="scheduled-fixture-date">Match date</label>
+                      <input id="scheduled-fixture-date" type="date" min={today()} value={browseDate} onChange={(event) => { setBrowseDate(event.target.value); setDateFixtures([]); setDateFixturesNotice(null); }} />
+                      <button className="secondary-button" disabled={dateFixturesLoading || !browseDate} onClick={() => void loadFixturesForDate()} type="button">
+                        {dateFixturesLoading ? "Loading…" : "Load fixtures"}
+                      </button>
+                    </div>
+                    {dateFixturesNotice && <div className="message">{dateFixturesNotice}</div>}
+                    {dateFixtures.length > 0 && (
+                      <div className="date-fixture-list" aria-label="Upcoming fixtures for selected date">
+                        {dateFixtures.map((fixture) => {
+                          const selected = activeFixture?.fixture_id === fixture.fixture_id;
+                          return (
+                            <button className={selected ? "date-fixture-option selected" : "date-fixture-option"} key={fixture.fixture_id} aria-pressed={selected} onClick={() => chooseScheduledFixture(fixture)} type="button">
+                              <span>{new Date(fixture.kickoff_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                              <strong>{fixture.home_team}<i>vs</i>{fixture.away_team}</strong>
+                              <em>{selected ? "Selected" : "Choose"}</em>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </details>
+                </section>
+                  );
+                })()}
             ) : (
               <form className="explore-form" onSubmit={(event) => void generateForecast(event)}>
                 <p className="mode-description">Choose any two teams. This hypothetical forecast uses their latest available results.</p>
