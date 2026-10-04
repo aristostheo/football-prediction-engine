@@ -45,7 +45,7 @@ export function saveForecast(prediction: Prediction): StoredForecast[] {
     : [
         prediction.market_home_win_probability,
         prediction.market_draw_probability,
-        prediction.market_away_probability,
+        prediction.market_away_win_probability,
       ] as [number, number, number];
   const forecast: StoredForecast = {
     id: crypto.randomUUID(),
@@ -60,7 +60,7 @@ export function saveForecast(prediction: Prediction): StoredForecast[] {
     model_probabilities: [
       prediction.model_home_win_probability,
       prediction.model_draw_probability,
-      prediction.model_away_probability,
+      prediction.model_away_win_probability,
     ],
     market_probabilities: marketProbabilities,
   };
