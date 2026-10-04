@@ -39,6 +39,11 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
     away_form_goals_against_per_match: number;
     home_venue_points_per_match: number;
     away_venue_points_per_match: number;
+    head_to_head_matches: number;
+    head_to_head_home_wins: number;
+    head_to_head_draws: number;
+    head_to_head_away_wins: number;
+    head_to_head_recent: string[];
   };
   components: {
     elo_probabilities: [number, number, number];
@@ -46,6 +51,7 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
     core_model_probabilities: [number, number, number];
     home_goal_rate: number | null;
     away_goal_rate: number | null;
+    top_scorelines: Array<{ home_goals: number; away_goals: number; probability: number }>;
     elo_weight: number;
     base_model_weight: number;
     league_prior_probabilities: [number, number, number] | null;
