@@ -585,7 +585,7 @@ function App() {
                 </div>
                 {prediction.market_home_win_probability !== null
                   && prediction.market_draw_probability !== null
-                  && prediction.market_away_win_probability !== null && (
+                  && prediction.market_away_probability !== null && (
                   <section className="market-comparison" aria-label="Model versus market probabilities">
                     <div className="market-comparison-heading">
                       <h3>Model vs market</h3>
@@ -599,7 +599,7 @@ function App() {
                       {[
                         { label: `${prediction.home_team} win`, model: prediction.model_home_win_probability, market: prediction.market_home_win_probability },
                         { label: "Draw", model: prediction.model_draw_probability, market: prediction.market_draw_probability },
-                        { label: `${prediction.away_team} win`, model: prediction.model_away_win_probability, market: prediction.market_away_win_probability },
+                        { label: `${prediction.away_team} win`, model: prediction.model_away_probability, market: prediction.market_away_probability },
                       ].map((row) => {
                         const gap = (row.model - row.market) * 100;
                         return (
