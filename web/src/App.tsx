@@ -585,7 +585,7 @@ function App() {
                 </div>
                 {prediction.market_home_win_probability !== null
                   && prediction.market_draw_probability !== null
-                  && prediction.market_away_probability !== null && (
+                  && prediction.market_away_win_probability !== null && (
                   <section className="market-comparison" aria-label="Model versus market probabilities">
                     <div className="market-comparison-heading">
                       <h3>Model vs market</h3>
@@ -599,7 +599,7 @@ function App() {
                       {[
                         { label: `${prediction.home_team} win`, model: prediction.model_home_win_probability, market: prediction.market_home_win_probability },
                         { label: "Draw", model: prediction.model_draw_probability, market: prediction.market_draw_probability },
-                        { label: `${prediction.away_team} win`, model: prediction.model_away_probability, market: prediction.market_away_probability },
+                        { label: `${prediction.away_team} win`, model: prediction.model_away_win_probability, market: prediction.market_away_win_probability },
                       ].map((row) => {
                         const gap = (row.model - row.market) * 100;
                         return (
@@ -618,7 +618,7 @@ function App() {
                 )}
                 {prediction.model_policy === "market_implied_odds" && (
                   <p className="model-market-note">
-                    Model-only probabilities: {percent(prediction.model_home_win_probability)} home · {percent(prediction.model_draw_probability)} draw · {percent(prediction.model_away_probability)} away.
+                    Model-only probabilities: {percent(prediction.model_home_win_probability)} home · {percent(prediction.model_draw_probability)} draw · {percent(prediction.model_away_win_probability)} away.
                     The headline probabilities above come from the odds.
                   </p>
                 )}
@@ -669,7 +669,7 @@ function App() {
                   )}
                   {prediction.components.league_prior_probabilities && (
                     <p className="component-prior">
-                      Promoted-team adjustment: {percent(prediction.components.base_model_weight)} core model ({outcomeSummary(prediction.components.core_model_probabilities)}) + {percent(1 - prediction.components.base_model_weight)} league prior ({outcomeSummary(prediction.components.league_prior_probabilities)}) = model probabilities ({outcomeSummary([prediction.model_home_win_probability, prediction.model_draw_probability, prediction.model_away_probability])}).
+                      Promoted-team adjustment: {percent(prediction.components.base_model_weight)} core model ({outcomeSummary(prediction.components.core_model_probabilities)}) + {percent(1 - prediction.components.base_model_weight)} league prior ({outcomeSummary(prediction.components.league_prior_probabilities)}) = model probabilities ({outcomeSummary([prediction.model_home_win_probability, prediction.model_draw_probability, prediction.model_away_win_probability])}).
                     </p>
                   )}
                 </div>
