@@ -101,6 +101,7 @@ input:focus { border-color: #4a6959; box-shadow: 0 0 0 3px rgba(74,105,89,.1); }
 .primary-button:disabled, .secondary-button:disabled { opacity: .6; cursor: wait; }
 .message { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: #e8ece5; color: #58615b; font-size: 12px; line-height: 1.5; }
 .error-message { background: #fde7e2; color: #8d3527; }
+.market-odds-note { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #e8f1e8; color: #385d42; font-size: 11px; line-height: 1.5; }
 .result-panel { margin-top: 22px; padding-top: 20px; border-top: 1px solid #d8ddd4; animation: rise .35s ease-out; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 .result-title, .freshness { display: flex; justify-content: space-between; align-items: center; }
