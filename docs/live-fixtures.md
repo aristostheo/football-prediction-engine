@@ -3,7 +3,8 @@
 The service exposes an optional live-fixture adapter and a prediction endpoint:
 
 ```bash
-GOAL_API_KEY=your_key \
+GOAL_API_KEY=your_goal_key \
+THE_ODDS_API_KEY=your_odds_api_key \
 uv run uvicorn football_predictor.api:app --reload
 ```
 
