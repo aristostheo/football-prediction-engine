@@ -206,3 +206,30 @@ footer > a:last-child { color: #b4c0b8; }
   .context-grid { grid-template-columns: 1fr; gap: 4px; }
   .context-grid strong { margin-bottom: 6px; text-align: left; }
 }
+
+
+.date-fixture-browser { margin-top: 18px; border-top: 1px solid #e5e9e2; color: #536158; }
+.date-fixture-browser summary { display: flex; justify-content: space-between; gap: 12px; padding: 15px 2px 4px; color: #26372d; font-size: 11px; font-weight: 700; cursor: pointer; list-style-position: inside; }
+.date-fixture-browser summary span { color: #87928a; font-weight: 500; }
+.date-fixture-browser > p { margin: 8px 0 12px; color: #818a83; font-size: 10px; line-height: 1.5; }
+.date-fixture-controls { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.date-fixture-controls label { color: #69716c; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.date-fixture-controls input { min-width: 0; padding: 10px 11px; font-size: 12px; }
+.secondary-button { border: 1px solid #d6dcd2; border-radius: 10px; padding: 10px 13px; background: #f4f6f1; color: #26372d; font-size: 11px; font-weight: 700; cursor: pointer; }
+.secondary-button:hover:not(:disabled) { background: #e9eee6; }
+.date-fixture-list { display: grid; gap: 7px; margin-top: 12px; }
+.date-fixture-option { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; border: 1px solid #e1e6de; border-radius: 10px; padding: 10px 11px; background: #fff; color: #24352b; text-align: left; cursor: pointer; }
+.date-fixture-option:hover, .date-fixture-option.selected { border-color: #9ab891; background: #f2f7ef; }
+.date-fixture-option > span { color: #788179; font: 500 10px "DM Mono", monospace; }
+.date-fixture-option strong { display: flex; justify-content: center; gap: 7px; font-size: 10px; line-height: 1.4; }
+.date-fixture-option strong i { color: #9ba39c; font-size: 9px; font-style: normal; font-weight: 500; text-transform: uppercase; }
+.date-fixture-option em { color: #4d7156; font-size: 9px; font-style: normal; font-weight: 700; }
+.selected-fixture-heading { margin-top: 18px; }
+.date-fixture-browser .message { margin-top: 10px; }
+@media (max-width: 620px) {
+  .date-fixture-browser summary { align-items: flex-start; }
+  .date-fixture-controls { grid-template-columns: 1fr auto; }
+  .date-fixture-controls label { grid-column: 1 / -1; }
+  .date-fixture-option { grid-template-columns: 42px minmax(0, 1fr) auto; gap: 6px; padding: 10px 8px; }
+  .date-fixture-option strong { flex-direction: column; align-items: flex-start; gap: 2px; }
+}
