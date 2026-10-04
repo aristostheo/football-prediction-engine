@@ -14,6 +14,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from football_predictor.domain import Competition
+from football_predictor.team_names import canonical_team_name
 
 ODDS_API_BASE_URL = "https://api.the-odds-api.com/v4"
 SPORT_KEYS = {
@@ -72,9 +73,9 @@ class TheOddsApiProvider:
         for event in events:
             if not isinstance(event, dict):
                 continue
-            if not _same_team(event.get("home_team"), home_team):
+            if not _same_team(event.get("home_team"), home_team, competition):
                 continue
-            if not _same_team(event.get("away_team"), away_team):
+            if not _same_team(event.get("away_team"), away_team, competition):
                 continue
             try:
                 event_kickoff = datetime.fromisoformat(
@@ -84,7 +85,7 @@ class TheOddsApiProvider:
                 continue
             if abs((_as_utc(event_kickoff) - target_kickoff).total_seconds()) > 12 * 3600:
                 continue
-            probabilities = _bookmaker_consensus(event)
+            probabilities = _bookmaker_consensus(event, competition)
             if probabilities is None:
                 continue
             return MarketOdds(
@@ -136,7 +137,7 @@ class TheOddsApiProvider:
 
 
 def _bookmaker_consensus(
-    event: dict[str, object],
+    event: dict[str, object], competition: Competition
 ) -> tuple[float, float, float, int] | None:
     bookmakers = event.get("bookmakers")
     if not isinstance(bookmakers, list):
@@ -168,8 +169,8 @@ def _bookmaker_consensus(
                 continue
             if price > 1 and isinstance(name, str):
                 prices[name] = price
-        home_price = next((v for k, v in prices.items() if _same_team(k, home)), None)
-        away_price = next((v for k, v in prices.items() if _same_team(k, away)), None)
+        home_price = next((v for k, v in prices.items() if _same_team(k, home, competition)), None)
+        away_price = next((v for k, v in prices.items() if _same_team(k, away, competition)), None)
         draw_price = next((v for k, v in prices.items() if k.strip().lower() == "draw"), None)
         if home_price and away_price and draw_price:
             raw = (1 / home_price, 1 / draw_price, 1 / away_price)
@@ -188,8 +189,11 @@ def _team_key(value: object) -> str:
     return re.sub(r"\b(fc|afc|cf|sc|club)\b", "", normalized).strip()
 
 
-def _same_team(first: object, second: object) -> bool:
-    return bool(_team_key(first)) and _team_key(first) == _team_key(second)
+def _same_team(first: object, second: object, competition: Competition) -> bool:
+    first_name = canonical_team_name(str(first), competition)
+    second_name = canonical_team_name(str(second), competition)
+    first_key = _team_key(first_name)
+    return bool(first_key) and first_key == _team_key(second_name)
 
 
 def _as_utc(value: datetime) -> datetime:
