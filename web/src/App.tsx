@@ -227,7 +227,7 @@ function App() {
   const nextFixtureError = currentFixtureResult?.error ?? null;
   const nextFixtureLoading = currentFixtureResult === null;
   const activeUpcomingFixture = selectedFixture?.competition === competition ? selectedFixture : nextFixture;
-  const isAlternativeFixtureFixture = Boolean(
+  const isAlternativeFixture = Boolean(
     activeUpcomingFixture && nextFixture && activeUpcomingFixture.fixture_id !== nextFixture.fixture_id,
   );
 
@@ -443,12 +443,12 @@ function App() {
                 <div className="upcoming-card-heading">
                   <div><span className="section-label">Up next · {LEAGUES[competition].short}</span><h3>{LEAGUES[competition].name}</h3></div>
                   <span className={nextFixtureLoading ? "fixture-status searching" : "fixture-status"}>
-                    {nextFixtureLoading ? "Finding match" : nextFixture ? "Fixture found" : "No fixture"}
+                    {nextFixtureLoading ? "Finding match" : activeUpcomingFixture ? "Fixture found" : "No fixture"}
                   </span>
                 </div>
                 {nextFixtureLoading ? (
                   <div className="upcoming-empty"><span className="search-spinner" /><p>Checking today and upcoming dates…</p></div>
-                ) : nextFixture ? null : (
+                ) : activeUpcomingFixture ? null : (
                   <div className="upcoming-empty">
                     <p>{nextFixtureError ?? `No upcoming fixture was found from in the next three weeks.`}</p>
                     {nextFixtureError ? (
