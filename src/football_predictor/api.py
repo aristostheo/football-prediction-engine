@@ -20,6 +20,10 @@ from football_predictor.live_fixtures import (
     LiveFixture,
     fixture_provider_from_environment,
 )
+from football_predictor.market_odds import (
+    MarketOddsError,
+    TheOddsApiProvider,
+)
 from football_predictor.prediction import (
     FixtureToPredict,
     MatchPrediction,
@@ -52,6 +56,15 @@ class PredictionRequest(BaseModel):
             if self.kickoff_at.date() != self.kickoff_date:
                 raise ValueError("kickoff_at must fall on kickoff_date")
         return self
+
+
+class MarketOddsResponse(BaseModel):
+    home_fair_odds: float
+    draw_fair_odds: float
+    away_fair_odds: float
+    bookmaker_count: int
+    source: str
+    fetched_at: datetime
 
 
 class ScorecardFixtureRequest(BaseModel):
@@ -106,6 +119,7 @@ def create_app(
     *,
     engine: PredictionEngine | None = None,
     fixture_provider: FixtureProvider | None = None,
+    market_odds_provider: TheOddsApiProvider | None = None,
     web_dist_path: Path | None = None,
 ) -> FastAPI:
     app = FastAPI(title="European Football Prediction Engine", version="0.1.0")
@@ -117,6 +131,7 @@ def create_app(
     )
     configured_engine = engine
     configured_provider = fixture_provider
+    configured_market_odds_provider = market_odds_provider
     engine_lock = Lock()
 
     def get_engine() -> PredictionEngine:
@@ -137,6 +152,12 @@ def create_app(
         if configured_provider is None:
             configured_provider = fixture_provider_from_environment()
         return configured_provider
+
+    def get_market_odds_provider() -> TheOddsApiProvider:
+        nonlocal configured_market_odds_provider
+        if configured_market_odds_provider is None:
+            configured_market_odds_provider = TheOddsApiProvider.from_environment()
+        return configured_market_odds_provider
 
     @app.get("/health")
     async def health() -> dict[str, str]:
@@ -181,6 +202,34 @@ def create_app(
         except FixtureProviderError as error:
             raise HTTPException(status_code=503, detail=str(error)) from error
         return [_fixture_response(fixture) for fixture in live_fixtures]
+
+    @app.get("/odds", response_model=MarketOddsResponse)
+    def odds(
+        competition: Competition,
+        fixture_id: str,
+        home_team: str,
+        away_team: str,
+        kickoff_at: datetime,
+    ) -> MarketOddsResponse:
+        if kickoff_at.tzinfo is None or kickoff_at.utcoffset() is None:
+            raise HTTPException(status_code=422, detail="kickoff_at must include a timezone offset")
+        if kickoff_at <= datetime.now(UTC):
+            raise HTTPException(status_code=400, detail="Market odds are available for upcoming fixtures only")
+        try:
+            quote = get_market_odds_provider().get_match_odds(
+                competition, home_team, away_team, kickoff_at
+            )
+        except MarketOddsError as error:
+            status = 503 if "not configured" in str(error) else 502
+            raise HTTPException(status_code=status, detail=str(error)) from error
+        return MarketOddsResponse(
+            home_fair_odds=quote.home_fair_odds,
+            draw_fair_odds=quote.draw_fair_odds,
+            away_fair_odds=quote.away_fair_odds,
+            bookmaker_count=quote.bookmaker_count,
+            source="The Odds API · bookmaker consensus, margin removed",
+            fetched_at=quote.fetched_at,
+        )
 
     @app.post("/predict", response_model=PredictionResponse)
     def predict(request: PredictionRequest) -> PredictionResponse:
