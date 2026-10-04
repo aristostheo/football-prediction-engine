@@ -97,10 +97,10 @@ class PredictionComponents:
     core_model_probabilities: tuple[float, float, float]
     home_goal_rate: float | None
     away_goal_rate: float | None
-    top_scorelines: tuple[ScorelineForecast, ...]
     elo_weight: float
     base_model_weight: float
     league_prior_probabilities: tuple[float, float, float] | None
+    top_scorelines: tuple[ScorelineForecast, ...] = ()
 
 
 class PredictionEngine:
