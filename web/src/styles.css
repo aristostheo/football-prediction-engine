@@ -117,7 +117,6 @@ input:focus { border-color: #4a6959; box-shadow: 0 0 0 3px rgba(74,105,89,.1); }
 .probability-1 .probability-track i { background: #94a098; }
 .probability-2 .probability-track i { background: #172c22; }
 .freshness { border-top: 1px solid #e0e4dd; padding-top: 12px; color: #808983; font: 400 9px "DM Mono", monospace; text-transform: capitalize; }
-.model-market-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: #f0f3ed; color: #56635a; font-size: 10px; line-height: 1.6; }
 .market-comparison { margin-top: 16px; padding: 14px; border: 1px solid #dfe5dc; border-radius: 12px; background: #f8f9f6; }
 .market-comparison-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .market-comparison-heading h3 { margin: 0; font-size: 12px; }
