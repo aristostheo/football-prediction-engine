@@ -616,12 +616,6 @@ function App() {
                     </div>
                   </section>
                 )}
-                {prediction.model_policy === "market_implied_odds" && (
-                  <p className="model-market-note">
-                    Model-only probabilities: {percent(prediction.model_home_win_probability)} home · {percent(prediction.model_draw_probability)} draw · {percent(prediction.model_away_win_probability)} away.
-                    The headline probabilities above come from the odds.
-                  </p>
-                )}
                 <div className="context-panel">
                   <h3>What informs the model</h3>
                   <p>
