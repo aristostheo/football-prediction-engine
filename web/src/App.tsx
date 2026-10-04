@@ -552,9 +552,9 @@ function App() {
               )}
               {marketOddsNote && <div className={marketOddsNote.startsWith("Market consensus") ? "market-odds-note" : "message"}>{marketOddsNote}</div>}
               <div className="market-odds-fields">
-                <label><span>Home</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => setOddsHome(event.target.value)} /></label>
-                <label><span>Draw</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => setOddsDraw(event.target.value)} /></label>
-                <label><span>Away</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => setOddsAway(event.target.value)} /></label>
+                <label><span>Home</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => { setOddsHome(event.target.value); setMarketOddsNote(null); }} /></label>
+                <label><span>Draw</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => { setOddsDraw(event.target.value); setMarketOddsNote(null); }} /></label>
+                <label><span>Away</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => { setOddsAway(event.target.value); setMarketOddsNote(null); }} /></label>
               </div>
               <small>With all three prices entered, headline probabilities use the supplied margin-removed odds. Model-only probabilities remain available below.</small>
             </details>
