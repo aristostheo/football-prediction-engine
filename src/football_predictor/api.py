@@ -214,7 +214,10 @@ def create_app(
         if kickoff_at.tzinfo is None or kickoff_at.utcoffset() is None:
             raise HTTPException(status_code=422, detail="kickoff_at must include a timezone offset")
         if kickoff_at <= datetime.now(UTC):
-            raise HTTPException(status_code=400, detail="Market odds are available for upcoming fixtures only")
+            raise HTTPException(
+                status_code=400,
+                detail="Market odds are available for upcoming fixtures only",
+            )
         try:
             quote = get_market_odds_provider().get_match_odds(
                 competition, home_team, away_team, kickoff_at
