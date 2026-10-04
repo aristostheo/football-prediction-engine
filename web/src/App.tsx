@@ -226,6 +226,10 @@ function App() {
   const nextFixture = currentFixtureResult?.fixture ?? null;
   const nextFixtureError = currentFixtureResult?.error ?? null;
   const nextFixtureLoading = currentFixtureResult === null;
+  const activeUpcomingFixture = selectedFixture?.competition === competition ? selectedFixture : nextFixture;
+  const isAlternativeFixtureFixture = Boolean(
+    activeUpcomingFixture && nextFixture && activeUpcomingFixture.fixture_id !== nextFixture.fixture_id,
+  );
 
   const scorecardByCompetition = useMemo(
     () => (Object.keys(LEAGUES) as Competition[]).map((key) => {
@@ -436,10 +440,6 @@ function App() {
 
             {mode === "upcoming" ? (
               <section className="upcoming-card" aria-live="polite">
-                {(() => {
-                  const activeFixture = selectedFixture?.competition === competition ? selectedFixture : nextFixture;
-                  const isAlternative = Boolean(activeFixture && nextFixture && activeFixture.fixture_id !== nextFixture.fixture_id);
-                  return (
                 <div className="upcoming-card-heading">
                   <div><span className="section-label">Up next · {LEAGUES[competition].short}</span><h3>{LEAGUES[competition].name}</h3></div>
                   <span className={nextFixtureLoading ? "fixture-status searching" : "fixture-status"}>
@@ -459,15 +459,15 @@ function App() {
                     <button className="text-button" onClick={() => changeMode("explore")} type="button">Explore a matchup instead →</button>
                   </div>
                 )}
-                  {activeFixture && (
+                  {activeUpcomingFixture && (
                     <>
                       <div className="upcoming-card-heading selected-fixture-heading">
-                        <div><span className="section-label">{isAlternative ? "Selected scheduled match" : "Soonest scheduled match"}</span><h3>{LEAGUES[competition].name}</h3></div>
-                        {isAlternative && <button className="text-button" onClick={() => { setSelectedFixture(null); setPrediction(null); }} type="button">Use soonest</button>}
+                        <div><span className="section-label">{isAlternativeFixture ? "Selected scheduled match" : "Soonest scheduled match"}</span><h3>{LEAGUES[competition].name}</h3></div>
+                        {isAlternativeFixture && <button className="text-button" onClick={() => { setSelectedFixture(null); setPrediction(null); }} type="button">Use soonest</button>}
                       </div>
-                      <p className="fixture-kickoff">{fixtureTime(activeFixture.kickoff_at)}</p>
-                      <div className="upcoming-teams"><strong>{activeFixture.home_team}</strong><span>vs</span><strong>{activeFixture.away_team}</strong></div>
-                      <button className="primary-button" disabled={loading} onClick={() => void generateForecast(undefined, activeFixture)} type="button">
+                      <p className="fixture-kickoff">{fixtureTime(activeUpcomingFixture.kickoff_at)}</p>
+                      <div className="upcoming-teams"><strong>{activeUpcomingFixture.home_team}</strong><span>vs</span><strong>{activeUpcomingFixture.away_team}</strong></div>
+                      <button className="primary-button" disabled={loading} onClick={() => void generateForecast(undefined, activeUpcomingFixture)} type="button">
                         {loading ? "Generating forecast…" : "Predict this match"}<span>→</span>
                       </button>
                     </>
@@ -486,7 +486,7 @@ function App() {
                     {dateFixtures.length > 0 && (
                       <div className="date-fixture-list" aria-label="Upcoming fixtures for selected date">
                         {dateFixtures.map((fixture) => {
-                          const selected = activeFixture?.fixture_id === fixture.fixture_id;
+                          const selected = activeUpcomingFixture?.fixture_id === fixture.fixture_id;
                           return (
                             <button className={selected ? "date-fixture-option selected" : "date-fixture-option"} key={fixture.fixture_id} aria-pressed={selected} onClick={() => chooseScheduledFixture(fixture)} type="button">
                               <span>{new Date(fixture.kickoff_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
@@ -498,9 +498,7 @@ function App() {
                       </div>
                     )}
                   </details>
-                </section>
-                  );
-                })()}
+              </section>
             ) : (
               <form className="explore-form" onSubmit={(event) => void generateForecast(event)}>
                 <p className="mode-description">Choose any two teams. This hypothetical forecast uses their latest available results.</p>
