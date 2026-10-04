@@ -52,6 +52,15 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
   };
 }
 
+export interface MarketOddsQuote {
+  home_fair_odds: number;
+  draw_fair_odds: number;
+  away_fair_odds: number;
+  bookmaker_count: number;
+  source: string;
+  fetched_at: string;
+}
+
 export interface LiveFixture {
   fixture_id: string;
   competition: Competition;
@@ -87,6 +96,18 @@ export async function predictMatch(request: PredictionRequest): Promise<Predicti
     body: JSON.stringify(request),
   });
   return parseResponse<Prediction>(response);
+}
+
+export async function getMarketOdds(fixture: LiveFixture): Promise<MarketOddsQuote> {
+  const params = new URLSearchParams({
+    competition: fixture.competition,
+    fixture_id: fixture.fixture_id,
+    home_team: fixture.home_team,
+    away_team: fixture.away_team,
+    kickoff_at: fixture.kickoff_at,
+  });
+  const response = await fetch(`${API_ROOT}/odds?${params}`);
+  return parseResponse<MarketOddsQuote>(response);
 }
 
 export async function getTeams(competition: Competition): Promise<string[]> {
