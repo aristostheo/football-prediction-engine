@@ -245,3 +245,10 @@ footer > a:last-child { color: #b4c0b8; }
   .date-fixture-option { grid-template-columns: 42px minmax(0, 1fr) auto; gap: 6px; padding: 10px 8px; }
   .date-fixture-option strong { flex-direction: column; align-items: flex-start; gap: 2px; }
 }
+
+
+.scoreline-list { display: grid; gap: 8px; margin-top: 12px; }
+.scoreline-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid #e4e9e1; border-radius: 10px; background: #f8faf6; }
+.scoreline-row strong { color: #304037; font-size: 11px; }
+.scoreline-row span { color: #365f3e; font: 600 11px "DM Mono", monospace; white-space: nowrap; }
+.h2h-list { display: grid; gap: 5px; margin: 12px 0 0; padding-left: 15px; color: #66736a; font-size: 10px; line-height: 1.5; }
