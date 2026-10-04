@@ -210,7 +210,9 @@ def test_live_odds_endpoint_returns_quote_metadata() -> None:
     from types import SimpleNamespace
 
     class StubOddsProvider:
-        def get_match_odds(self, competition, home_team, away_team, kickoff_at):  # type: ignore[no-untyped-def]
+        def get_match_odds(
+            self, competition, home_team, away_team, kickoff_at
+        ):  # type: ignore[no-untyped-def]
             assert competition is Competition.PREMIER_LEAGUE
             assert home_team == "Arsenal"
             assert away_team == "Chelsea"
@@ -222,7 +224,9 @@ def test_live_odds_endpoint_returns_quote_metadata() -> None:
                 fetched_at=datetime.now(UTC),
             )
 
-    app = create_app(engine=StubEngine(), market_odds_provider=StubOddsProvider())  # type: ignore[arg-type]
+    app = create_app(
+        engine=StubEngine(), market_odds_provider=StubOddsProvider()
+    )  # type: ignore[arg-type]
     endpoint = next(
         route.endpoint for route in app.routes
         if getattr(route, "path", None) == "/odds"
