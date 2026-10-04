@@ -22,10 +22,10 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
   forecasted_at: string;
   model_home_win_probability: number;
   model_draw_probability: number;
-  model_away_probability: number;
+  model_away_win_probability: number;
   market_home_win_probability: number | null;
   market_draw_probability: number | null;
-  market_away_probability: number | null;
+  market_away_win_probability: number | null;
   context: {
     home_elo: number;
     away_elo: number;
