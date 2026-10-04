@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useId, useMemo, useState } from "react";
 import {
   Competition,
   getFixtures,
+  getMarketOdds,
   getNextFixture,
   getScorecardResults,
   getTeams,
@@ -164,6 +165,8 @@ function App() {
   const [oddsHome, setOddsHome] = useState("");
   const [oddsDraw, setOddsDraw] = useState("");
   const [oddsAway, setOddsAway] = useState("");
+  const [marketOddsNote, setMarketOddsNote] = useState<string | null>(null);
+  const [marketOddsLoading, setMarketOddsLoading] = useState(false);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [trackingNotice, setTrackingNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -286,6 +289,7 @@ function App() {
     setOddsHome("");
     setOddsDraw("");
     setOddsAway("");
+    setMarketOddsNote(null);
   }
 
   function changeMode(next: "upcoming" | "explore") {
@@ -320,6 +324,30 @@ function App() {
     setSelectedFixture(fixture);
     setPrediction(null);
     setError(null);
+    setMarketOddsNote(null);
+    setOddsHome("");
+    setOddsDraw("");
+    setOddsAway("");
+  }
+
+  async function loadOddsForSelectedFixture() {
+    if (!activeUpcomingFixture) return;
+    setMarketOddsLoading(true);
+    setMarketOddsNote(null);
+    setError(null);
+    try {
+      const quote = await getMarketOdds(activeUpcomingFixture);
+      setOddsHome(quote.home_fair_odds.toFixed(2));
+      setOddsDraw(quote.draw_fair_odds.toFixed(2));
+      setOddsAway(quote.away_fair_odds.toFixed(2));
+      setMarketOddsNote(
+        `Market consensus from ${quote.bookmaker_count} bookmakers · margin removed · updated ${new Date(quote.fetched_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`,
+      );
+    } catch (caught) {
+      setMarketOddsNote(caught instanceof Error ? caught.message : "Live market odds are unavailable.");
+    } finally {
+      setMarketOddsLoading(false);
+    }
   }
 
   async function generateForecast(event?: FormEvent, fixture?: LiveFixture) {
@@ -516,13 +544,19 @@ function App() {
 
             <details className="odds-details">
               <summary>Add market odds <span>Optional</span></summary>
-              <p>Enter all three decimal prices to compare with the market. Leave blank to use the model forecast.</p>
+              <p>Load odds for the selected scheduled match, or enter three decimal prices yourself. The market stays separate from the model.</p>
+              {mode === "upcoming" && activeUpcomingFixture && (
+                <button className="secondary-button" disabled={marketOddsLoading} onClick={() => void loadOddsForSelectedFixture()} type="button">
+                  {marketOddsLoading ? "Loading market odds…" : "Load live market odds"}
+                </button>
+              )}
+              {marketOddsNote && <div className={marketOddsNote.startsWith("Market consensus") ? "market-odds-note" : "message"}>{marketOddsNote}</div>}
               <div className="market-odds-fields">
                 <label><span>Home</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => setOddsHome(event.target.value)} /></label>
                 <label><span>Draw</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => setOddsDraw(event.target.value)} /></label>
                 <label><span>Away</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => setOddsAway(event.target.value)} /></label>
               </div>
-              <small>With all three prices entered, headline probabilities use margin-removed market odds.</small>
+              <small>With all three prices entered, headline probabilities use the supplied margin-removed odds. Model-only probabilities remain available below.</small>
             </details>
 
             {(error || (mode === "explore" && teamCatalogError)) && <div className="message error-message">{error ?? teamCatalogError}</div>}
