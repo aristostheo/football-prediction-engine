@@ -463,7 +463,7 @@ function App() {
                   {activeUpcomingFixture && (
                     <>
                       <div className="upcoming-card-heading selected-fixture-heading">
-                        <div><span className="section-label">{isAlternativeFixture ? "Selected scheduled match" : "Soonest scheduled match"}</span><h3>{LEAGUES[competition].name}</h3></div>
+                        <div><span className="section-label">{isAlternativeFixture ? "Selected scheduled match" : "Soonest scheduled match"}</span></div>
                         {isAlternativeFixture && <button className="text-button" onClick={() => { setSelectedFixture(null); setPrediction(null); }} type="button">Use soonest</button>}
                       </div>
                       <p className="fixture-kickoff">{fixtureTime(activeUpcomingFixture.kickoff_at)}</p>
