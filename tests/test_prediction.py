@@ -78,6 +78,18 @@ def test_market_odds_use_margin_removed_probabilities(
     assert components.goal_probabilities is not None
     assert components.home_goal_rate is not None and components.home_goal_rate > 0
     assert components.away_goal_rate is not None and components.away_goal_rate > 0
+    assert len(components.top_scorelines) == 3
+    assert all(scoreline.probability > 0 for scoreline in components.top_scorelines)
+    assert all(
+        earlier.probability >= later.probability
+        for earlier, later in zip(components.top_scorelines, components.top_scorelines[1:])
+    )
+    assert prediction.context.head_to_head_matches >= len(prediction.context.head_to_head_recent)
+    assert prediction.context.head_to_head_matches == (
+        prediction.context.head_to_head_home_wins
+        + prediction.context.head_to_head_draws
+        + prediction.context.head_to_head_away_wins
+    )
     assert prediction.model_probabilities == pytest.approx(
         tuple(
             0.25 * elo + 0.75 * goal
