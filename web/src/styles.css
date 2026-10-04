@@ -118,6 +118,18 @@ input:focus { border-color: #4a6959; box-shadow: 0 0 0 3px rgba(74,105,89,.1); }
 .probability-2 .probability-track i { background: #172c22; }
 .freshness { border-top: 1px solid #e0e4dd; padding-top: 12px; color: #808983; font: 400 9px "DM Mono", monospace; text-transform: capitalize; }
 .model-market-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: #f0f3ed; color: #56635a; font-size: 10px; line-height: 1.6; }
+.market-comparison { margin-top: 16px; padding: 14px; border: 1px solid #dfe5dc; border-radius: 12px; background: #f8f9f6; }
+.market-comparison-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.market-comparison-heading h3 { margin: 0; font-size: 12px; }
+.market-comparison-heading > span { color: #7b847d; font-size: 9px; }
+.market-comparison > p { margin: 6px 0 12px; color: #727b74; font-size: 9px; line-height: 1.5; }
+.market-comparison-row { display: grid; grid-template-columns: minmax(90px, 1.4fr) repeat(3, minmax(48px, .7fr)); gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid #e5e9e2; font-size: 10px; }
+.market-comparison-row > :not(:first-child) { text-align: right; font-family: "DM Mono", monospace; }
+.market-comparison-head { color: #7b847d; font-size: 8px; border-top: 0; padding-top: 0; }
+.market-comparison-head > :not(:first-child) { font-family: inherit; }
+.market-comparison-row strong { font-size: 10px; color: #56635a; }
+.market-comparison-row .gap-positive { color: #28734b; }
+.market-comparison-row .gap-negative { color: #8b5142; }
 .context-panel { margin-top: 16px; padding: 15px; border: 1px solid #e0e5dc; border-radius: 12px; background: #f8f9f6; }
 .context-panel h3 { margin: 0 0 5px; font-size: 12px; }
 .context-panel > p { margin: 0 0 12px; color: #788179; font-size: 10px; line-height: 1.5; }
