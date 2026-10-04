@@ -583,6 +583,39 @@ function App() {
                     : `Forecast source: Model · ${prediction.model_policy.replaceAll("_", " ")}`}</span>
                   <span>History through {prediction.history_through} · {prediction.history_age_days} days old</span>
                 </div>
+                {prediction.market_home_win_probability !== null
+                  && prediction.market_draw_probability !== null
+                  && prediction.market_away_win_probability !== null && (
+                  <section className="market-comparison" aria-label="Model versus market probabilities">
+                    <div className="market-comparison-heading">
+                      <h3>Model vs market</h3>
+                      <span>Fair market probabilities</span>
+                    </div>
+                    <p>Gap is model minus market in percentage points. Positive means the model assigns a higher probability to that outcome; it is not proof of betting value.</p>
+                    <div className="market-comparison-grid" role="table" aria-label="Outcome probability comparison">
+                      <div className="market-comparison-row market-comparison-head" role="row">
+                        <span role="columnheader">Outcome</span><span role="columnheader">Model</span><span role="columnheader">Market</span><span role="columnheader">Gap</span>
+                      </div>
+                      {[
+                        { label: `${prediction.home_team} win`, model: prediction.model_home_win_probability, market: prediction.market_home_win_probability },
+                        { label: "Draw", model: prediction.model_draw_probability, market: prediction.market_draw_probability },
+                        { label: `${prediction.away_team} win`, model: prediction.model_away_win_probability, market: prediction.market_away_win_probability },
+                      ].map((row) => {
+                        const gap = (row.model - row.market) * 100;
+                        return (
+                          <div className="market-comparison-row" role="row" key={row.label}>
+                            <span role="cell">{row.label}</span>
+                            <span role="cell">{percent(row.model)}</span>
+                            <span role="cell">{percent(row.market)}</span>
+                            <strong className={gap > 0 ? "gap-positive" : gap < 0 ? "gap-negative" : ""} role="cell">
+                              {gap > 0 ? "+" : ""}{gap.toFixed(1)} pp
+                            </strong>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
                 {prediction.model_policy === "market_implied_odds" && (
                   <p className="model-market-note">
                     Model-only probabilities: {percent(prediction.model_home_win_probability)} home · {percent(prediction.model_draw_probability)} draw · {percent(prediction.model_away_probability)} away.
