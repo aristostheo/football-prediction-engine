@@ -144,6 +144,7 @@ def compare(
     *,
     max_test_seasons: int = 10,
     bootstrap_samples: int = 10_000,
+    recency_only: bool = False,
 ) -> dict[str, dict[str, object]]:
     raw = matches.copy()
     raw["match_date"] = pd.to_datetime(raw["match_date"], format="ISO8601")
@@ -163,6 +164,12 @@ def compare(
                 continue
             baseline = _baseline(str(competition), train, test)
             posteriors = _h2h_posteriors(str(competition), test, baseline, h2h_index)
+            if recency_only:
+                posteriors = {
+                    name: posterior
+                    for name, posterior in posteriors.items()
+                    if name.startswith("decay")
+                }
             baseline["result"] = test["result"].to_numpy()
             for posterior in posteriors.values():
                 posterior["result"] = test["result"].to_numpy()
@@ -242,6 +249,7 @@ def compare(
         baseline_loss = _log_loss(baseline_all)
         candidate_loss = _log_loss(candidate_all)
         output[str(competition)] = {
+            "candidate_set": "recency-weighted only" if recency_only else "all history options",
             "test_seasons": tested_seasons,
             "matches": len(baseline_all),
             "baseline_log_loss": baseline_loss,
@@ -264,6 +272,11 @@ def main() -> None:
     )
     parser.add_argument("--max-test-seasons", type=int, default=10)
     parser.add_argument("--bootstrap-samples", type=int, default=10_000)
+    parser.add_argument(
+        "--recency-only",
+        action="store_true",
+        help="select only among 2-, 5-, or 10-year recency half-lives",
+    )
     args = parser.parse_args()
     if args.max_test_seasons < 1 or args.bootstrap_samples < 1:
         parser.error("season and bootstrap counts must be positive")
@@ -272,6 +285,7 @@ def main() -> None:
         matches,
         max_test_seasons=args.max_test_seasons,
         bootstrap_samples=args.bootstrap_samples,
+        recency_only=args.recency_only,
     )
     print(json.dumps(result, indent=2))
 
