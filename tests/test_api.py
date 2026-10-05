@@ -72,6 +72,8 @@ class StubFixtureProvider:
                 kickoff_at=datetime(2025, 6, 1, 15, 0),
                 home_team="Arsenal FC",
                 away_team="Chelsea FC",
+                home_badge_url="https://media.goal-api.com/badges/arsenal.png",
+                away_badge_url="https://media.goal-api.com/badges/chelsea.png",
             )
         ]
 
@@ -119,6 +121,7 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
 
     fixtures = routes["/fixtures"](Competition.PREMIER_LEAGUE, date(2025, 6, 1))
     assert fixtures[0].fixture_id == "123"
+    assert fixtures[0].home_badge_url == "https://media.goal-api.com/badges/arsenal.png"
 
     prediction = routes["/predict"](
         PredictionRequest(

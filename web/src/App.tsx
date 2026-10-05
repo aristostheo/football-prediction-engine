@@ -58,11 +58,23 @@ function outcomeSummary(values: [number, number, number]): string {
   return `Home ${percent(values[0])} · Draw ${percent(values[1])} · Away ${percent(values[2])}`;
 }
 
+function TeamBadge({ name, src, size = "normal" }: { name: string; src?: string | null; size?: "normal" | "small" }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  return (
+    <span className={`team-badge team-badge-${size}`} aria-hidden="true">
+      {src && !failed ? <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /> : initials}
+    </span>
+  );
+}
+
 function TeamPicker({
   label,
   value,
   teams,
   exclude,
+  badges,
   loading,
   onSelect,
 }: {
@@ -70,6 +82,7 @@ function TeamPicker({
   value: string;
   teams: string[];
   exclude: string;
+  badges: Record<string, string>;
   loading: boolean;
   onSelect: (team: string) => void;
 }) {
@@ -136,6 +149,7 @@ function TeamPicker({
                 role="option"
                 type="button"
               >
+                <TeamBadge name={team} src={badges[team.toLocaleLowerCase()]} size="small" />
                 {team}
               </button>
             )) : (
@@ -231,6 +245,15 @@ function App() {
   const nextFixtureError = currentFixtureResult?.error ?? null;
   const nextFixtureLoading = currentFixtureResult === null;
   const activeUpcomingFixture = selectedFixture?.competition === competition ? selectedFixture : nextFixture;
+  const teamBadges = useMemo(() => {
+    const result: Record<string, string> = {};
+    for (const fixture of [nextFixture, selectedFixture, ...dateFixtures]) {
+      if (!fixture || fixture.competition !== competition) continue;
+      if (fixture.home_badge_url) result[fixture.home_team.toLocaleLowerCase()] = fixture.home_badge_url;
+      if (fixture.away_badge_url) result[fixture.away_team.toLocaleLowerCase()] = fixture.away_badge_url;
+    }
+    return result;
+  }, [competition, dateFixtures, nextFixture, selectedFixture]);
   const isAlternativeFixture = Boolean(
     activeUpcomingFixture && nextFixture && activeUpcomingFixture.fixture_id !== nextFixture.fixture_id,
   );
@@ -264,12 +287,12 @@ function App() {
   const probabilities = useMemo(
     () => prediction
       ? [
-          { label: prediction.home_team, short: "Home", value: prediction.model_home_win_probability },
+          { label: prediction.home_team, short: "Home", badge: teamBadges[prediction.home_team.toLocaleLowerCase()], value: prediction.model_home_win_probability },
           { label: "Draw", short: "Draw", value: prediction.model_draw_probability },
-          { label: prediction.away_team, short: "Away", value: prediction.model_away_win_probability },
+          { label: prediction.away_team, short: "Away", badge: teamBadges[prediction.away_team.toLocaleLowerCase()], value: prediction.model_away_win_probability },
         ]
       : [],
-    [prediction],
+    [prediction, teamBadges],
   );
 
   function changeLeague(next: Competition) {
@@ -496,7 +519,7 @@ function App() {
                         {isAlternativeFixture && <button className="text-button" onClick={() => { setSelectedFixture(null); setPrediction(null); }} type="button">Use soonest</button>}
                       </div>
                       <p className="fixture-kickoff">{fixtureTime(activeUpcomingFixture.kickoff_at)}</p>
-                      <div className="upcoming-teams"><strong>{activeUpcomingFixture.home_team}</strong><span>vs</span><strong>{activeUpcomingFixture.away_team}</strong></div>
+                      <div className="upcoming-teams"><div className="fixture-team"><TeamBadge name={activeUpcomingFixture.home_team} src={activeUpcomingFixture.home_badge_url} /><strong>{activeUpcomingFixture.home_team}</strong></div><span>vs</span><div className="fixture-team away"><TeamBadge name={activeUpcomingFixture.away_team} src={activeUpcomingFixture.away_badge_url} /><strong>{activeUpcomingFixture.away_team}</strong></div></div>
                       <button className="primary-button" disabled={loading} onClick={() => void generateForecast(undefined, activeUpcomingFixture)} type="button">
                         {loading ? "Generating forecast…" : "Predict this match"}<span>→</span>
                       </button>
@@ -520,7 +543,7 @@ function App() {
                           return (
                             <button className={selected ? "date-fixture-option selected" : "date-fixture-option"} key={fixture.fixture_id} aria-pressed={selected} onClick={() => chooseScheduledFixture(fixture)} type="button">
                               <span>{new Date(fixture.kickoff_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                              <strong>{fixture.home_team}<i>vs</i>{fixture.away_team}</strong>
+                              <strong className="date-fixture-teams"><span><TeamBadge name={fixture.home_team} src={fixture.home_badge_url} size="small" />{fixture.home_team}</span><i>vs</i><span><TeamBadge name={fixture.away_team} src={fixture.away_badge_url} size="small" />{fixture.away_team}</span></strong>
                               <em>{selected ? "Selected" : "Choose"}</em>
                             </button>
                           );
@@ -533,9 +556,9 @@ function App() {
               <form className="explore-form" onSubmit={(event) => void generateForecast(event)}>
                 <p className="mode-description">Choose any two teams. This hypothetical forecast uses their latest available results.</p>
                 <div className="team-fields">
-                  <TeamPicker key={`${competition}-home`} label="Home team" value={homeTeam} teams={teamOptions} exclude={awayTeam} loading={teamsLoading} onSelect={(team) => { setHomeTeam(team); setPrediction(null); }} />
+                  <TeamPicker key={`${competition}-home`} label="Home team" value={homeTeam} teams={teamOptions} exclude={awayTeam} badges={teamBadges} loading={teamsLoading} onSelect={(team) => { setHomeTeam(team); setPrediction(null); }} />
                   <span className="versus">VS</span>
-                  <TeamPicker key={`${competition}-away`} label="Away team" value={awayTeam} teams={teamOptions} exclude={homeTeam} loading={teamsLoading} onSelect={(team) => { setAwayTeam(team); setPrediction(null); }} />
+                  <TeamPicker key={`${competition}-away`} label="Away team" value={awayTeam} teams={teamOptions} exclude={homeTeam} badges={teamBadges} loading={teamsLoading} onSelect={(team) => { setAwayTeam(team); setPrediction(null); }} />
                 </div>
                 <button className="primary-button" disabled={loading || teamsLoading || teamOptions.length < 2} type="submit">
                   {loading ? "Generating forecast…" : "Generate hypothetical forecast"}<span>→</span>
@@ -573,7 +596,7 @@ function App() {
                     <div className={`probability probability-${index}`} key={item.short}>
                       <div><span>{item.short}</span><strong>{percent(item.value)}</strong></div>
                       <div className="probability-track"><i style={{ width: percent(item.value) }} /></div>
-                      <small>{item.label}</small>
+                      <small className="probability-team"><TeamBadge name={item.label} src={"badge" in item ? item.badge : undefined} size="small" />{item.label}</small>
                     </div>
                   ))}
                 </div>

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Protocol
 from urllib.error import HTTPError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from football_predictor.domain import Competition
@@ -34,6 +34,8 @@ class LiveFixture:
     kickoff_at: datetime
     home_team: str
     away_team: str
+    home_badge_url: str | None = None
+    away_badge_url: str | None = None
 
 
 class FixtureProvider(Protocol):
@@ -173,6 +175,8 @@ class ApiFootballFixtureProvider:
                     kickoff_at=datetime.fromisoformat(item["fixture"]["date"]),
                     home_team=item["teams"]["home"]["name"],
                     away_team=item["teams"]["away"]["name"],
+                    home_badge_url=_safe_badge_url(item["teams"]["home"].get("logo")),
+                    away_badge_url=_safe_badge_url(item["teams"]["away"].get("logo")),
                 )
                 for item in payload["response"]
             ]
@@ -250,7 +254,26 @@ def _goal_api_fixture(item: dict[str, object], competition: Competition) -> Live
         kickoff_at=_goal_api_kickoff(item),
         home_team=_goal_api_team_name(item, "home"),
         away_team=_goal_api_team_name(item, "away"),
+        home_badge_url=_goal_api_badge_url(item, "home"),
+        away_badge_url=_goal_api_badge_url(item, "away"),
     )
+
+
+def _goal_api_badge_url(item: dict[str, object], side: str) -> str | None:
+    direct = item.get(f"team{side.title()}Badge") or item.get(f"team_{side}_badge")
+    team = item.get(f"{side}Team") or item.get(f"{side}_team") or item.get(side)
+    nested = team.get("badge") or team.get("logo") if isinstance(team, dict) else None
+    return _safe_badge_url(direct or nested)
+
+
+def _safe_badge_url(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    parsed = urlparse(value)
+    trusted_hosts = {"media.goal-api.com", "media.api-sports.io"}
+    if parsed.scheme != "https" or parsed.hostname not in trusted_hosts:
+        return None
+    return value
 
 
 def _goal_api_kickoff(item: dict[str, object]) -> datetime:

@@ -113,6 +113,8 @@ class LiveFixtureResponse(BaseModel):
     kickoff_at: str
     home_team: str
     away_team: str
+    home_badge_url: str | None = None
+    away_badge_url: str | None = None
 
 
 def create_app(
@@ -294,6 +296,8 @@ def _fixture_response(fixture: LiveFixture) -> LiveFixtureResponse:
         kickoff_at=fixture.kickoff_at.isoformat(),
         home_team=fixture.home_team,
         away_team=fixture.away_team,
+        home_badge_url=fixture.home_badge_url,
+        away_badge_url=fixture.away_badge_url,
     )
 
 

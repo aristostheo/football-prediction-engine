@@ -22,8 +22,8 @@ def test_goal_api_provider_parses_and_filters_fixture_payload(monkeypatch) -> No
           "leagueId": "internal-premier-league-id",
           "leagueApiId": "152",
           "kickoffUtc": "2026-10-04T15:00:00.000Z",
-          "homeTeam": {"name": "Arsenal"},
-          "awayTeam": {"name": "Chelsea"}
+          "homeTeam": {"name": "Arsenal", "badge": "https://media.goal-api.com/badges/arsenal.png"},
+          "awayTeam": {"name": "Chelsea", "badge": "https://media.goal-api.com/badges/chelsea.png"}
         },
         {
           "id": "fixture-456",
@@ -49,6 +49,8 @@ def test_goal_api_provider_parses_and_filters_fixture_payload(monkeypatch) -> No
 
     assert [fixture.fixture_id for fixture in fixtures] == ["fixture-123"]
     assert fixtures[0].home_team == "Arsenal"
+    assert fixtures[0].home_badge_url == "https://media.goal-api.com/badges/arsenal.png"
+    assert fixtures[0].away_badge_url == "https://media.goal-api.com/badges/chelsea.png"
     assert fixtures[0].kickoff_at.isoformat() == "2026-10-04T15:00:00+00:00"
     assert "/fixtures/date/2026-10-04?" in requests[0].full_url
     assert "leagueId=cmr77dvkr005nrx06lp7rvp49" in requests[0].full_url
@@ -87,6 +89,25 @@ def test_goal_api_provider_supports_greece_and_split_date_fields(monkeypatch) ->
     assert fixtures[0].kickoff_at.isoformat() == "2026-10-04T17:30:00+00:00"
     assert "/fixtures/date/2026-10-04?" in requested_urls[0]
     assert "leagueId=cmr77dwfb00jmrx06oapyzogf" in requested_urls[0]
+
+
+def test_goal_api_fixture_accepts_direct_badges_and_rejects_untrusted_badge_hosts(
+    monkeypatch,
+) -> None:  # type: ignore[no-untyped-def]
+    payload = b'''{"success":true,"data":[{
+      "id":"direct-badges","kickoffUtc":"2026-10-04T15:00:00Z",
+      "homeTeam":{"name":"Arsenal"},"awayTeam":{"name":"Chelsea"},
+      "teamHomeBadge":"https://media.goal-api.com/badges/a.png",
+      "teamAwayBadge":"https://example.com/not-a-team-logo.png"
+    }]}'''
+    monkeypatch.setattr(live_fixtures, "urlopen", lambda request, timeout: io.BytesIO(payload))
+
+    fixture = GoalApiFixtureProvider("test-key").list_fixtures(
+        Competition.PREMIER_LEAGUE, date(2026, 10, 4)
+    )[0]
+
+    assert fixture.home_badge_url == "https://media.goal-api.com/badges/a.png"
+    assert fixture.away_badge_url is None
 
 
 def test_goal_api_provider_follows_league_fixture_pagination(monkeypatch) -> None:  # type: ignore[no-untyped-def]

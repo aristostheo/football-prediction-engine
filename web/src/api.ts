@@ -73,6 +73,8 @@ export interface LiveFixture {
   kickoff_at: string;
   home_team: string;
   away_team: string;
+  home_badge_url?: string | null;
+  away_badge_url?: string | null;
 }
 
 export interface ScorecardFixture {
