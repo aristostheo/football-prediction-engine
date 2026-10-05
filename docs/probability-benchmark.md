@@ -21,14 +21,14 @@ Main weaknesses observed: equal weighting within the five-match form window; fix
 
 ## 2. Data and time splits
 
-Bundled source: data/model/historical_matches.csv.gz, manifest generated 2026-10-02. It contains 10,995 results: 9,930 Premier League and 1,065 Greek Super League matches. Results run through 2026-09-20. Partial 2026–27 seasons (50 Premier League and 35 Greek matches) were excluded from validation and test. The latest complete Premier League season is 2025–26.
+Bundled source: data/model/historical_matches.csv.gz, manifest generated 2026-10-02, SHA-256 21ce84a7d8973c8ad5c1884c0a74eaeb2ed37089512b791487b4a9a5e63c670a. It contains 10,995 results: 9,930 Premier League and 1,065 Greek Super League matches. Results run through 2026-09-20. Partial 2026–27 seasons (50 Premier League and 35 Greek matches) were excluded from validation and test. The latest complete Premier League season is 2025–26.
 
 The model-selection design is expanding by season. Every fold fits on matches dated before that season and predicts the entire season. Candidate decay/model choice uses validation seasons only; test seasons are later and untouched by those choices.
 
 | League | Validation seasons | Validation matches and dates | Final test seasons | Test matches and dates | Training sizes for final test folds |
 |---|---|---:|---|---:|---|
-| Premier League | 2016–17 to 2020–21 | 1,900; 2016-08-13 to 2021-05-23 | 2021–22 to 2025–26 | 1,900; 2021-08-13 to 2026-05-24 | 7,980; 8,360; 8,740; 9,120; 9,500 |
-| Greece Super League | 2019–20, 2020–21 | 364; 2019-08-24 to 2021-03-14 | 2023–24, 2024–25 | 364; 2023-08-18 to 2025-03-09 | 604; 786 |
+| Premier League | 2016–17 to 2020–21 | 1,900; 2016-08-13 to 2021-05-23 | 2021–22 to 2025–26 | 1,900; 2021-08-13 to 2026-05-24 | 7,980; 8,360; 8,740; 9,120; 9,500; train dates 2000-08-19 through 2025-05-25 |
+| Greece Super League | 2019–20, 2020–21 | 364; 2019-08-24 to 2021-03-14 | 2023–24, 2024–25 | 364; 2023-08-18 to 2025-03-09 | 604; 786; train dates 2018-08-25 through 2024-03-03 |
 
 For the Premier League validation folds, training sizes were 6,080, 6,460, 6,840, 7,220, and 7,600. Greek validation training sizes were 240 and 422. Counts vary by fold because each later season includes the earlier seasons. Greece has no bundled 2021–22 or 2022–23 results; its final test therefore contains only two season blocks.
 
