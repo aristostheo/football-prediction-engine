@@ -7,7 +7,11 @@ import pytest
 from football_predictor.api import PredictionRequest, create_app
 from football_predictor.domain import Competition
 from football_predictor.live_fixtures import LiveFixture
-from football_predictor.prediction import FixtureToPredict, PredictionEngine
+from football_predictor.prediction import (
+    FixtureToPredict,
+    PredictionEngine,
+    _head_to_head_summary,
+)
 
 
 @pytest.fixture(scope="module")
@@ -338,3 +342,69 @@ def test_selected_live_fixture_can_be_normalized_by_prediction_endpoint(
         )
     )
     assert result.home_team == expected_home
+
+
+def test_head_to_head_summary_counts_actual_winner_and_excludes_forecast_day() -> None:
+    history = pd.DataFrame(
+        [
+            {
+                "match_date": date(2025, 1, 1),
+                "home_team": "Arsenal FC",
+                "away_team": "Chelsea FC",
+                "home_goals": 2,
+                "away_goals": 0,
+                "result": "H",
+            },
+            {
+                "match_date": date(2025, 1, 2),
+                "home_team": "Arsenal FC",
+                "away_team": "Chelsea FC",
+                "home_goals": 0,
+                "away_goals": 1,
+                "result": "A",
+            },
+            {
+                "match_date": date(2025, 1, 3),
+                "home_team": "Chelsea FC",
+                "away_team": "Arsenal FC",
+                "home_goals": 1,
+                "away_goals": 0,
+                "result": "H",
+            },
+            {
+                "match_date": date(2025, 1, 4),
+                "home_team": "Chelsea FC",
+                "away_team": "Arsenal FC",
+                "home_goals": 0,
+                "away_goals": 1,
+                "result": "A",
+            },
+            {
+                "match_date": date(2025, 1, 5),
+                "home_team": "Arsenal FC",
+                "away_team": "Chelsea FC",
+                "home_goals": 1,
+                "away_goals": 1,
+                "result": "D",
+            },
+            {
+                "match_date": date(2025, 1, 6),
+                "home_team": "Arsenal FC",
+                "away_team": "Chelsea FC",
+                "home_goals": 3,
+                "away_goals": 0,
+                "result": "H",
+            },
+        ]
+    )
+
+    summary = _head_to_head_summary(
+        history, "Arsenal FC", "Chelsea FC", date(2025, 1, 6)
+    )
+
+    assert summary["head_to_head_matches"] == 5
+    assert summary["head_to_head_home_wins"] == 2
+    assert summary["head_to_head_draws"] == 1
+    assert summary["head_to_head_away_wins"] == 2
+    assert summary["head_to_head_recent"][0].startswith("2025-01-05:")
+    assert summary["head_to_head_recent"][0].endswith("(D for Arsenal FC)")
