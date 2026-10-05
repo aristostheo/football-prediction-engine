@@ -113,3 +113,15 @@ uv run python -m football_predictor.model_cli \
   --input /tmp/historical_match_features.csv \
   --walk-forward
 ```
+
+
+## Head-to-head probability experiment
+
+Recent head-to-head results were tested as an optional probability input with a nested, expanding-season procedure. For each forecast, the candidate uses only the previous five meetings strictly before the fixture date. Their outcome counts are shrunk toward that match's existing model probabilities with prior strength 6, then blended with the existing forecast. The blend weight is selected from 0%, 5%, 10%, 15%, 20%, 30%, and 40% using only earlier walk-forward seasons; the first test season uses 0%. Uncertainty resamples paired season-level log-loss differences. Run the reproducible experiment from the repository root with `PYTHONPATH=src python experiments/h2h_walk_forward.py`.
+
+| Competition | Test seasons | Matches | Existing log loss | Nested H2H log loss | H2H − existing | Paired season-block 95% interval |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Premier League | 2021-22–2025-26 | 1,900 | 0.97407 | 0.97422 | +0.00015 | [0.00000, 0.00045] |
+| Super League Greece | 2019-20, 2020-21, 2023-24, 2024-25 | 728 | 0.98543 | 0.98543 | 0.00000 | [0.00000, 0.00000] |
+
+Lower log loss is better. The prospective H2H blend did not improve either league: its weight was zero for nearly all tested seasons, and the pooled result was unchanged or slightly worse. This is not evidence that H2H improves calibrated W/D/L probabilities, so H2H remains display-only context in the product. The Greek sample has just four test-season blocks, and five PL blocks still provide limited uncertainty estimates. More seasons or better inputs would be needed to revisit this decision. This experiment does not establish that H2H can never help; it rejects this particular simple H2H formulation for the current model.
