@@ -117,11 +117,27 @@ uv run python -m football_predictor.model_cli \
 
 ## Head-to-head probability experiment
 
-Recent head-to-head results were tested as an optional probability input with a nested, expanding-season procedure. For each forecast, the candidate uses only the previous five meetings strictly before the fixture date. Their outcome counts are shrunk toward that match's existing model probabilities with prior strength 6, then blended with the existing forecast. The blend weight is selected from 0%, 5%, 10%, 15%, 20%, 30%, and 40% using only earlier walk-forward seasons; the first test season uses 0%. Uncertainty resamples paired season-level log-loss differences. Run the reproducible experiment from the repository root with `PYTHONPATH=src python experiments/h2h_walk_forward.py`.
+**Correction:** the first H2H calculation incorrectly credited every non-draw result to the historical home club, even when it lost. Those earlier H2H metrics are invalid and should be disregarded. The count display was corrected to orient wins and losses to the forecasted home team, and a regression test now covers both venue orders, wins, losses, draws, and exclusion of same-day results.
 
-| Competition | Test seasons | Matches | Existing log loss | Nested H2H log loss | H2H − existing | Paired season-block 95% interval |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| Premier League | 2021-22–2025-26 | 1,900 | 0.97407 | 0.97422 | +0.00015 | [0.00000, 0.00045] |
-| Super League Greece | 2019-20, 2020-21, 2023-24, 2024-25 | 728 | 0.98543 | 0.98543 | 0.00000 | [0.00000, 0.00000] |
+The expanded experiment compares the previous 5, 10, or 20 meetings and all prior meetings. It also tests calendar-time exponential decay with 2-, 5-, and 10-year half-lives, so more recent matches receive greater weight. Every H2H estimate is shrunk toward the current model forecast with prior strength 6. The H2H mixture weight and history method are selected using only earlier complete-season folds. The first test season uses the unchanged model. Same-day results are excluded.
 
-Lower log loss is better. The prospective H2H blend did not improve either league: its weight was zero for nearly all tested seasons, and the pooled result was unchanged or slightly worse. This is not evidence that H2H improves calibrated W/D/L probabilities, so H2H remains display-only context in the product. The Greek sample has just four test-season blocks, and five PL blocks still provide limited uncertainty estimates. More seasons or better inputs would be needed to revisit this decision. This experiment does not establish that H2H can never help; it rejects this particular simple H2H formulation for the current model.
+| Competition | Test seasons | Matches | Existing log loss | Nested history selection | H2H − existing | Paired season-block 95% interval |
+| --- | --- | ---: | ---: | --- | ---: | ---: |
+| Premier League | 2016-17–2025-26 | 3,800 | 0.96877 | Mix of last 10, 5–10% H2H weight | -0.00052 | [-0.00130, 0.00021] |
+| Super League Greece | 2019-20, 2020-21, 2023-24, 2024-25 | 728 | 0.98543 | All prior meetings, 30–50% H2H weight | -0.01182 | [-0.02201, -0.00275] |
+
+A separate run constrained the candidate set to recency-weighted histories only:
+
+| Competition | Existing log loss | Recency-weighted H2H log loss | H2H − existing | Paired season-block 95% interval |
+| --- | ---: | ---: | ---: | ---: |
+| Premier League | 0.96877 | 0.96861 | -0.00016 | [-0.00069, 0.00034] |
+| Super League Greece | 0.98543 | 0.97422 | -0.01122 | [-0.02052, -0.00274] |
+
+Lower log loss is better. The expanded H2H variants show no clear PL gain; both PL intervals include zero, and the change is very small. Greece shows a promising improvement in all three seasons where the nested process selected a nonzero H2H weight. However, there are only four Greek test-season blocks, the history omits two seasons, and several years of results are missing. The season-block interval is therefore fragile, and the Greek result needs another independent evaluation before changing production W/D/L probabilities. H2H remains context-only in the dashboard for now.
+
+Run both candidate sets from the repository root:
+
+```bash
+PYTHONPATH=src python experiments/h2h_walk_forward.py
+PYTHONPATH=src python experiments/h2h_walk_forward.py --recency-only
+```
