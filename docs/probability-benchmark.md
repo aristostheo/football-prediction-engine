@@ -61,17 +61,17 @@ Scores are on the stated final test fixtures. Lower Log Loss, Brier, RPS, and ca
 | League | Model | N | Log Loss | Brier | RPS | Accuracy |
 |---|---|---:|---:|---:|---:|---:|
 | Premier League | Production (fixed Elo/Poisson policy) | 1,900 | 0.9741 | 0.5799 | 0.1997 | 0.5384 |
-| Premier League | Dixon–Coles, decay selected on validation | 1,900 | 0.9963 | 0.5945 | 0.2071 | 0.5111 |
+| Premier League | Dixon–Coles, decay selected on validation | 1,900 | 0.9963 | 0.5945 | 0.2071 | 0.5111 |\n| Premier League | Dixon–Coles + validation-selected H2H | 1,900 | 0.9956 | 0.5939 | 0.2069 | 0.5142 |
 | Premier League | Calibrated HistGradientBoosting | 1,900 | 0.9943 | 0.5925 | 0.2050 | 0.5321 |
 | Premier League | Production/DC blend, DC weight selected on validation | 1,900 | 0.9764 | 0.5812 | 0.2004 | 0.5311 |
 | Premier League | De-vigged closing odds | 1,900 | 0.9570 | 0.5679 | 0.1940 | 0.5537 |
 | Greece Super League | Production Elo policy | 364 | 1.0012 | 0.5969 | 0.2053 | 0.5330 |
-| Greece Super League | Dixon–Coles, decay selected on validation | 364 | 0.9704 | 0.5721 | 0.1946 | 0.5385 |
+| Greece Super League | Dixon–Coles, decay selected on validation | 364 | 0.9704 | 0.5721 | 0.1946 | 0.5385 |\n| Greece Super League | Dixon–Coles + validation-selected H2H | 364 | 0.9641 | 0.5673 | 0.1925 | 0.5385 |
 | Greece Super League | Calibrated HistGradientBoosting | 364 | 1.0255 | 0.6140 | 0.2136 | 0.4945 |
 | Greece Super League | Production/DC blend, DC weight selected on validation | 364 | 0.9675 | 0.5717 | 0.1943 | 0.5495 |
 | Greece Super League | De-vigged closing odds | 361 | 0.9252 | 0.5449 | 0.1804 | 0.5540 |
 
-The independent market was best in both leagues. On Premier League test fixtures, the production model’s Log Loss exceeded the closing-market Log Loss by 0.0171; the existing five-season paired season-block bootstrap estimated a 95% interval of 0.0111 to 0.0227. The market-assisted walk-forward procedure selected 100% market weight, so the model did not add useful information to those closing prices.
+The independent market was best in both leagues. On Premier League test fixtures, the production model’s Log Loss exceeded the closing-market Log Loss by 0.0171; the existing five-season paired season-block bootstrap estimated a 95% interval of 0.0111 to 0.0227. A production/DC ensemble chose a 25% DC share for the Premier League and 80% for Greece using validation Log Loss. It did not beat production in the Premier League; in Greece it improved modestly but remains based on two test seasons. The market-assisted walk-forward procedure selected 100% market weight, so the model did not add useful information to those closing prices.
 
 Premier League Dixon–Coles was worse than production by 0.0222 Log Loss. Its paired differences by test season were +0.0010, +0.0482, +0.0123, +0.0359, and +0.0138. A five-season block bootstrap gives a positive average difference, but there are only five blocks and the spread is large; this is evidence against replacing the model, not a precise estimate of future loss.
 
@@ -85,7 +85,7 @@ One-vs-rest expected calibration error (ECE) for home/draw/away probabilities:
 |---|---:|---:|---:|
 | Premier League production | 0.0196 | 0.0052 | 0.0122 |
 | Premier League Dixon–Coles | 0.0184 | 0.0067 | 0.0192 |
-| Greece production | 0.0862 | 0.0128 | 0.0646 |
+| Greece production | 0.0862 | 0.0128 | 0.0646 |\n| Premier League calibrated tree model | 0.0351 | 0.0134 | 0.0303 |\n| Greece calibrated tree model | 0.0402 | 0.0127 | 0.0322 |\n| Premier League production/DC blend | 0.0192 | 0.0070 | 0.0186 |\n| Greece production/DC blend | 0.0363 | 0.0222 | 0.0432 |\n| Premier League market | 0.0229 | 0.0080 | 0.0125 |\n| Greece market | 0.0534 | 0.0206 | 0.0629 |
 | Greece Dixon–Coles | 0.0298 | 0.0336 | 0.0459 |
 
 Maximum-outcome confidence buckets show the average stated confidence and actual accuracy for the predicted most likely outcome. Small bins should not be over-read.
@@ -111,7 +111,7 @@ The Greek production ECE is high, especially for home and away outcomes. DC impr
 | Exponential decay | 365 days selected for PL; 180 days for Greece | The selected DC model still lost to production in PL. Greek DC won on two seasons; instability across seasons remains. |
 | Elo in DC | DC+Elo did not win overall validation selection in either league | In PL, DC+Elo at 180 days improved over DC-180 but still trailed production. In Greece it worsened DC-180. |
 | Form window 5/8/10 | PL validation Log Loss: 0.96347 / 0.96296 / 0.96319; selected 8 | PL test: 0.97407 / 0.97378 / 0.97379. Gain from 5 to 8 is only 0.00030. Greece is Elo-only in production, so its form window does not alter 1X2 probabilities. |
-| H2H removed / overall / venue-aware | PL validation selected a small overall H2H effect (10% maximum blend before sample-size shrinkage); Greece selected 30%. Venue-aware H2H was worse in validation for both leagues. | The validation-selected overall H2H adjustment changed PL DC Log Loss from 0.99631 to 0.99560 (0.00072 better) and Greece from 0.97040 to 0.96406 (0.00634 better). These are small effects from only five PL and two Greek test seasons; they do not establish durable added value. |
+| H2H removed / overall / venue-aware | PL validation selected a small overall H2H effect (10% maximum blend before sample-size shrinkage); Greece selected 30%. Venue-aware H2H was worse in validation for both leagues. | Validation selected 10% maximum overall H2H blend for PL and 30% for Greece (both further shrunk by sample size). The adjusted test metrics were PL Log Loss 0.99559 vs 0.99631 without H2H (0.00072 better), and Greece 0.96410 vs 0.97040 (0.00630 better). These are based on five PL and two Greek test seasons; they do not establish durable added value. |
 | Advanced match statistics | Historical data has no xG/xGA, shots, chances, lineups, injuries, or weather. | Not tested; no values were fabricated. |
 | Market as an input | Kept separate from independent models | Historical market probabilities outperformed all independent models. Market-assisted selection chose the market alone; it did not justify blending model probabilities into the market. |
 
