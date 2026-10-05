@@ -3,6 +3,11 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
+.aws
+.codex/
+attachments/
+upload/
+scripts/__pycache__/
 data/raw/
 data/processed/
 !data/raw/.gitkeep
