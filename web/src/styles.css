@@ -124,6 +124,7 @@ input:focus { border-color: #4a6959; box-shadow: 0 0 0 3px rgba(74,105,89,.1); }
 .market-comparison-heading h3 { margin: 0; font-size: 16px; }
 .market-comparison-heading > span { color: #66736a; font-size: 12px; }
 .market-comparison > p { margin: 7px 0 14px; color: #5e6b62; font-size: 12px; line-height: 1.6; }
+.market-comparison-prompt { margin: 16px 0 0; padding: 13px 15px; border: 1px dashed #cdd8ca; border-radius: 12px; color: #536158; background: #f8faf6; font-size: 12px; line-height: 1.55; }
 .market-comparison-row { display: grid; grid-template-columns: minmax(110px, 1.4fr) repeat(3, minmax(58px, .7fr)); gap: 10px; align-items: center; padding: 11px 0; border-top: 1px solid #e5e9e2; font-size: 12px; }
 .market-comparison-row > :not(:first-child) { text-align: right; font-family: "DM Mono", monospace; }
 .market-comparison-head { color: #6a766d; font-size: 10px; border-top: 0; padding-top: 0; }

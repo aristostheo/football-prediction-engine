@@ -115,10 +115,10 @@ probabilities. These values describe the pre-match inputs; they are not an
 exact causal decomposition of the predicted probability. The Premier League
 policy combines Elo with recent-form and goal-rate features. The current Greek
 policy uses Elo only; its recent-form and venue figures are contextual. Home
-advantage is included in the Elo comparison. If three odds are entered, the
-headline probabilities use margin-removed market prices, and the model-only
-probabilities remain visible separately. Injuries, lineups, weather, and odds
-are not features in the current model.
+advantage is included in the Elo comparison. If three odds are entered, they
+are converted to margin-removed market probabilities and shown beside the
+unchanged model forecast. Injuries, lineups, weather, and odds are not features
+in the current model.
 
 The response's `components` object makes the model calculation auditable. For
 Premier League forecasts it returns the Elo and goal-model outcome distributions,

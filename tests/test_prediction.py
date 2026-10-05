@@ -58,25 +58,30 @@ def test_predict_resolves_provider_team_names_to_historical_labels(
 def test_market_odds_use_margin_removed_probabilities(
     prediction_engine: PredictionEngine,
 ) -> None:
+    kickoff_date = prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE) + timedelta(days=1)
+    fixture = dict(
+        competition=Competition.PREMIER_LEAGUE,
+        kickoff_date=kickoff_date,
+        home_team="Arsenal",
+        away_team="Chelsea",
+    )
     prediction = prediction_engine.predict(
         FixtureToPredict(
-            competition=Competition.PREMIER_LEAGUE,
-            kickoff_date=prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE)
-            + timedelta(days=1),
-            home_team="Arsenal",
-            away_team="Chelsea",
+            **fixture,
             odds_home=2.0,
             odds_draw=3.0,
             odds_away=4.0,
         )
     )
+    model_only = prediction_engine.predict(FixtureToPredict(**fixture))
 
-    assert prediction.model_policy == "market_implied_odds"
-    assert prediction.home_win_probability == pytest.approx(6 / 13)
-    assert prediction.draw_probability == pytest.approx(4 / 13)
-    assert prediction.away_win_probability == pytest.approx(3 / 13)
+    assert prediction.model_policy == "elo_poisson_25_75"
+    assert prediction.home_win_probability == pytest.approx(prediction.model_probabilities[0])
+    assert prediction.draw_probability == pytest.approx(prediction.model_probabilities[1])
+    assert prediction.away_win_probability == pytest.approx(prediction.model_probabilities[2])
     assert prediction.market_probabilities == pytest.approx((6 / 13, 4 / 13, 3 / 13))
     assert sum(prediction.model_probabilities) == pytest.approx(1.0)
+    assert prediction.model_probabilities == pytest.approx(model_only.model_probabilities)
     components = prediction.components
     assert components.elo_weight == pytest.approx(0.25)
     assert components.goal_probabilities is not None

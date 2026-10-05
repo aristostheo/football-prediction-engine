@@ -29,7 +29,7 @@ class StubEngine:
             history_age_days=7,
             forecasted_at=datetime(2025, 5, 25, tzinfo=UTC),
             model_probabilities=(0.5, 0.25, 0.25),
-            market_probabilities=None,
+            market_probabilities=(0.6, 0.25, 0.15) if fixture.odds_home is not None else None,
             context=PredictionContext(
                 home_elo=1500,
                 away_elo=1500,
@@ -126,10 +126,15 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
             kickoff_date=date(2025, 6, 1),
             home_team="Arsenal FC",
             away_team="Chelsea FC",
+            odds_home=1.7,
+            odds_draw=3.5,
+            odds_away=5.0,
         )
     )
     assert prediction.home_win_probability == 0.5
     assert prediction.model_home_win_probability == 0.5
+    assert prediction.market_home_win_probability == 0.6
+    assert prediction.market_away_win_probability == 0.15
     assert prediction.context.home_elo == 1500
     assert prediction.components.elo_probabilities == (0.5, 0.25, 0.25)
 

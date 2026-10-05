@@ -264,9 +264,9 @@ function App() {
   const probabilities = useMemo(
     () => prediction
       ? [
-          { label: prediction.home_team, short: "Home", value: prediction.home_win_probability },
-          { label: "Draw", short: "Draw", value: prediction.draw_probability },
-          { label: prediction.away_team, short: "Away", value: prediction.away_win_probability },
+          { label: prediction.home_team, short: "Home", value: prediction.model_home_win_probability },
+          { label: "Draw", short: "Draw", value: prediction.model_draw_probability },
+          { label: prediction.away_team, short: "Away", value: prediction.model_away_win_probability },
         ]
       : [],
     [prediction],
@@ -545,7 +545,7 @@ function App() {
 
             <details className="odds-details">
               <summary>Add market odds <span>Optional</span></summary>
-              <p>Load odds for the selected scheduled match, or enter three decimal prices yourself. The market stays separate from the model.</p>
+              <p>Your model forecast works without odds. Load odds for the selected scheduled match, or enter three decimal prices to compare it with the market.</p>
               {mode === "upcoming" && activeUpcomingFixture && (
                 <button className="secondary-button" disabled={marketOddsLoading} onClick={() => void loadOddsForSelectedFixture()} type="button">
                   {marketOddsLoading ? "Loading market odds…" : "Load live market odds"}
@@ -557,7 +557,7 @@ function App() {
                 <label><span>Draw</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => { setOddsDraw(event.target.value); setMarketOddsNote(null); }} /></label>
                 <label><span>Away</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => { setOddsAway(event.target.value); setMarketOddsNote(null); }} /></label>
               </div>
-              <small>With all three prices entered, headline probabilities use the supplied margin-removed odds. Model-only probabilities remain available below.</small>
+              <small>Market odds are converted to fair probabilities by removing the bookmaker margin. They are shown separately and do not change the model forecast.</small>
             </details>
 
             {(error || (mode === "explore" && teamCatalogError)) && <div className="message error-message">{error ?? teamCatalogError}</div>}
@@ -565,7 +565,7 @@ function App() {
             {prediction && (
               <div className="result-panel" aria-live="polite">
                 <div className="result-title">
-                  <span>Forecast result · {prediction.kickoff_at ? "Scheduled fixture" : "Hypothetical matchup"}</span>
+                  <span>Model forecast · {prediction.kickoff_at ? "Scheduled fixture" : "Hypothetical matchup"}</span>
                   <strong>{LEAGUES[prediction.competition].name}</strong>
                 </div>
                 <div className="probabilities">
@@ -578,14 +578,12 @@ function App() {
                   ))}
                 </div>
                 <div className="freshness">
-                  <span>{prediction.model_policy === "market_implied_odds"
-                    ? "Forecast source: Market odds · margin removed"
-                    : `Forecast source: Model · ${prediction.model_policy.replaceAll("_", " ")}`}</span>
+                  <span>Model source: {prediction.model_policy.replaceAll("_", " ")}</span>
                   <span>History through {prediction.history_through} · {prediction.history_age_days} days old</span>
                 </div>
                 {prediction.market_home_win_probability !== null
                   && prediction.market_draw_probability !== null
-                  && prediction.market_away_win_probability !== null && (
+                  && prediction.market_away_win_probability !== null ? (
                   <section className="market-comparison" aria-label="Model versus market probabilities">
                     <div className="market-comparison-heading">
                       <h3>Model vs market</h3>
@@ -615,6 +613,8 @@ function App() {
                       })}
                     </div>
                   </section>
+                ) : (
+                  <p className="market-comparison-prompt">Want to compare this forecast with the market? Load live odds above, or enter the three prices.</p>
                 )}
                 <div className="context-panel">
                   <h3>What informs the model</h3>
@@ -760,7 +760,7 @@ function App() {
                       <td>{item.home_team} vs {item.away_team}</td>
                       <td>{new Date(item.kickoff_at).toLocaleString()}</td>
                       <td>{new Date(item.forecasted_at).toLocaleString()}</td>
-                      <td>{item.market_probabilities ? "Market + model" : "Model"}</td>
+                      <td>{item.market_probabilities ? "Model + market comparison" : "Model only"}</td>
                       <td>{resultLabel(settledResults[item.id], scorecardLoading)}</td>
                     </tr>
                   ))}

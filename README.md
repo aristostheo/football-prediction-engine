@@ -118,15 +118,15 @@ current through September 20, 2026 for both
 leagues; see [data coverage](docs/data-sources.md) for incomplete Greek seasons
 and gaps.
 
-A closing-odds benchmark and optional odds-based forecast are available. The
+A closing-odds benchmark and optional live market comparison are available. The
 benchmark matches odds to walk-forward fixtures, removes the bookmaker margin,
 and reports coverage and season-block intervals. The dashboard can load a live
 bookmaker consensus for an upcoming fixture when `THE_ODDS_API_KEY` is
 configured, or accept all three 1X2 prices manually. It displays
-margin-removed market-implied probabilities separately from model-only
-probabilities. Historical sequential tests chose 100% market weight on every
-eligible fold, so the current evidence does not support a model/market blend.
-Live quotes are for prospective forecasts only. See
+model probabilities as the forecast and margin-removed market probabilities
+separately for comparison. Historical sequential tests chose 100% market weight
+on every eligible fold, so the current evidence does not support a
+model/market blend. Live quotes do not alter model probabilities. See
 [market benchmark setup](docs/market-benchmark.md) and
 [live fixture setup](docs/live-fixtures.md).
 

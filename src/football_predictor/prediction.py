@@ -269,14 +269,12 @@ class PredictionEngine:
             float(prediction["p_draw"]),
             float(prediction["p_away_win"]),
         )
-        selected_probabilities = market_probabilities or model_probabilities
-        selected_policy = "market_implied_odds" if market_probabilities else policy
         return MatchPrediction(
             fixture=canonical_fixture,
-            home_win_probability=selected_probabilities[0],
-            draw_probability=selected_probabilities[1],
-            away_win_probability=selected_probabilities[2],
-            model_policy=selected_policy,
+            home_win_probability=model_probabilities[0],
+            draw_probability=model_probabilities[1],
+            away_win_probability=model_probabilities[2],
+            model_policy=policy,
             history_through=history_through,
             history_age_days=(fixture.kickoff_date - history_through).days,
             forecasted_at=forecasted_at,
