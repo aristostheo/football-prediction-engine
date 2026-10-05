@@ -385,7 +385,9 @@ def _head_to_head_summary(
         if row.result == "D":
             draws += 1
             outcome = "D"
-        elif row.home_team == home_team:
+        elif (row.result == "H" and row.home_team == home_team) or (
+            row.result == "A" and row.away_team == home_team
+        ):
             home_wins += 1
             outcome = "H"
         else:
