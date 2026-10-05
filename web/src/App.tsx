@@ -624,17 +624,15 @@ function App() {
                       : "Greek league probabilities currently use team Elo ratings and home advantage. The form, goal, and venue figures below are context only; they do not directly change these probabilities."}
                     {` Snapshot through ${prediction.history_through}.`}
                   </p>
-                  <div className="context-grid">
-                    <span>Team strength (Elo)</span>
-                    <strong>{prediction.home_team} {prediction.context.home_elo.toFixed(0)} · {prediction.context.away_elo.toFixed(0)} {prediction.away_team}</strong>
-                    <span>Recent form · points per match</span>
-                    <strong>{perMatch(prediction.context.home_form_points_per_match)} ({prediction.context.home_form_matches} matches) · {perMatch(prediction.context.away_form_points_per_match)} ({prediction.context.away_form_matches} matches)</strong>
-                    <span>Recent goals · scored / conceded per match</span>
-                    <strong>{perMatch(prediction.context.home_form_goals_for_per_match)} / {perMatch(prediction.context.home_form_goals_against_per_match)} · {perMatch(prediction.context.away_form_goals_for_per_match)} / {perMatch(prediction.context.away_form_goals_against_per_match)}</strong>
-                    <span>Venue form · points per match</span>
-                    <strong>Home at home {perMatch(prediction.context.home_venue_points_per_match)} · away away {perMatch(prediction.context.away_venue_points_per_match)}</strong>
-                    <span>Head-to-head · home team perspective</span>
-                    <strong>{prediction.context.head_to_head_matches} meetings · {prediction.context.head_to_head_home_wins} wins · {prediction.context.head_to_head_draws} draws · {prediction.context.head_to_head_away_wins} losses</strong>
+                  <div className="team-context-table" role="table" aria-label="Team form comparison">
+                    <div className="team-context-row team-context-head" role="row">
+                      <span role="columnheader">Metric</span><strong role="columnheader">{prediction.home_team}</strong><strong role="columnheader">{prediction.away_team}</strong>
+                    </div>
+                    <div className="team-context-row" role="row"><span role="rowheader">Team strength · Elo</span><strong>{prediction.context.home_elo.toFixed(0)}</strong><strong>{prediction.context.away_elo.toFixed(0)}</strong></div>
+                    <div className="team-context-row" role="row"><span role="rowheader">Recent form · points / match</span><strong>{perMatch(prediction.context.home_form_points_per_match)} <small>({prediction.context.home_form_matches} matches)</small></strong><strong>{perMatch(prediction.context.away_form_points_per_match)} <small>({prediction.context.away_form_matches} matches)</small></strong></div>
+                    <div className="team-context-row" role="row"><span role="rowheader">Recent goals · scored / conceded</span><strong>{perMatch(prediction.context.home_form_goals_for_per_match)} / {perMatch(prediction.context.home_form_goals_against_per_match)}</strong><strong>{perMatch(prediction.context.away_form_goals_for_per_match)} / {perMatch(prediction.context.away_form_goals_against_per_match)}</strong></div>
+                    <div className="team-context-row" role="row"><span role="rowheader">Venue form · points / match</span><strong>{perMatch(prediction.context.home_venue_points_per_match)}</strong><strong>{perMatch(prediction.context.away_venue_points_per_match)}</strong></div>
+                    <div className="team-context-row" role="row"><span role="rowheader">Recent head-to-head record</span><strong>{prediction.context.head_to_head_home_wins} wins · {prediction.context.head_to_head_draws} draws</strong><strong>{prediction.context.head_to_head_away_wins} wins · {prediction.context.head_to_head_draws} draws</strong></div>
                   </div>
                   <small>Head-to-head is shown as historical context and does not currently change the W/D/L probabilities. The current version does not use injuries, lineups, weather, or live odds as model inputs.</small>
                   {prediction.context.head_to_head_recent.length > 0 && (
