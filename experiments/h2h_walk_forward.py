@@ -176,6 +176,7 @@ def compare(
         baseline_parts: list[pd.DataFrame] = []
         candidate_parts: list[pd.DataFrame] = []
         season_differences: list[float] = []
+        season_results: list[dict[str, object]] = []
 
         for position, season in enumerate(tested_seasons):
             baseline, posteriors = folds[season]
@@ -213,7 +214,20 @@ def compare(
             candidate["result"] = baseline["result"].to_numpy()
             baseline_parts.append(baseline)
             candidate_parts.append(candidate)
-            season_differences.append(_log_loss(candidate) - _log_loss(baseline))
+            baseline_season_loss = _log_loss(baseline)
+            candidate_season_loss = _log_loss(candidate)
+            difference = candidate_season_loss - baseline_season_loss
+            season_differences.append(difference)
+            season_results.append(
+                {
+                    "season": season,
+                    "baseline_log_loss": baseline_season_loss,
+                    "recency_h2h_log_loss": candidate_season_loss,
+                    "difference": difference,
+                    "selected_history": spec,
+                    "selected_weight": weight,
+                }
+            )
 
         baseline_all = pd.concat(baseline_parts, ignore_index=True)
         candidate_all = pd.concat(candidate_parts, ignore_index=True)
@@ -238,6 +252,7 @@ def compare(
                 bootstrapped[high_index],
             ],
             "selected_h2h_by_season": selected_by_season,
+            "season_results": season_results,
         }
     return output
 
