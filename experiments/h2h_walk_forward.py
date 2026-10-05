@@ -101,11 +101,11 @@ def _h2h_posteriors(
                 if result == "D":
                     counts[1] += weight
                 elif (result == "H" and historical_home == match.home_team) or (
-                result == "A" and historical_home != match.home_team
-            ):
-                counts[0] += weight
-            else:
-                counts[2] += weight
+                    result == "A" and historical_home != match.home_team
+                ):
+                    counts[0] += weight
+                else:
+                    counts[2] += weight
 
             denominator = PRIOR_STRENGTH + sum(weights)
             rows[spec].append(
