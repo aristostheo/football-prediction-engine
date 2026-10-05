@@ -62,7 +62,7 @@ def predict_dc(train,test,half_life=None,with_elo=False,rho=None):
         m=np.array([[poi(x,i)*poi(y,j) for j in range(13)] for i in range(13)])
         m[0,0]*=1-x*y*rho; m[0,1]*=1+x*rho; m[1,0]*=1+y*rho; m[1,1]*=1-rho
         m=np.maximum(m,1e-12); m/=m.sum()
-            score.append(m)
+        score.append(m)
     q=test.copy()
     q[PC]=np.array([[m[np.tril_indices(13,-1)].sum(),np.trace(m),m[np.triu_indices(13,1)].sum()] for m in score])
     q['lambda_home']=lh; q['lambda_away']=la; q['home_adv_log']=ha; q['rho']=rho; q['_scorematrix']=score
