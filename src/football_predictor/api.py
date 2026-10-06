@@ -136,6 +136,9 @@ def create_app(
     configured_provider = fixture_provider
     configured_market_odds_provider = market_odds_provider
     engine_lock = Lock()
+    live_result_cache: dict[
+        tuple[Competition, date], tuple[datetime, list[LiveFixture]]
+    ] = {}
 
     def get_engine() -> PredictionEngine:
         nonlocal configured_engine
@@ -278,6 +281,48 @@ def create_app(
             for fixture in request.fixtures
         ]
         results = engine.find_results(keys)
+        today_utc = datetime.now(UTC).date()
+        recent_pending = [
+            fixture for fixture in request.fixtures
+            if results[fixture.id] is None
+            and today_utc - timedelta(days=14) <= fixture.kickoff_date <= today_utc
+        ]
+        match_to_ids: dict[tuple[Competition, date, str, str], list[str]] = {}
+        for fixture in recent_pending:
+            key = (
+                fixture.competition,
+                fixture.kickoff_date,
+                canonical_team_name(fixture.home_team, fixture.competition),
+                canonical_team_name(fixture.away_team, fixture.competition),
+            )
+            match_to_ids.setdefault(key, []).append(fixture.id)
+
+        for competition, match_date in {
+            (fixture.competition, fixture.kickoff_date) for fixture in recent_pending
+        }:
+            cache_key = (competition, match_date)
+            now = datetime.now(UTC)
+            cached = live_result_cache.get(cache_key)
+            if cached and cached[0] > now:
+                live_fixtures = cached[1]
+            else:
+                try:
+                    live_fixtures = get_fixture_provider().list_fixtures(competition, match_date)
+                except FixtureProviderError:
+                    # Bundled-history results remain usable if the live provider is unavailable.
+                    continue
+                live_result_cache[cache_key] = (now + timedelta(minutes=5), live_fixtures)
+            for live_fixture in live_fixtures:
+                if live_fixture.result is None:
+                    continue
+                live_key = (
+                    competition,
+                    match_date,
+                    canonical_team_name(live_fixture.home_team, competition),
+                    canonical_team_name(live_fixture.away_team, competition),
+                )
+                for fixture_id in match_to_ids.get(live_key, []):
+                    results[fixture_id] = live_fixture.result
         return [
             ScorecardResultResponse(id=fixture.id, result=results[fixture.id])
             for fixture in request.fixtures

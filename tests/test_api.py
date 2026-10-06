@@ -164,6 +164,52 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
     assert results[0].result == "H"
 
 
+def test_scorecard_checks_live_provider_for_recent_results_missing_from_history() -> None:
+    match_date = datetime.now(UTC).date() - timedelta(days=1)
+    provider_calls: list[tuple[Competition, date]] = []
+
+    class PendingResultsEngine(StubEngine):
+        def find_results(self, fixtures):  # type: ignore[no-untyped-def]
+            return {fixture[0]: None for fixture in fixtures}
+
+    class FinishedFixtureProvider(StubFixtureProvider):
+        def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
+            provider_calls.append((competition, fixture_date))
+            return [
+                LiveFixture(
+                    fixture_id="finished-123",
+                    competition=competition,
+                    kickoff_at=datetime.combine(fixture_date, datetime.min.time(), UTC),
+                    home_team="Arsenal FC",
+                    away_team="Chelsea FC",
+                    result="H",
+                )
+            ]
+
+    app = create_app(engine=PendingResultsEngine(), fixture_provider=FinishedFixtureProvider())
+    endpoint = next(
+        route.endpoint for route in app.routes
+        if getattr(route, "path", None) == "/scorecard/results"
+    )
+
+    results = endpoint(
+        ScorecardResultsRequest(
+            fixtures=[
+                {
+                    "id": "forecast-recent",
+                    "competition": "premier_league",
+                    "kickoff_date": match_date,
+                    "home_team": "Arsenal FC",
+                    "away_team": "Chelsea FC",
+                }
+            ]
+        )
+    )
+
+    assert results[0].result == "H"
+    assert provider_calls == [(Competition.PREMIER_LEAGUE, match_date)]
+
+
 def test_next_fixture_scans_forward_and_returns_the_first_future_match() -> None:
     start = datetime.now(UTC).date() + timedelta(days=1)
     target_date = start + timedelta(days=2)

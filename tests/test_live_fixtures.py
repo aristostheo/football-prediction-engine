@@ -110,6 +110,30 @@ def test_goal_api_fixture_accepts_direct_badges_and_rejects_untrusted_badge_host
     assert fixture.away_badge_url is None
 
 
+def test_goal_api_fixture_reads_finished_result_and_ignores_unfinished_scores(
+    monkeypatch,
+) -> None:  # type: ignore[no-untyped-def]
+    payload = b'''{"success":true,"data":[
+      {"id":"finished","kickoffUtc":"2026-10-04T15:00:00Z",
+       "matchStatus":"FINISHED","homeTeamFtScore":"1","awayTeamFtScore":"1",
+       "homeTeam":{"name":"Arsenal"},"awayTeam":{"name":"Everton"}},
+      {"id":"live","kickoffUtc":"2026-10-04T16:00:00Z",
+       "matchStatus":"LIVE","homeTeamScore":"4","awayTeamScore":"0",
+       "homeTeam":{"name":"Chelsea"},"awayTeam":{"name":"Leeds"}},
+      {"id":"missing-ft-score","kickoffUtc":"2026-10-04T17:00:00Z",
+       "matchStatus":"FINISHED","homeTeamFtScore":null,"awayTeamFtScore":null,
+       "homeTeamScore":"2","awayTeamScore":"0",
+       "homeTeam":{"name":"Liverpool"},"awayTeam":{"name":"Brighton"}}
+    ]}'''
+    monkeypatch.setattr(live_fixtures, "urlopen", lambda request, timeout: io.BytesIO(payload))
+
+    fixtures = GoalApiFixtureProvider("test-key").list_fixtures(
+        Competition.PREMIER_LEAGUE, date(2026, 10, 4)
+    )
+
+    assert [fixture.result for fixture in fixtures] == ["D", None, "H"]
+
+
 def test_goal_api_provider_lists_team_badges_from_league_endpoint(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     payload = b'''{"success":true,"data":[
       {"name":"Arsenal","badge":"https://media.goal-api.com/badges/arsenal.png"},
@@ -227,8 +251,9 @@ def test_api_football_provider_parses_fixture_payload(monkeypatch) -> None:  # t
     payload = b"""{
       "errors": {},
       "response": [{
-        "fixture": {"id": 123, "date": "2026-10-04T15:00:00+00:00"},
-        "teams": {"home": {"name": "Arsenal"}, "away": {"name": "Chelsea"}}
+        "fixture": {"id": 123, "date": "2026-10-04T15:00:00+00:00", "status": {"short": "FT"}},
+        "teams": {"home": {"name": "Arsenal"}, "away": {"name": "Chelsea"}},
+        "goals": {"home": 2, "away": 0}
       }]
     }"""
     requested_urls = []
@@ -245,6 +270,7 @@ def test_api_football_provider_parses_fixture_payload(monkeypatch) -> None:  # t
 
     assert fixtures[0].fixture_id == "123"
     assert fixtures[0].home_team == "Arsenal"
+    assert fixtures[0].result == "H"
     assert fixtures[0].competition is Competition.PREMIER_LEAGUE
     assert "league=39" in requested_urls[0]
     assert "season=2026" in requested_urls[0]

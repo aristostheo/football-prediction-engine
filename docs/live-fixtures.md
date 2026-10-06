@@ -81,9 +81,14 @@ history or shared across browsers. Forecast requests that arrive after kickoff
 are rejected. Hypothetical matchup forecasts have no scheduled kickoff and are
 not included in the prospective scorecard.
 
-The scorecard looks up completed outcomes in the bundled dataset after a
-refresh and reports log loss, Brier score, ranked probability score, classwise
-calibration error, and accuracy. If odds were entered, it scores the model and margin-removed market
+The scorecard looks up completed outcomes in the bundled dataset and reports
+log loss, Brier score, ranked probability score, classwise calibration error,
+and accuracy. For unresolved forecasts dated within the last 14 days, it also
+checks the configured live fixture provider for a finished score (cached for
+five minutes). This lets local users settle recent forecasts without waiting
+for a Git pull; if the provider is unavailable, those entries stay pending
+until the bundled history is refreshed. If odds were entered, it scores the
+model and margin-removed market
 probabilities on the same fixtures. Re-forecasting a fixture replaces its
 saved entry, so the scorecard uses the latest timestamped forecast before
 kickoff. The live sample is exploratory; historical walk-forward results

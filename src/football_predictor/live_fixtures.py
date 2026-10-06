@@ -36,6 +36,7 @@ class LiveFixture:
     away_team: str
     home_badge_url: str | None = None
     away_badge_url: str | None = None
+    result: str | None = None
 
 
 class FixtureProvider(Protocol):
@@ -224,6 +225,7 @@ class ApiFootballFixtureProvider:
                     away_team=item["teams"]["away"]["name"],
                     home_badge_url=_safe_badge_url(item["teams"]["home"].get("logo")),
                     away_badge_url=_safe_badge_url(item["teams"]["away"].get("logo")),
+                    result=_api_football_result(item),
                 )
                 for item in payload["response"]
             ]
@@ -373,7 +375,45 @@ def _goal_api_fixture(item: dict[str, object], competition: Competition) -> Live
         away_team=_goal_api_team_name(item, "away"),
         home_badge_url=_goal_api_badge_url(item, "home"),
         away_badge_url=_goal_api_badge_url(item, "away"),
+        result=_goal_api_result(item),
     )
+
+
+def _goal_api_result(item: dict[str, object]) -> str | None:
+    status = str(item.get("matchStatus") or item.get("status") or "").strip().upper()
+    if status not in {"FINISHED", "FT", "AET", "PEN", "PENALTIES"}:
+        return None
+    home = _nonnegative_score(item.get("homeTeamFtScore") or item.get("homeTeamScore"))
+    away = _nonnegative_score(item.get("awayTeamFtScore") or item.get("awayTeamScore"))
+    return _outcome(home, away)
+
+
+def _api_football_result(item: dict[str, object]) -> str | None:
+    fixture = item.get("fixture")
+    goals = item.get("goals")
+    if not isinstance(fixture, dict) or not isinstance(goals, dict):
+        return None
+    status = fixture.get("status")
+    short_status = status.get("short") if isinstance(status, dict) else None
+    if short_status not in {"FT", "AET", "PEN"}:
+        return None
+    return _outcome(_nonnegative_score(goals.get("home")), _nonnegative_score(goals.get("away")))
+
+
+def _nonnegative_score(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value >= 0:
+        return value
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value.strip())
+    return None
+
+
+def _outcome(home: int | None, away: int | None) -> str | None:
+    if home is None or away is None:
+        return None
+    return "H" if home > away else "A" if away > home else "D"
 
 
 def _goal_api_badge_url(item: dict[str, object], side: str) -> str | None:
