@@ -110,6 +110,30 @@ def test_goal_api_fixture_accepts_direct_badges_and_rejects_untrusted_badge_host
     assert fixture.away_badge_url is None
 
 
+def test_goal_api_provider_lists_team_badges_from_league_endpoint(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    payload = b'''{"success":true,"data":[
+      {"name":"Arsenal","badge":"https://media.goal-api.com/badges/arsenal.png"},
+      {"team":{"name":"Chelsea","logo":"https://media.goal-api.com/badges/chelsea.png"}},
+      {"teamName":"Unsafe FC","teamBadge":"https://example.com/unsafe.png"}
+    ],"pagination":{"total":3,"limit":100,"offset":0,"hasMore":false}}'''
+    requests = []
+
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        requests.append(request)
+        return io.BytesIO(payload)
+
+    monkeypatch.setattr(live_fixtures, "urlopen", fake_urlopen)
+
+    badges = GoalApiFixtureProvider("test-key").list_team_badges(Competition.PREMIER_LEAGUE)
+
+    assert badges == {
+        "Arsenal": "https://media.goal-api.com/badges/arsenal.png",
+        "Chelsea": "https://media.goal-api.com/badges/chelsea.png",
+    }
+    assert "/leagues/cmr77dvkr005nrx06lp7rvp49/teams?" in requests[0].full_url
+    assert requests[0].get_header("Authorization") == "Bearer test-key"
+
+
 def test_goal_api_provider_follows_league_fixture_pagination(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     first_page = b"""{
       "success": true,

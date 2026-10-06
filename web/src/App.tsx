@@ -5,6 +5,7 @@ import {
   getMarketOdds,
   getNextFixture,
   getScorecardResults,
+  getTeamBadges,
   getTeams,
   LiveFixture,
   MatchOutcome,
@@ -168,6 +169,7 @@ function App() {
   const [awayTeam, setAwayTeam] = useState("");
   const [mode, setMode] = useState<"upcoming" | "explore">("upcoming");
   const [teamCatalog, setTeamCatalog] = useState<{ competition: Competition; teams: string[]; error?: string } | null>(null);
+  const [teamBadgeCatalog, setTeamBadgeCatalog] = useState<{ competition: Competition; badges: Record<string, string> } | null>(null);
   const [nextFixtureResult, setNextFixtureResult] = useState<{ competition: Competition; search: number; fixture: LiveFixture | null; error?: string } | null>(null);
   const [nextFixtureSearch, setNextFixtureSearch] = useState(0);
   const [nextFixtureStart, setNextFixtureStart] = useState(today);
@@ -216,6 +218,14 @@ function App() {
     return () => { active = false; };
   }, [competition]);
 
+  useEffect(() => {
+    let active = true;
+    getTeamBadges(competition)
+      .then((badges) => { if (active) setTeamBadgeCatalog({ competition, badges }); })
+      .catch(() => { if (active) setTeamBadgeCatalog({ competition, badges: {} }); });
+    return () => { active = false; };
+  }, [competition]);
+
   const currentTeamCatalog = teamCatalog?.competition === competition ? teamCatalog : null;
   const teamOptions = currentTeamCatalog?.teams ?? [];
   const teamsLoading = currentTeamCatalog === null;
@@ -247,13 +257,18 @@ function App() {
   const activeUpcomingFixture = selectedFixture?.competition === competition ? selectedFixture : nextFixture;
   const teamBadges = useMemo(() => {
     const result: Record<string, string> = {};
+    if (teamBadgeCatalog?.competition === competition) {
+      for (const [team, badge] of Object.entries(teamBadgeCatalog.badges)) {
+        result[team.toLocaleLowerCase()] = badge;
+      }
+    }
     for (const fixture of [nextFixture, selectedFixture, ...dateFixtures]) {
       if (!fixture || fixture.competition !== competition) continue;
       if (fixture.home_badge_url) result[fixture.home_team.toLocaleLowerCase()] = fixture.home_badge_url;
       if (fixture.away_badge_url) result[fixture.away_team.toLocaleLowerCase()] = fixture.away_badge_url;
     }
     return result;
-  }, [competition, dateFixtures, nextFixture, selectedFixture]);
+  }, [competition, dateFixtures, nextFixture, selectedFixture, teamBadgeCatalog]);
   const isAlternativeFixture = Boolean(
     activeUpcomingFixture && nextFixture && activeUpcomingFixture.fixture_id !== nextFixture.fixture_id,
   );

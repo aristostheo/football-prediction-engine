@@ -123,6 +123,11 @@ export async function getTeams(competition: Competition): Promise<string[]> {
   return parseResponse<string[]>(response);
 }
 
+export async function getTeamBadges(competition: Competition): Promise<Record<string, string>> {
+  const response = await fetch(`${API_ROOT}/team-badges?${new URLSearchParams({ competition })}`);
+  return parseResponse<Record<string, string>>(response);
+}
+
 export async function getNextFixture(
   competition: Competition,
   fromDate: string,

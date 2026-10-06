@@ -41,6 +41,8 @@ class LiveFixture:
 class FixtureProvider(Protocol):
     def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]: ...
 
+    def list_team_badges(self, competition: Competition) -> dict[str, str]: ...
+
 
 class FixtureProviderError(RuntimeError):
     """Raised when a live-fixture provider cannot return a valid response."""
@@ -114,6 +116,51 @@ class GoalApiFixtureProvider:
 
         return [fixture for fixture in fixtures if fixture.kickoff_at.date() == fixture_date]
 
+    def list_team_badges(self, competition: Competition) -> dict[str, str]:
+        """Read all teams and badge URLs for a configured league."""
+        league_id = str(GOAL_API_LEAGUE_IDS[competition])
+        result: dict[str, str] = {}
+        offset = 0
+        page_count = 0
+        seen_pages: set[str] = set()
+
+        while True:
+            query = urlencode({"limit": 100, "offset": offset})
+            request = Request(
+                f"{self._base_url}/leagues/{league_id}/teams?{query}",
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {self._api_key}",
+                    "User-Agent": GOAL_API_USER_AGENT,
+                },
+            )
+            payload = self._request_json(request)
+            items = _goal_api_team_items(payload)
+            fingerprint = json.dumps(items, sort_keys=True, default=str)
+            if fingerprint in seen_pages:
+                break
+            seen_pages.add(fingerprint)
+            for item in items:
+                name, badge_url = _goal_api_team_badge(item)
+                if name and badge_url:
+                    result[name] = badge_url
+
+            pagination = payload.get("pagination")
+            if not isinstance(pagination, dict) or pagination.get("hasMore") is not True:
+                break
+            page_count += 1
+            if page_count >= 5:
+                raise FixtureProviderError("Goal API returned too many team pages")
+            try:
+                page_limit = int(pagination.get("limit", 100))
+            except (TypeError, ValueError) as error:
+                raise FixtureProviderError("Goal API returned invalid team pagination") from error
+            if page_limit <= 0:
+                raise FixtureProviderError("Goal API returned invalid team pagination")
+            offset += page_limit
+
+        return result
+
     def _request_json(self, request: Request) -> dict[str, object]:
         try:
             with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
@@ -185,6 +232,37 @@ class ApiFootballFixtureProvider:
                 "API-Football returned an unexpected fixture payload"
             ) from error
 
+    def list_team_badges(self, competition: Competition) -> dict[str, str]:
+        query = urlencode(
+            {
+                "league": API_FOOTBALL_LEAGUE_IDS[competition],
+                "season": _season_start_year(datetime.now(UTC).date()),
+            }
+        )
+        request = Request(
+            f"{self._base_url}/teams?{query}",
+            headers={"x-apisports-key": self._api_key},
+        )
+        try:
+            with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
+                payload = json.load(response)
+        except OSError as error:
+            raise FixtureProviderError("API-Football team request failed") from error
+        if payload.get("errors"):
+            raise FixtureProviderError(f"API-Football returned errors: {payload['errors']}")
+        try:
+            return {
+                team["name"]: badge_url
+                for item in payload["response"]
+                if (team := item["team"])
+                and isinstance(team.get("name"), str)
+                and (badge_url := _safe_badge_url(team.get("logo")))
+            }
+        except (KeyError, TypeError, ValueError) as error:
+            raise FixtureProviderError(
+                "API-Football returned an unexpected team payload"
+            ) from error
+
 
 class FallbackFixtureProvider:
     """Try configured providers in order when an upstream provider fails."""
@@ -202,6 +280,20 @@ class FallbackFixtureProvider:
             except FixtureProviderError as error:
                 errors.append(str(error))
         raise FixtureProviderError("; fallback also failed: ".join(errors))
+
+    def list_team_badges(self, competition: Competition) -> dict[str, str]:
+        errors: list[str] = []
+        for provider in self._providers:
+            try:
+                badges = provider.list_team_badges(competition)
+            except FixtureProviderError as error:
+                errors.append(str(error))
+                continue
+            if badges:
+                return badges
+        raise FixtureProviderError(
+            "; fallback also failed: ".join(errors) or "No team badges were returned"
+        )
 
 
 def fixture_provider_from_environment() -> FixtureProvider:
@@ -229,6 +321,31 @@ def _goal_api_fixture_items(payload: dict[str, object]) -> list[dict[str, object
     if not isinstance(raw_fixtures, list):
         raise FixtureProviderError("Goal API returned an unexpected fixture payload")
     return [item for item in raw_fixtures if isinstance(item, dict)]
+
+
+def _goal_api_team_items(payload: dict[str, object]) -> list[dict[str, object]]:
+    raw_teams = payload.get("data")
+    if isinstance(raw_teams, dict):
+        raw_teams = raw_teams.get("teams") or raw_teams.get("items")
+    if not isinstance(raw_teams, list):
+        raise FixtureProviderError("Goal API returned an unexpected team payload")
+    return [item for item in raw_teams if isinstance(item, dict)]
+
+
+def _goal_api_team_badge(item: dict[str, object]) -> tuple[str | None, str | None]:
+    team = item.get("team")
+    details = team if isinstance(team, dict) else item
+    name = details.get("name") or details.get("teamName") or details.get("team_name")
+    badge = (
+        details.get("badge")
+        or details.get("logo")
+        or details.get("teamBadge")
+        or details.get("team_badge")
+    )
+    return (
+        name if isinstance(name, str) and name.strip() else None,
+        _safe_badge_url(badge),
+    )
 
 
 def _goal_api_http_error_detail(error: HTTPError) -> str:

@@ -19,6 +19,7 @@ uv run uvicorn football_predictor.api:app --reload
 
 - `GET /fixtures/next?competition=...&from=YYYY-MM-DD` checks upcoming dates in order and returns the earliest future fixture in its three-week search window.
 - `GET /teams?competition=...` returns teams from that league's most recent recorded season for searchable hypothetical matchups.
+- `GET /team-badges?competition=...` reads the league's team catalogue from the configured live fixture provider and returns trusted badge URLs keyed by the predictor's canonical team names. Missing provider data leaves the initials fallback in place.
 
 The dashboard opens on the next scheduled match for the selected league. Use
 **Explore matchup** to choose any two teams from searchable league-specific

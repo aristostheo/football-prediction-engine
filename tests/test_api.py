@@ -77,6 +77,9 @@ class StubFixtureProvider:
             )
         ]
 
+    def list_team_badges(self, competition: Competition) -> dict[str, str]:
+        return {"Arsenal": "https://media.goal-api.com/badges/arsenal.png"}
+
 
 @pytest.mark.parametrize("custom_path", [None, "custom/history.csv"])
 def test_api_loads_bundled_history_by_default_and_honors_override(
@@ -118,6 +121,9 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
     routes = {getattr(route, "path", None): route.endpoint for route in app.routes}
     assert asyncio.run(routes["/health"]()) == {"status": "ok"}
     assert routes["/teams"](Competition.PREMIER_LEAGUE) == ["Arsenal FC", "Chelsea FC"]
+    assert routes["/team-badges"](Competition.PREMIER_LEAGUE) == {
+        "Arsenal FC": "https://media.goal-api.com/badges/arsenal.png"
+    }
 
     fixtures = routes["/fixtures"](Competition.PREMIER_LEAGUE, date(2025, 6, 1))
     assert fixtures[0].fixture_id == "123"

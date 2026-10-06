@@ -31,6 +31,7 @@ from football_predictor.prediction import (
     PredictionContext,
     PredictionEngine,
 )
+from football_predictor.team_names import canonical_team_name
 
 
 class PredictionRequest(BaseModel):
@@ -171,6 +172,23 @@ def create_app(
             return get_engine().available_teams(competition)
         except (FileNotFoundError, ValueError) as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
+
+    @app.get("/team-badges", response_model=dict[str, str])
+    def team_badges(competition: Competition) -> dict[str, str]:
+        try:
+            provider_badges = get_fixture_provider().list_team_badges(competition)
+            available = set(get_engine().available_teams(competition))
+        except FixtureProviderError as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
+        except (FileNotFoundError, ValueError) as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+
+        badges: dict[str, str] = {}
+        for provider_name, badge_url in provider_badges.items():
+            canonical = canonical_team_name(provider_name, competition)
+            if canonical in available:
+                badges[canonical] = badge_url
+        return badges
 
     @app.get("/fixtures/next", response_model=LiveFixtureResponse | None)
     def next_fixture(
