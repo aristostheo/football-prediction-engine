@@ -13,6 +13,7 @@ import {
   Prediction,
 } from "./api";
 import { calculateMetrics, calculateTopPickCalibration, loadForecasts, saveForecast, StoredForecast } from "./scorecard";
+import { FavoriteTeams, loadFavoriteTeams, saveFavoriteTeams } from "./favorites";
 
 const LEAGUES: Record<Competition, { name: string; short: string; code: string }> = {
   premier_league: { name: "Premier League", short: "England", code: "PL" },
@@ -193,6 +194,10 @@ function App() {
   const [scorecardError, setScorecardError] = useState<string | null>(null);
   const [scorecardLeagueFilter, setScorecardLeagueFilter] = useState<Competition | "all">("all");
   const [scorecardStatusFilter, setScorecardStatusFilter] = useState<"all" | "settled" | "pending">("all");
+  const [favoriteTeams, setFavoriteTeams] = useState<FavoriteTeams>(loadFavoriteTeams);
+  const [favoriteSearch, setFavoriteSearch] = useState("");
+
+  useEffect(() => saveFavoriteTeams(favoriteTeams), [favoriteTeams]);
 
   useEffect(() => {
     if (!forecastLog.length) return;
@@ -232,6 +237,24 @@ function App() {
   const teamOptions = currentTeamCatalog?.teams ?? [];
   const teamsLoading = currentTeamCatalog === null;
   const teamCatalogError = currentTeamCatalog?.error ?? null;
+  const currentFavorites = favoriteTeams[competition] ?? [];
+
+  function isFavoriteTeam(team: string): boolean {
+    return currentFavorites.some((favorite) => favorite.toLocaleLowerCase() === team.toLocaleLowerCase());
+  }
+
+  function toggleFavoriteTeam(team: string) {
+    setFavoriteTeams((current) => {
+      const currentLeague = current[competition] ?? [];
+      const exists = currentLeague.some((favorite) => favorite.toLocaleLowerCase() === team.toLocaleLowerCase());
+      return {
+        ...current,
+        [competition]: exists
+          ? currentLeague.filter((favorite) => favorite.toLocaleLowerCase() !== team.toLocaleLowerCase())
+          : [...currentLeague, team],
+      };
+    });
+  }
 
   useEffect(() => {
     let active = true;
@@ -546,7 +569,7 @@ function App() {
                   {activeUpcomingFixture && (
                     <>
                       <div className="upcoming-card-heading selected-fixture-heading">
-                        <div><span className="section-label">{isAlternativeFixture ? "Selected scheduled match" : "Soonest scheduled match"}</span></div>
+                        <div><span className="section-label">{isAlternativeFixture ? "Selected scheduled match" : isFavoriteTeam(activeUpcomingFixture.home_team) || isFavoriteTeam(activeUpcomingFixture.away_team) ? "Your team is playing" : "Soonest scheduled match"}</span></div>
                         {isAlternativeFixture && <button className="text-button" onClick={() => { setSelectedFixture(null); setPrediction(null); }} type="button">Use soonest</button>}
                       </div>
                       <p className="fixture-kickoff">{fixtureTime(activeUpcomingFixture.kickoff_at)}</p>
@@ -569,18 +592,40 @@ function App() {
                     {dateFixturesNotice && <div className="message">{dateFixturesNotice}</div>}
                     {dateFixtures.length > 0 && (
                       <div className="date-fixture-list" aria-label="Upcoming fixtures for selected date">
-                        {dateFixtures.map((fixture) => {
+                        {[...dateFixtures].sort((first, second) => {
+                          const firstFavorite = Number(isFavoriteTeam(first.home_team) || isFavoriteTeam(first.away_team));
+                          const secondFavorite = Number(isFavoriteTeam(second.home_team) || isFavoriteTeam(second.away_team));
+                          return secondFavorite - firstFavorite || Date.parse(first.kickoff_at) - Date.parse(second.kickoff_at);
+                        }).map((fixture) => {
                           const selected = activeUpcomingFixture?.fixture_id === fixture.fixture_id;
+                          const featuresFavorite = isFavoriteTeam(fixture.home_team) || isFavoriteTeam(fixture.away_team);
                           return (
                             <button className={selected ? "date-fixture-option selected" : "date-fixture-option"} key={fixture.fixture_id} aria-pressed={selected} onClick={() => chooseScheduledFixture(fixture)} type="button">
                               <span>{new Date(fixture.kickoff_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                              <strong className="date-fixture-teams"><span><TeamBadge name={fixture.home_team} src={fixture.home_badge_url} size="small" />{fixture.home_team}</span><i>vs</i><span><TeamBadge name={fixture.away_team} src={fixture.away_badge_url} size="small" />{fixture.away_team}</span></strong>
-                              <em>{selected ? "Selected" : "Choose"}</em>
+                              <strong className="date-fixture-teams"><span><TeamBadge name={fixture.home_team} src={fixture.home_badge_url} size="small" />{isFavoriteTeam(fixture.home_team) && <b className="favorite-star" aria-label="Favorite team">★</b>}{fixture.home_team}</span><i>vs</i><span><TeamBadge name={fixture.away_team} src={fixture.away_badge_url} size="small" />{isFavoriteTeam(fixture.away_team) && <b className="favorite-star" aria-label="Favorite team">★</b>}{fixture.away_team}</span></strong>
+                              <em>{featuresFavorite ? "★ For you" : selected ? "Selected" : "Choose"}</em>
                             </button>
                           );
                         })}
                       </div>
                     )}
+                  </details>
+                  <details className="favorite-teams-panel">
+                    <summary>Your favorite teams <span>{currentFavorites.length} followed</span></summary>
+                    <p>Follow clubs to see their matches first in the date fixture list. Favorites are saved in this browser.</p>
+                    <label className="favorite-search-label" htmlFor="favorite-team-search">Find a team</label>
+                    <input id="favorite-team-search" type="search" value={favoriteSearch} placeholder="Search teams" onChange={(event) => setFavoriteSearch(event.target.value)} />
+                    {teamsLoading ? <p>Loading teams…</p> : teamOptions.length ? (
+                      <div className="favorite-team-grid">
+                        {teamOptions.filter((team) => team.toLocaleLowerCase().includes(favoriteSearch.trim().toLocaleLowerCase())).map((team) => {
+                          const favorite = isFavoriteTeam(team);
+                          return <button key={team} type="button" aria-pressed={favorite} onClick={() => toggleFavoriteTeam(team)}>
+                            <TeamBadge name={team} src={teamBadges[team.toLocaleLowerCase()]} size="small" />
+                            <span>{team}</span><strong aria-hidden="true">{favorite ? "★" : "☆"}</strong>
+                          </button>;
+                        })}
+                      </div>
+                    ) : <p>Team favorites are unavailable until the team list loads.</p>}
                   </details>
               </section>
             ) : (
