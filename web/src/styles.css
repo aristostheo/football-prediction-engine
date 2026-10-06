@@ -250,6 +250,8 @@ footer > a:last-child { color: #b4c0b8; }
   .probability { padding: 11px 9px; border-radius: 12px; }
   .probability strong { font-size: clamp(20px, 7vw, 27px); }
   .probability span, .probability small { font-size: 10px; }
+  .result-title { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .result-title span { font-size: 12px; }
   .league-tabs { grid-template-columns: 1fr; }
   .team-fields { grid-template-columns: 1fr; }
   .versus { height: 16px; }
@@ -311,12 +313,18 @@ footer > a:last-child { color: #b4c0b8; }
   .date-fixture-browser summary { align-items: flex-start; }
   .date-fixture-controls { grid-template-columns: 1fr auto; }
   .date-fixture-controls label { grid-column: 1 / -1; }
-  .date-fixture-option { grid-template-columns: 42px minmax(0, 1fr) auto; gap: 6px; padding: 10px 8px; }
+  .date-fixture-option { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 8px; padding: 10px 8px; }
+  .date-fixture-option > span { grid-column: 1; grid-row: 1; }
+  .date-fixture-option em { grid-column: 2; grid-row: 1; }
   .date-fixture-option strong { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .date-fixture-option strong { grid-column: 1 / -1; grid-row: 2; }
+  .date-fixture-teams > span { max-width: 100%; min-width: 0; flex-wrap: wrap; overflow-wrap: anywhere; }
   .favorite-team-grid { grid-template-columns: 1fr; }
   .fixture-team { gap: 6px; }
   .team-badge { width: 28px; height: 28px; }
   .team-badge-small { width: 21px; height: 21px; }
+  .scoreline-row { align-items: flex-start; }
+  .scoreline-row strong { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.45; }
 }
 
 
