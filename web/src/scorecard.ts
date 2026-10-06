@@ -26,6 +26,13 @@ export interface ScoreMetrics {
   accuracy: number;
 }
 
+export interface ConfidenceBucket {
+  label: string;
+  count: number;
+  meanConfidence: number;
+  observedAccuracy: number;
+}
+
 export function loadForecasts(): StoredForecast[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -143,6 +150,43 @@ export function calculateMetrics(
     calibrationError,
     accuracy: correct / scored.length,
   };
+}
+
+export function calculateTopPickCalibration(
+  forecasts: StoredForecast[],
+  results: Record<string, MatchOutcome | null>,
+  probabilities: (forecast: StoredForecast) => [number, number, number] | null,
+): ConfidenceBucket[] {
+  const ranges = [
+    { lower: 0.3, upper: 0.4, label: "30–40%" },
+    { lower: 0.4, upper: 0.5, label: "40–50%" },
+    { lower: 0.5, upper: 0.55, label: "50–55%" },
+    { lower: 0.55, upper: 0.6, label: "55–60%" },
+    { lower: 0.6, upper: 0.65, label: "60–65%" },
+    { lower: 0.65, upper: 0.7, label: "65–70%" },
+    { lower: 0.7, upper: 0.75, label: "70–75%" },
+    { lower: 0.75, upper: 0.8, label: "75–80%" },
+    { lower: 0.8, upper: 1.01, label: "80%+" },
+  ];
+  return ranges.flatMap((range) => {
+    const members = forecasts.flatMap((forecast) => {
+      const actual = results[forecast.id];
+      const probs = probabilities(forecast);
+      if (!actual || !probs || probs.some((probability) => !Number.isFinite(probability))) return [];
+      const confidence = Math.max(...probs);
+      if (confidence < range.lower || confidence >= range.upper) return [];
+      const predictedIndex = probs.indexOf(confidence);
+      const actualIndex = actual === "H" ? 0 : actual === "D" ? 1 : 2;
+      return [{ confidence, correct: predictedIndex === actualIndex }];
+    });
+    if (!members.length) return [];
+    return [{
+      label: range.label,
+      count: members.length,
+      meanConfidence: members.reduce((sum, item) => sum + item.confidence, 0) / members.length,
+      observedAccuracy: members.filter((item) => item.correct).length / members.length,
+    }];
+  });
 }
 
 function outcomeIndexOf(outcome: MatchOutcome): number {

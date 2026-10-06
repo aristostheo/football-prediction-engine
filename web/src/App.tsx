@@ -12,7 +12,7 @@ import {
   predictMatch,
   Prediction,
 } from "./api";
-import { calculateMetrics, loadForecasts, saveForecast, StoredForecast } from "./scorecard";
+import { calculateMetrics, calculateTopPickCalibration, loadForecasts, saveForecast, StoredForecast } from "./scorecard";
 
 const LEAGUES: Record<Competition, { name: string; short: string; code: string }> = {
   premier_league: { name: "Premier League", short: "England", code: "PL" },
@@ -60,12 +60,12 @@ function outcomeSummary(values: [number, number, number]): string {
 }
 
 function TeamBadge({ name, src, size = "normal" }: { name: string; src?: string | null; size?: "normal" | "small" }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const failed = failedSource === src;
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   return (
     <span className={`team-badge team-badge-${size}`} aria-hidden="true">
-      {src && !failed ? <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /> : initials}
+      {src && !failed ? <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailedSource(src)} /> : initials}
     </span>
   );
 }
@@ -191,6 +191,8 @@ function App() {
   const [settledResults, setSettledResults] = useState<Record<string, MatchOutcome | null>>({});
   const [scorecardLoading, setScorecardLoading] = useState(false);
   const [scorecardError, setScorecardError] = useState<string | null>(null);
+  const [scorecardLeagueFilter, setScorecardLeagueFilter] = useState<Competition | "all">("all");
+  const [scorecardStatusFilter, setScorecardStatusFilter] = useState<"all" | "settled" | "pending">("all");
 
   useEffect(() => {
     if (!forecastLog.length) return;
@@ -286,11 +288,19 @@ function App() {
       const market = calculateMetrics(
         marketForecasts, settledResults, (item) => item.market_probabilities,
       );
+      const modelCalibration = calculateTopPickCalibration(
+        marketForecasts, settledResults, (item) => item.model_probabilities,
+      );
+      const marketCalibration = calculateTopPickCalibration(
+        marketForecasts, settledResults, (item) => item.market_probabilities,
+      );
       return {
         competition: key,
         allModel,
         pairedModel,
         market,
+        modelCalibration,
+        marketCalibration,
         pairedLogLossDifference: pairedModel && market
           ? pairedModel.logLoss - market.logLoss
           : null,
@@ -298,6 +308,12 @@ function App() {
     }),
     [forecastLog, settledResults],
   );
+  const visibleForecasts = useMemo(() => [...forecastLog]
+    .filter((item) => scorecardLeagueFilter === "all" || item.competition === scorecardLeagueFilter)
+    .filter((item) => scorecardStatusFilter === "all"
+      || (scorecardStatusFilter === "settled" ? Boolean(settledResults[item.id]) : !settledResults[item.id]))
+    .sort((a, b) => b.forecasted_at.localeCompare(a.forecasted_at))
+    .slice(0, 12), [forecastLog, scorecardLeagueFilter, scorecardStatusFilter, settledResults]);
 
   const probabilities = useMemo(
     () => prediction
@@ -762,14 +778,27 @@ function App() {
           </div>
           <div className="scorecard-toolbar">
             <span>{forecastLog.length} tracked · {forecastLog.filter((item) => settledResults[item.id]).length} settled</span>
-            <button className="secondary-button" type="button" disabled={scorecardLoading || !forecastLog.length} onClick={() => {
-              setScorecardError(null);
-              setScorecardLoading(true);
-              getScorecardResults(forecastLog)
-                .then(setSettledResults)
-                .catch((caught: unknown) => setScorecardError(caught instanceof Error ? caught.message : "Could not load results."))
-                .finally(() => setScorecardLoading(false));
-            }}>{scorecardLoading ? "Checking results…" : "Update results"}</button>
+            <div className="scorecard-controls">
+              <label>League
+                <select value={scorecardLeagueFilter} onChange={(event) => setScorecardLeagueFilter(event.target.value as Competition | "all")}>
+                  <option value="all">All leagues</option>
+                  {(Object.keys(LEAGUES) as Competition[]).map((key) => <option key={key} value={key}>{LEAGUES[key].name}</option>)}
+                </select>
+              </label>
+              <label>Result
+                <select value={scorecardStatusFilter} onChange={(event) => setScorecardStatusFilter(event.target.value as "all" | "settled" | "pending")}>
+                  <option value="all">All</option><option value="settled">Completed</option><option value="pending">Upcoming / unverified</option>
+                </select>
+              </label>
+              <button className="secondary-button" type="button" disabled={scorecardLoading || !forecastLog.length} onClick={() => {
+                setScorecardError(null);
+                setScorecardLoading(true);
+                getScorecardResults(forecastLog)
+                  .then(setSettledResults)
+                  .catch((caught: unknown) => setScorecardError(caught instanceof Error ? caught.message : "Could not load results."))
+                  .finally(() => setScorecardLoading(false));
+              }}>{scorecardLoading ? "Checking results…" : "Update results"}</button>
+            </div>
           </div>
           {scorecardError && <div className="message error-message">{scorecardError}</div>}
           {scorecardByCompetition.map((group) => (
@@ -786,14 +815,22 @@ function App() {
                   {group.pairedLogLossDifference < 0 ? " · lower favors the model" : " · lower favors the market"}
                 </p>
               )}
+              <details className="scorecard-calibration">
+                <summary>Top-pick calibration · Model vs market</summary>
+                <p>For each odds-covered match, this compares the most likely outcome’s average probability with how often that pick was correct. Small samples can vary widely.</p>
+                <div className="calibration-grid">
+                  <CalibrationTable title="Model" buckets={group.modelCalibration} />
+                  <CalibrationTable title="Market" buckets={group.marketCalibration} />
+                </div>
+              </details>
             </div>
           ))}
-          {forecastLog.length > 0 ? (
+          {visibleForecasts.length > 0 ? (
             <div className="scorecard-table-wrap">
               <table className="scorecard-table">
                 <thead><tr><th>Fixture</th><th>Kickoff</th><th>Saved</th><th>Source</th><th>Actual</th></tr></thead>
                 <tbody>
-                  {[...forecastLog].sort((a, b) => b.forecasted_at.localeCompare(a.forecasted_at)).slice(0, 12).map((item) => (
+                  {visibleForecasts.map((item) => (
                     <tr key={item.id}>
                       <td>{item.home_team} vs {item.away_team}</td>
                       <td>{new Date(item.kickoff_at).toLocaleString()}</td>
@@ -804,10 +841,10 @@ function App() {
                   ))}
                 </tbody>
               </table>
-              <small>Showing up to 12 recent forecasts. Re-forecasts replace the saved version for that fixture; the scorecard uses the latest timestamped forecast before kickoff.</small>
+              <small>Showing up to 12 recent forecasts matching these filters. Re-forecasts replace the saved version for that fixture; the scorecard uses the latest timestamped forecast before kickoff.</small>
             </div>
           ) : (
-            <div className="scorecard-empty">Predict a scheduled upcoming match to start tracking.</div>
+            <div className="scorecard-empty">{forecastLog.length ? "No forecasts match these filters." : "Predict a scheduled upcoming match to start tracking."}</div>
           )}
           <p className="scorecard-footnote">A small live sample is noisy; wait for more settled matches before drawing conclusions. Calibration gap is a five-bin, three-outcome expected calibration error (lower is better). History updates are checked weekly.</p>
         </section>
@@ -834,6 +871,20 @@ function ScorecardCard({ title, metrics }: { title: string; metrics: ReturnType<
         <div className="metric-row"><span>Accuracy</span><strong>{percent(metrics.accuracy)}</strong></div>
       </> : <p>Scores appear after tracked fixtures have completed and results are refreshed.</p>}
     </article>
+  );
+}
+
+function CalibrationTable({ title, buckets }: { title: string; buckets: ReturnType<typeof calculateTopPickCalibration> }) {
+  return (
+    <div className="calibration-table-wrap">
+      <h4>{title}</h4>
+      {buckets.length ? <table className="calibration-table">
+        <thead><tr><th>Confidence</th><th>Avg. predicted</th><th>Pick hit rate</th><th>Matches</th></tr></thead>
+        <tbody>{buckets.map((bucket) => <tr key={bucket.label}>
+          <td>{bucket.label}</td><td>{percent(bucket.meanConfidence)}</td><td>{percent(bucket.observedAccuracy)}</td><td>{bucket.count}</td>
+        </tr>)}</tbody>
+      </table> : <p>No settled odds-covered matches in these confidence bands yet.</p>}
+    </div>
   );
 }
 
