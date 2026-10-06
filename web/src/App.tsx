@@ -819,7 +819,7 @@ function App() {
           <div className="section-intro">
             <span className="section-label">2026–27 prospective test</span>
             <h2>Track forecasts against results.</h2>
-            <p>Timestamped forecasts stay in this browser. Results are matched after they enter the bundled history.</p>
+            <p>Forecasts stay in this browser. Recent finished scores are checked live; older results arrive with history updates.</p>
           </div>
           <div className="scorecard-toolbar">
             <span>{forecastLog.length} tracked · {forecastLog.filter((item) => settledResults[item.id]).length} settled</span>
@@ -891,7 +891,7 @@ function App() {
           ) : (
             <div className="scorecard-empty">{forecastLog.length ? "No forecasts match these filters." : "Predict a scheduled upcoming match to start tracking."}</div>
           )}
-          <p className="scorecard-footnote">A small live sample is noisy; wait for more settled matches before drawing conclusions. Calibration gap is a five-bin, three-outcome expected calibration error (lower is better). History updates are checked weekly.</p>
+          <p className="scorecard-footnote">Recent matches are checked live for up to 14 days after kickoff. Older results appear when the bundled history updates. A small live sample is noisy; wait for more settled matches before drawing conclusions. Calibration gap is a five-bin, three-outcome expected calibration error (lower is better).</p>
         </section>
       </main>
 
