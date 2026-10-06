@@ -55,7 +55,7 @@ export function saveForecast(prediction: Prediction): StoredForecast[] {
         prediction.market_away_win_probability,
       ] as [number, number, number];
   const forecast: StoredForecast = {
-    id: crypto.randomUUID(),
+    id: createForecastId(),
     competition: prediction.competition,
     kickoff_date: prediction.kickoff_date,
     kickoff_at: prediction.kickoff_at,
@@ -91,6 +91,13 @@ export function saveForecast(prediction: Prediction): StoredForecast[] {
 
 export function forecastKey(forecast: Pick<StoredForecast, "competition" | "kickoff_date" | "home_team" | "away_team">): string {
   return [forecast.competition, forecast.kickoff_date, forecast.home_team, forecast.away_team].join("|");
+}
+
+function createForecastId(): string {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return uuid;
+  // randomUUID is unavailable in some browsers on a local-network HTTP origin.
+  return `forecast-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
 }
 
 export function calculateMetrics(
