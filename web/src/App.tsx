@@ -740,6 +740,7 @@ function App() {
                     </ul>
                   )}
                 </div>
+                <div className="component-grid">
                 <div className="component-panel">
                   <h3>How the model builds its probabilities</h3>
                   {prediction.components.goal_probabilities ? (
@@ -785,6 +786,7 @@ function App() {
                   {prediction.competition === "super_league_greece" && (
                     <small>Scorelines use the goal model; the Greek W/D/L probabilities continue to use Elo.</small>
                   )}
+                </div>
                 </div>
                 {trackingNotice && <p className="scorecard-note">{trackingNotice}</p>}
               </div>
