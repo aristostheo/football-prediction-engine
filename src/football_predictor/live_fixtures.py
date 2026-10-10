@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Protocol
@@ -30,14 +31,21 @@ GOAL_API_LEAGUE_IDS = {
     Competition.PREMIER_LEAGUE: "cmr77dvkr005nrx06lp7rvp49",
     Competition.SUPER_LEAGUE_GREECE: "cmr77dwfb00jmrx06oapyzogf",
 }
-GOAL_API_LEAGUE_LOOKUP_IDS = {
-    # Public GOAL API coverage identifiers; resolve these to the internal ids
-    # used by fixture records before applying the date endpoint's league filter.
-    Competition.LA_LIGA: "302",
-    Competition.BUNDESLIGA: "175",
-    Competition.SERIE_A: "207",
-    Competition.LIGUE_1: "168",
-    Competition.PRIMEIRA_LIGA: "266",
+GOAL_API_LEAGUE_SEARCH_NAMES = {
+    # Search the API's own league catalogue; coverage-page ids are not the
+    # internal league ids expected by the date-fixture endpoint.
+    Competition.LA_LIGA: "La Liga",
+    Competition.BUNDESLIGA: "Bundesliga",
+    Competition.SERIE_A: "Serie A",
+    Competition.LIGUE_1: "Ligue 1",
+    Competition.PRIMEIRA_LIGA: "Primeira Liga",
+}
+GOAL_API_LEAGUE_NAME_ALIASES = {
+    Competition.LA_LIGA: {"la liga", "laliga", "primera division"},
+    Competition.BUNDESLIGA: {"bundesliga"},
+    Competition.SERIE_A: {"serie a"},
+    Competition.LIGUE_1: {"ligue 1"},
+    Competition.PRIMEIRA_LIGA: {"primeira liga", "liga portugal", "liga portugal betclic"},
 }
 
 
@@ -181,11 +189,13 @@ class GoalApiFixtureProvider:
         cached = self._league_ids.get(competition)
         if cached:
             return cached
-        lookup_id = GOAL_API_LEAGUE_LOOKUP_IDS.get(competition)
-        if lookup_id is None:
+        search_name = GOAL_API_LEAGUE_SEARCH_NAMES.get(competition)
+        aliases = GOAL_API_LEAGUE_NAME_ALIASES.get(competition)
+        if search_name is None or aliases is None:
             raise FixtureProviderError(f"Goal API has no league mapping for {competition.value}")
+        query = urlencode({"search": search_name, "limit": 100})
         request = Request(
-            f"{self._base_url}/leagues/{lookup_id}",
+            f"{self._base_url}/leagues?{query}",
             headers={
                 "Accept": "application/json",
                 "Authorization": f"Bearer {self._api_key}",
@@ -195,13 +205,34 @@ class GoalApiFixtureProvider:
         payload = self._request_json(request)
         data = payload.get("data")
         if isinstance(data, dict):
-            league = data.get("league")
-            candidates = [data, league] if isinstance(league, dict) else [data]
-            for candidate in candidates:
-                raw_id = candidate.get("id")
-                if isinstance(raw_id, (str, int)) and str(raw_id).strip():
-                    self._league_ids[competition] = str(raw_id)
-                    return str(raw_id)
+            data = data.get("leagues") or data.get("items") or [data]
+        if not isinstance(data, list):
+            raise FixtureProviderError("Goal API returned an unexpected league search payload")
+
+        matches: list[str] = []
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+            league = item.get("league")
+            candidate = league if isinstance(league, dict) else item
+            raw_name = candidate.get("name") or candidate.get("leagueName") or candidate.get("league_name")
+            raw_id = candidate.get("id")
+            if (
+                isinstance(raw_name, str)
+                and _normalize_league_name(raw_name) in aliases
+                and isinstance(raw_id, (str, int))
+                and str(raw_id).strip()
+            ):
+                matches.append(str(raw_id))
+
+        if len(set(matches)) == 1:
+            resolved_id = matches[0]
+            self._league_ids[competition] = resolved_id
+            return resolved_id
+        if len(set(matches)) > 1:
+            raise FixtureProviderError(
+                f"Goal API returned multiple exact league matches for {competition.value}"
+            )
         raise FixtureProviderError(
             f"Goal API could not resolve its internal league id for {competition.value}"
         )
@@ -375,6 +406,12 @@ def _goal_api_team_items(payload: dict[str, object]) -> list[dict[str, object]]:
     if not isinstance(raw_teams, list):
         raise FixtureProviderError("Goal API returned an unexpected team payload")
     return [item for item in raw_teams if isinstance(item, dict)]
+
+
+def _normalize_league_name(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", value.casefold())
+    without_marks = "".join(char for char in decomposed if not unicodedata.combining(char))
+    return " ".join(without_marks.split())
 
 
 def _goal_api_team_badge(item: dict[str, object]) -> tuple[str | None, str | None]:

@@ -34,11 +34,11 @@ V1 prefers the optional [Goal API](https://goal-api.com/) adapter for current
 fixture discovery. The user's free plan allows 1,000 requests per day. The
 date-fixture endpoint's `leagueId` filter uses Goal API's internal league `id`
 from `/leagues`, not its numeric coverage/API identifier. Existing Premier
-League and Greece internal IDs are configured directly; for the five new
-competitions the provider resolves the IDs from coverage identifiers 302
-(Spain), 175 (Germany), 207 (Italy), 168 (France), and 266 (Portugal), then
-reuses them for that server process. Each resolved league costs one additional
-request on first use after a server restart.
+League and Greece internal IDs are configured directly. For the five new
+competitions, the provider searches `/leagues?search=...`, requires an exact
+league-name match, and caches the returned internal ID for that server process.
+Each resolved league costs one additional request on first use after a server
+restart.
 
 The API caches fixture dates for ten minutes and team badge catalogues for a
 day. A first uncached "next match" search can still query one date at a time,

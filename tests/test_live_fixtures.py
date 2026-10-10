@@ -1,6 +1,9 @@
 import io
+import json
 from datetime import date
 from urllib.error import HTTPError
+
+import pytest
 
 import football_predictor.live_fixtures as live_fixtures
 from football_predictor.domain import Competition
@@ -91,23 +94,42 @@ def test_goal_api_provider_supports_greece_and_split_date_fields(monkeypatch) ->
     assert "leagueId=cmr77dwfb00jmrx06oapyzogf" in requested_urls[0]
 
 
-def test_goal_api_resolves_new_league_internal_id_once(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    lookup = b'{"success":true,"data":{"id":"goal-internal-la-liga","apiId":"302"}}'
+@pytest.mark.parametrize(
+    ("competition", "expected_search", "catalogue_name"),
+    [
+        (Competition.LA_LIGA, "La Liga", "Primera División"),
+        (Competition.BUNDESLIGA, "Bundesliga", "Bundesliga"),
+        (Competition.SERIE_A, "Serie A", "Serie A"),
+        (Competition.LIGUE_1, "Ligue 1", "Ligue 1"),
+        (Competition.PRIMEIRA_LIGA, "Primeira Liga", "Liga Portugal Betclic"),
+    ],
+)
+def test_goal_api_resolves_new_league_from_catalogue_and_caches_id(
+    monkeypatch, competition, expected_search, catalogue_name
+) -> None:  # type: ignore[no-untyped-def]
+    lookup = json.dumps(
+        {"success": True, "data": [{"id": f"goal-internal-{competition.value}", "name": catalogue_name}]}
+    ).encode()
     fixtures = b'{"success":true,"data":[],"pagination":{"total":0,"hasMore":false}}'
     requests = []
 
     def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
         requests.append(request.full_url)
-        return io.BytesIO(lookup if "/leagues/302" in request.full_url else fixtures)
+        if "/leagues?search=" in request.full_url:
+            return io.BytesIO(lookup)
+        return io.BytesIO(fixtures)
 
     monkeypatch.setattr(live_fixtures, "urlopen", fake_urlopen)
     provider = GoalApiFixtureProvider("test-key")
 
-    provider.list_fixtures(Competition.LA_LIGA, date(2026, 10, 4))
-    provider.list_fixtures(Competition.LA_LIGA, date(2026, 10, 5))
+    provider.list_fixtures(competition, date(2026, 10, 4))
+    provider.list_fixtures(competition, date(2026, 10, 5))
 
-    assert len([url for url in requests if "/leagues/302" in url]) == 1
-    assert all("leagueId=goal-internal-la-liga" in url for url in requests if "/fixtures/date/" in url)
+    search_requests = [url for url in requests if "/leagues?search=" in url]
+    fixture_requests = [url for url in requests if "/fixtures/date/" in url]
+    assert len(search_requests) == 1
+    assert f"search={expected_search.replace(' ', '+')}" in search_requests[0]
+    assert all(f"leagueId=goal-internal-{competition.value}" in url for url in fixture_requests)
 
 
 def test_goal_api_fixture_accepts_direct_badges_and_rejects_untrusted_badge_hosts(
