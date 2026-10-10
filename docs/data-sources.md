@@ -9,15 +9,28 @@ text-based results format:
   Premier League, with completed seasons from 2000-01 to 2025-26 and results
   from the in-progress 2026-27 season.
 - [OpenFootball Europe](https://github.com/openfootball/europe) for Super
-  League Greece. It includes available completed files for 2018-19, 2019-20,
-  2020-21, 2023-24, and 2024-25, plus partial results from 2025-26 and 2026-27.
+  League Greece, Ligue 1, and Primeira Liga.
+- [OpenFootball Espana](https://github.com/openfootball/espana) for La Liga.
+- [OpenFootball Deutschland](https://github.com/openfootball/deutschland) for
+  Bundesliga.
+- [OpenFootball Italy](https://github.com/openfootball/italy) for Serie A.
+
+The five newly added leagues have 13,955 parsed results: La Liga 3,109,
+Bundesliga 2,484, Serie A 3,090, Ligue 1 2,762, and Primeira Liga 2,510. Each
+has eight complete seasons from 2018-19 through 2025-26. Partial 2026-27
+results are included in those totals. Ligue 1's 2019-20 season stopped early
+(279 matches), so it is deliberately excluded from complete-season tests.
+Counts and per-season provenance are in
+`data/model/historical_matches.manifest.json`.
 
 Each canonical row retains its exact source URL and retrieval timestamp. The
-October 2, 2026 snapshot contains 50 Premier League and 35 Greek matches from
-2026-27. The Greek 2025-26 file contains 62 scored regular-season matches and
-remains incomplete in the upstream data. Coverage also has explicit gaps for
-2021-22 and 2022-23. Missing results are not filled or inferred. The October 2
-refresh found no new results beyond September 20, 2026.
+October 10, 2026 snapshot contains partial 2026-27 results in all seven
+leagues. The Greek 2025-26 file contains 62 scored regular-season matches and
+remains incomplete in the upstream data. Greek coverage also has explicit gaps
+for 2021-22 and 2022-23. Missing results are not filled or inferred. The five
+new league policies use pure Elo for 1X2 probabilities; they have not been
+independently tuned or selected for production. Their scoreline estimates are
+provided by the existing separate Poisson goal model.
 
 The adapter converts each external file into `HistoricalMatch` records, then
 applies duplicate, team-name, score, and completed-season schedule checks.
@@ -40,7 +53,7 @@ CSV format, method, run command, and limits.
 
 ## Live fixtures
 
-The optional API service prefers Goal API for upcoming fixtures in both
+The optional API service prefers Goal API for upcoming fixtures in all seven
 supported leagues, with API-Football available as a fallback. Providers are
 used only to discover fixtures: the versioned historical dataset remains the
 source of model inputs and each prediction exposes its history date. See

@@ -91,6 +91,25 @@ def test_goal_api_provider_supports_greece_and_split_date_fields(monkeypatch) ->
     assert "leagueId=cmr77dwfb00jmrx06oapyzogf" in requested_urls[0]
 
 
+def test_goal_api_resolves_new_league_internal_id_once(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    lookup = b'{"success":true,"data":{"id":"goal-internal-la-liga","apiId":"302"}}'
+    fixtures = b'{"success":true,"data":[],"pagination":{"total":0,"hasMore":false}}'
+    requests = []
+
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        requests.append(request.full_url)
+        return io.BytesIO(lookup if "/leagues/302" in request.full_url else fixtures)
+
+    monkeypatch.setattr(live_fixtures, "urlopen", fake_urlopen)
+    provider = GoalApiFixtureProvider("test-key")
+
+    provider.list_fixtures(Competition.LA_LIGA, date(2026, 10, 4))
+    provider.list_fixtures(Competition.LA_LIGA, date(2026, 10, 5))
+
+    assert len([url for url in requests if "/leagues/302" in url]) == 1
+    assert all("leagueId=goal-internal-la-liga" in url for url in requests if "/fixtures/date/" in url)
+
+
 def test_goal_api_fixture_accepts_direct_badges_and_rejects_untrusted_badge_hosts(
     monkeypatch,
 ) -> None:  # type: ignore[no-untyped-def]

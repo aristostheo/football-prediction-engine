@@ -18,11 +18,21 @@ import { FavoriteTeams, loadFavoriteTeams, saveFavoriteTeams } from "./favorites
 const LEAGUES: Record<Competition, { name: string; short: string; code: string }> = {
   premier_league: { name: "Premier League", short: "England", code: "PL" },
   super_league_greece: { name: "Super League Greece", short: "Greece", code: "SL" },
+  la_liga: { name: "La Liga", short: "Spain", code: "ES" },
+  bundesliga: { name: "Bundesliga", short: "Germany", code: "DE" },
+  serie_a: { name: "Serie A", short: "Italy", code: "IT" },
+  ligue_1: { name: "Ligue 1", short: "France", code: "FR" },
+  primeira_liga: { name: "Primeira Liga", short: "Portugal", code: "PT" },
 };
 
-const METRICS = {
+const METRICS: Record<Competition, { logLoss: string; brier: string; accuracy: string; model: string }> = {
   premier_league: { logLoss: "0.9879", brier: "0.5888", accuracy: "53.63%", model: "Elo + Poisson" },
   super_league_greece: { logLoss: "0.9857", brier: "0.5860", accuracy: "51.03%", model: "Elo" },
+  la_liga: { logLoss: "1.0022", brier: "0.5982", accuracy: "52.47%", model: "Elo baseline · walk-forward" },
+  bundesliga: { logLoss: "1.0038", brier: "0.5998", accuracy: "50.72%", model: "Elo baseline · walk-forward" },
+  serie_a: { logLoss: "1.0034", brier: "0.6001", accuracy: "50.89%", model: "Elo baseline · walk-forward" },
+  ligue_1: { logLoss: "1.0161", brier: "0.6085", accuracy: "51.37%", model: "Elo baseline · walk-forward" },
+  primeira_liga: { logLoss: "0.9549", brier: "0.5647", accuracy: "54.64%", model: "Elo baseline · walk-forward" },
 };
 
 function today(): string {
@@ -503,13 +513,13 @@ function App() {
             <div className="eyebrow"><span /> Probabilistic match intelligence</div>
             <h1>See the match<br />before it unfolds.</h1>
             <p>
-              Leakage-safe home, draw, and away probabilities for two European leagues,
+              Leakage-safe home, draw, and away probabilities across seven European leagues,
               evaluated on future matches—not shuffled history.
             </p>
             <div className="hero-proof">
-              <div><strong>10,468</strong><span>historical matches</span></div>
-              <div><strong>25 seasons</strong><span>Premier League depth</span></div>
-              <div><strong>0</strong><span>future-data leakage</span></div>
+              <div><strong>24,950</strong><span>historical matches</span></div>
+              <div><strong>7 leagues</strong><span>across Europe</span></div>
+              <div><strong>Pre-match</strong><span>inputs only</span></div>
             </div>
           </div>
 
@@ -720,7 +730,9 @@ function App() {
                   <p>
                     {prediction.competition === "premier_league"
                       ? `Premier League probabilities combine Elo with a Poisson goal model. Both use pre-match history; the goal model also uses recent form, scoring/conceding rates, venue form, and rest. This summary does not assign an exact probability change to each factor.`
-                      : "Greek league probabilities currently use team Elo ratings and home advantage. The form, goal, and venue figures below are context only; they do not directly change these probabilities."}
+                      : prediction.competition === "super_league_greece"
+                        ? "Greek league probabilities currently use team Elo ratings and home advantage. The form, goal, and venue figures below are context only; they do not directly change these probabilities."
+                        : `${LEAGUES[prediction.competition].name} probabilities currently use the Elo baseline and home advantage. This league’s walk-forward result is shown below; the model has not yet had a league-specific production policy selected.`}
                     {` Snapshot through ${prediction.history_through}.`}
                   </p>
                   <div className="team-context-table" role="table" aria-label="Team form comparison">
@@ -783,8 +795,8 @@ function App() {
                       </div>
                     ))}
                   </div>
-                  {prediction.competition === "super_league_greece" && (
-                    <small>Scorelines use the goal model; the Greek W/D/L probabilities continue to use Elo.</small>
+                  {prediction.competition !== "premier_league" && (
+                    <small>Scorelines use the goal model; W/D/L probabilities use the selected league model policy.</small>
                   )}
                 </div>
                 </div>
@@ -798,7 +810,7 @@ function App() {
           <div className="section-intro light">
             <span className="section-label">Held-out evaluation</span>
             <h2>Measured on the future.</h2>
-            <p>Every score comes from the final chronological 20% of its league—not a random split.</p>
+            <p>Season-by-season walk-forward scores use only earlier results. New league baselines are shown separately and are not tuned to these test seasons.</p>
           </div>
           <div className="performance-grid">
             {(Object.keys(LEAGUES) as Competition[]).map((key) => (

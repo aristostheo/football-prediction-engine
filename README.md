@@ -1,12 +1,12 @@
 # European Football Prediction Engine
 
-A leakage-safe, probabilistic football match prediction system for the **Premier League** and **Super League Greece**.
+A leakage-safe, probabilistic football match prediction system for seven European leagues: the Premier League, Super League Greece, La Liga, Bundesliga, Serie A, Ligue 1, and Primeira Liga.
 
 The project will estimate pre-match probabilities for home win, draw, and away win. It will evaluate models chronologically with log loss, Brier score, accuracy, and calibration — not just winner-picking accuracy.
 
 ## Scope for V1
 
-- Historical results from both target competitions
+- Historical results from all seven supported competitions
 - A normalized match dataset with explicit data provenance
 - Pre-match features only: form, goal rates, home/away performance, rest, and Elo
 - Baseline probabilistic models followed by model comparison
@@ -24,14 +24,19 @@ The project will estimate pre-match probabilities for home win, draw, and away w
 
 The first ingestion path will target open/public-domain historical results where possible. We will not bundle third-party raw data in this repository. The ingestion layer will be source-adapter based, so a source can be replaced without rewriting the model pipeline.
 
-The initial historical dataset uses CC0-licensed OpenFootball repositories:
+The historical dataset uses CC0-licensed OpenFootball repositories:
 
-- [eng-england](https://github.com/openfootball/eng-england) for Premier League results
-- [europe](https://github.com/openfootball/europe) for Super League Greece results
+- [england](https://github.com/openfootball/england) for Premier League results
+- [europe](https://github.com/openfootball/europe) for Greece, France, and Portugal
+- [espana](https://github.com/openfootball/espana) for Spain
+- [deutschland](https://github.com/openfootball/deutschland) for Germany
+- [italy](https://github.com/openfootball/italy) for Italy
 
-The first reproducible build covers Premier League completed seasons from
-2000-01 to 2024-25 and the available Greek completed seasons. It keeps Greek
-coverage gaps explicit and excludes post-regular-season stages.
+The bundled snapshot contains 24,950 results across the seven leagues. The
+five newly added leagues cover 2018-19 through 2025-26, plus partial 2026-27
+results. France's 2019-20 season ended early and is kept incomplete. Greek
+coverage gaps remain explicit. See [data coverage](docs/data-sources.md) for
+season-by-season counts and limitations.
 
 ## Repository layout
 
@@ -114,9 +119,10 @@ policy was chosen after inspecting the final holdout, so that holdout is
 exploratory and is not an independent estimate of future performance. The
 project now includes an expanding-season walk-forward evaluation with a
 climatology baseline and season-block uncertainty. The bundled history is
-current through September 20, 2026 for both
-leagues; see [data coverage](docs/data-sources.md) for incomplete Greek seasons
-and gaps.
+current through September 20, 2026 across the seven leagues. The new leagues use an Elo baseline until their own production policy
+is validated; their walk-forward metrics are exploratory and must not be read
+as proof that they outperform other leagues or models. See [data coverage](docs/data-sources.md)
+for season counts and limitations.
 
 A closing-odds benchmark and optional live market comparison are available. The
 benchmark matches odds to walk-forward fixtures, removes the bookmaker margin,

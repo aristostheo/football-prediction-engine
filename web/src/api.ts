@@ -1,4 +1,11 @@
-export type Competition = "premier_league" | "super_league_greece";
+export type Competition =
+  | "premier_league"
+  | "super_league_greece"
+  | "la_liga"
+  | "bundesliga"
+  | "serie_a"
+  | "ligue_1"
+  | "primeira_liga";
 
 export interface PredictionRequest {
   competition: Competition;

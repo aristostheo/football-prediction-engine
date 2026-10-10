@@ -98,6 +98,26 @@ Sat Aug 19
     ]
 
 
+def test_parser_strips_awarded_marker_after_away_team_in_legacy_format() -> None:
+    text = """▪ Matchday 1
+Sat Aug 19
+  20:45  Hellas Verona FC         3-0  AS Roma                  [awarded]
+"""
+    matches = parse_openfootball_results(
+        text,
+        competition=Competition.SERIE_A,
+        season="2020-21",
+        source_url=SOURCE_URL,
+    )
+
+    assert len(matches) == 1
+    assert (matches[0].home_team, matches[0].away_team, matches[0].home_goals) == (
+        "Hellas Verona FC",
+        "AS Roma",
+        3,
+    )
+
+
 def test_parser_reads_awarded_greek_results_without_creating_phantom_teams() -> None:
     text = """Sun Mar 17 2019
   19:00  Panathinaikos v Olympiakos Piraeus 0-3 [awarded]

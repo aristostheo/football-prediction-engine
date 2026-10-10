@@ -21,7 +21,8 @@ _MATCH_LINE: Final = re.compile(
 _MATCH_LINE_HOME_SCORE_AWAY: Final = re.compile(
     r"^\s*(?:\d{1,2}:\d{2}\s+)?"
     r"(?P<home>.+?)\s+(?P<home_goals>\d+)-(?P<away_goals>\d+)"
-    r"(?:\s+\([^)]*\))?\s+(?P<away>.+?)\s*$"
+    r"(?:\s+\([^)]*\))?\s+(?P<away>.+?)"
+    r"(?:\s+\[awarded\])?\s*$"
 )
 _REGULAR_MATCHDAY: Final = re.compile(r"^\s*[▪»]\s*Matchday\s+\d+\s*$")
 _ANY_MATCHDAY: Final = re.compile(r"^\s*[▪»].*Matchday\s+\d+\s*$")

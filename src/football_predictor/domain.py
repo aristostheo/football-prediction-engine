@@ -9,6 +9,11 @@ from pydantic import BaseModel, Field, HttpUrl, model_validator
 class Competition(StrEnum):
     PREMIER_LEAGUE = "premier_league"
     SUPER_LEAGUE_GREECE = "super_league_greece"
+    LA_LIGA = "la_liga"
+    BUNDESLIGA = "bundesliga"
+    SERIE_A = "serie_a"
+    LIGUE_1 = "ligue_1"
+    PRIMEIRA_LIGA = "primeira_liga"
 
 
 class MatchResult(StrEnum):

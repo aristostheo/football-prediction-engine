@@ -21,7 +21,8 @@ uv run uvicorn football_predictor.api:app --reload
 - `GET /teams?competition=...` returns teams from that league's most recent recorded season for searchable hypothetical matchups.
 - `GET /team-badges?competition=...` reads the league's team catalogue from the configured live fixture provider and returns trusted badge URLs keyed by the predictor's canonical team names. Missing provider data leaves the initials fallback in place.
 
-The dashboard opens on the next scheduled match for the selected league. Use
+The supported competitions are Premier League, Super League Greece, La Liga,
+Bundesliga, Serie A, Ligue 1, and Primeira Liga. The dashboard opens on the next scheduled match for the selected league. Use
 **Explore matchup** to choose any two teams from searchable league-specific
 options. Those forecasts use the latest available results and are labeled
 hypothetical. Odds are optional and collapsed until requested. If no fixture is
@@ -30,10 +31,20 @@ found in the initial three-week window, users can search the following window.
 ## Provider decision
 
 V1 prefers the optional [Goal API](https://goal-api.com/) adapter for current
-fixture discovery. Its free plan covers both supported leagues and allows 1,000
-requests per day. The date-fixture endpoint's `leagueId` filter uses Goal API's
-internal league `id` from `/leagues`, not the provider's numeric `apiId` (152 for
-the Premier League and 178 for Super League Greece).
+fixture discovery. The user's free plan allows 1,000 requests per day. The
+date-fixture endpoint's `leagueId` filter uses Goal API's internal league `id`
+from `/leagues`, not its numeric coverage/API identifier. Existing Premier
+League and Greece internal IDs are configured directly; for the five new
+competitions the provider resolves the IDs from coverage identifiers 302
+(Spain), 175 (Germany), 207 (Italy), 168 (France), and 266 (Portugal), then
+reuses them for that server process. Each resolved league costs one additional
+request on first use after a server restart.
+
+The API caches fixture dates for ten minutes and team badge catalogues for a
+day. A first uncached "next match" search can still query one date at a time,
+up to the configured 21-day window. Switching leagues or reloading after cache
+expiry uses more requests, so avoid repeatedly refreshing while testing. These
+caches are in-memory and reset when the local server restarts.
 
 [API-Football](https://www.api-football.com/) remains an optional fallback when
 `API_FOOTBALL_KEY` is also configured. Provider order is:
@@ -49,8 +60,8 @@ in the backend environment (including the Render service environment) to enable
 the dashboard's **Load live market odds** control. The user interface can still
 accept manually entered 1X2 odds without this key.
 
-The live odds adapter uses The Odds API's Premier League and Greece Super League
-sport keys, European bookmaker region, and 1X2 h2h market. It averages
+The live odds adapter uses The Odds API sport keys for the selected competition,
+European bookmaker region, and 1X2 h2h market. It averages
 per-book margin-removed probabilities across books that quote all three
 outcomes, then presents fair decimal prices for the existing market forecast
 path. A fixture must match both teams and kickoff time. A missing quote or
@@ -146,9 +157,11 @@ prefers the recent historical label when a club also has an older label.
 
 Iraklis and Kalamata now have recorded 2026-27 results. If another registered
 promoted club appears before its first local result, the engine uses the cautious
-prior described above. Unknown or ambiguous names are not guessed. Tests cover
-both leagues' alias resolution and the fixture-selection-to-prediction API flow.
-Live provider rosters still depend on the configured provider.
+prior described above. Unknown or ambiguous names are not guessed. The alias
+registry includes historical clubs and common short labels for the five new
+leagues. Tests cover league-scoped resolution and the fixture-selection-to-
+prediction API flow. Live provider rosters still depend on the configured
+provider.
 
 The parser now handles OpenFootball's `[awarded]` suffix and canonicalizes team
 labels before validation. The bundled results no longer contain the two phantom

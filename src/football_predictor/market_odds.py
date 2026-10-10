@@ -20,6 +20,11 @@ ODDS_API_BASE_URL = "https://api.the-odds-api.com/v4"
 SPORT_KEYS = {
     Competition.PREMIER_LEAGUE: "soccer_epl",
     Competition.SUPER_LEAGUE_GREECE: "soccer_greece_super_league",
+    Competition.LA_LIGA: "soccer_spain_la_liga",
+    Competition.BUNDESLIGA: "soccer_germany_bundesliga",
+    Competition.SERIE_A: "soccer_italy_serie_a",
+    Competition.LIGUE_1: "soccer_france_ligue_one",
+    Competition.PRIMEIRA_LIGA: "soccer_portugal_primeira_liga",
 }
 
 

@@ -58,6 +58,35 @@ def test_openfootball_sources_follow_the_current_season() -> None:
     assert greek_current.season == "2026-27"
 
 
+def test_additional_leagues_have_reproducible_current_and_historical_sources() -> None:
+    files = initial_openfootball_files(
+        england_root=Path("england"),
+        europe_root=Path("europe"),
+        as_of=date(2026, 10, 10),
+    )
+    expected = {
+        Competition.LA_LIGA: ("espana", "1-liga.txt"),
+        Competition.BUNDESLIGA: ("deutschland", "1-bundesliga.txt"),
+        Competition.SERIE_A: ("italy", "1-seriea.txt"),
+        Competition.LIGUE_1: ("europe/france", "_fr1.txt"),
+        Competition.PRIMEIRA_LIGA: ("europe/portugal", "_pt1.txt"),
+    }
+    for competition, (source_part, filename_part) in expected.items():
+        league_files = [item for item in files if item.competition is competition]
+        assert [item.season for item in league_files] == [
+            f"{year}-{str(year + 1)[-2:]}" for year in range(2018, 2027)
+        ]
+        assert all(source_part in item.source_url for item in league_files)
+        assert all(filename_part in item.source_url for item in league_files)
+        assert league_files[-1].expected_matches_per_team is None
+
+    france_2019 = next(
+        item for item in files
+        if item.competition is Competition.LIGUE_1 and item.season == "2019-20"
+    )
+    assert france_2019.expected_matches_per_team is None
+
+
 def test_refresh_writes_a_checksummed_dataset_and_reports_changes(tmp_path: Path) -> None:
     output_path = tmp_path / "matches.csv.gz"
     manifest_path = tmp_path / "manifest.json"

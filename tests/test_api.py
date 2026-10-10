@@ -164,6 +164,33 @@ def test_api_exposes_health_fixtures_and_predictions() -> None:
     assert results[0].result == "H"
 
 
+def test_api_caches_fixture_dates_and_team_badges() -> None:
+    class CountingProvider(StubFixtureProvider):
+        fixture_calls = 0
+        badge_calls = 0
+
+        def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
+            self.fixture_calls += 1
+            return super().list_fixtures(competition, fixture_date)
+
+        def list_team_badges(self, competition: Competition) -> dict[str, str]:
+            self.badge_calls += 1
+            return super().list_team_badges(competition)
+
+    provider = CountingProvider()
+    routes = {
+        getattr(route, "path", None): route.endpoint
+        for route in create_app(engine=StubEngine(), fixture_provider=provider).routes
+    }
+
+    for _ in range(2):
+        routes["/fixtures"](Competition.PREMIER_LEAGUE, date(2025, 6, 1))
+        routes["/team-badges"](Competition.PREMIER_LEAGUE)
+
+    assert provider.fixture_calls == 1
+    assert provider.badge_calls == 1
+
+
 def test_scorecard_checks_live_provider_for_recent_results_missing_from_history() -> None:
     match_date = datetime.now(UTC).date() - timedelta(days=1)
     provider_calls: list[tuple[Competition, date]] = []

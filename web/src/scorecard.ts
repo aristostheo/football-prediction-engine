@@ -204,7 +204,8 @@ function isStoredForecast(value: unknown): value is StoredForecast {
   if (!value || typeof value !== "object") return false;
   const item = value as Partial<StoredForecast>;
   return typeof item.id === "string"
-    && (item.competition === "premier_league" || item.competition === "super_league_greece")
+    && ["premier_league", "super_league_greece", "la_liga", "bundesliga", "serie_a", "ligue_1", "primeira_liga"]
+      .some((competition) => competition === item.competition)
     && typeof item.kickoff_date === "string"
     && typeof item.kickoff_at === "string"
     && typeof item.home_team === "string"

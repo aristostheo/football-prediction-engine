@@ -68,6 +68,30 @@ def test_english_provider_examples_use_recent_historical_labels(
     assert resolve_team_name(name, league, historical_teams[league]) == expected
 
 
+@pytest.mark.parametrize(
+    ("competition", "name", "expected"),
+    [
+        (Competition.LA_LIGA, "Barcelona", "FC Barcelona"),
+        (Competition.LA_LIGA, "Alaves", "Deportivo Alavés"),
+        (Competition.BUNDESLIGA, "Bayern", "FC Bayern München"),
+        (Competition.BUNDESLIGA, "Cologne", "1. FC Köln"),
+        (Competition.SERIE_A, "Inter", "FC Internazionale Milano"),
+        (Competition.SERIE_A, "Roma", "AS Roma"),
+        (Competition.LIGUE_1, "PSG", "Paris Saint-Germain FC"),
+        (Competition.LIGUE_1, "Marseille", "Olympique de Marseille"),
+        (Competition.PRIMEIRA_LIGA, "Benfica", "Sport Lisboa e Benfica"),
+        (Competition.PRIMEIRA_LIGA, "Sporting CP", "Sporting Clube de Portugal"),
+    ],
+)
+def test_new_league_provider_names_resolve_to_historical_clubs(
+    historical_teams: dict[Competition, set[str]],
+    competition: Competition,
+    name: str,
+    expected: str,
+) -> None:
+    assert resolve_team_name(name, competition, historical_teams[competition]) == expected
+
+
 def test_aliases_do_not_cross_leagues_or_guess_unrelated_clubs() -> None:
     greek_teams = {"Olympiakos Piraeus", "PAOK Saloniki"}
     assert resolve_team_name("Olympiacos", Competition.PREMIER_LEAGUE, greek_teams) == "Olympiacos"

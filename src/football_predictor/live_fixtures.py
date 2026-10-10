@@ -17,6 +17,11 @@ API_FOOTBALL_BASE_URL = "https://v3.football.api-sports.io"
 API_FOOTBALL_LEAGUE_IDS = {
     Competition.PREMIER_LEAGUE: 39,
     Competition.SUPER_LEAGUE_GREECE: 197,
+    Competition.LA_LIGA: 140,
+    Competition.BUNDESLIGA: 78,
+    Competition.SERIE_A: 135,
+    Competition.LIGUE_1: 61,
+    Competition.PRIMEIRA_LIGA: 94,
 }
 GOAL_API_BASE_URL = "https://api.goal-api.com/v1"
 GOAL_API_USER_AGENT = "football-prediction-engine/0.1"
@@ -24,6 +29,15 @@ GOAL_API_LEAGUE_IDS = {
     # Fixtures' leagueId filter expects Goal API's internal `id`, not `apiId`.
     Competition.PREMIER_LEAGUE: "cmr77dvkr005nrx06lp7rvp49",
     Competition.SUPER_LEAGUE_GREECE: "cmr77dwfb00jmrx06oapyzogf",
+}
+GOAL_API_LEAGUE_LOOKUP_IDS = {
+    # Public GOAL API coverage identifiers; resolve these to the internal ids
+    # used by fixture records before applying the date endpoint's league filter.
+    Competition.LA_LIGA: "302",
+    Competition.BUNDESLIGA: "175",
+    Competition.SERIE_A: "207",
+    Competition.LIGUE_1: "168",
+    Competition.PRIMEIRA_LIGA: "266",
 }
 
 
@@ -57,6 +71,7 @@ class GoalApiFixtureProvider:
             raise ValueError("Goal API key is required")
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
+        self._league_ids = dict(GOAL_API_LEAGUE_IDS)
 
     @classmethod
     def from_environment(cls) -> GoalApiFixtureProvider:
@@ -66,7 +81,7 @@ class GoalApiFixtureProvider:
         return cls(api_key)
 
     def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
-        league_id = str(GOAL_API_LEAGUE_IDS[competition])
+        league_id = self._league_id(competition)
         raw_fixtures: list[dict[str, object]] = []
         offset = 0
         page_count = 0
@@ -119,7 +134,7 @@ class GoalApiFixtureProvider:
 
     def list_team_badges(self, competition: Competition) -> dict[str, str]:
         """Read all teams and badge URLs for a configured league."""
-        league_id = str(GOAL_API_LEAGUE_IDS[competition])
+        league_id = self._league_id(competition)
         result: dict[str, str] = {}
         offset = 0
         page_count = 0
@@ -162,6 +177,34 @@ class GoalApiFixtureProvider:
 
         return result
 
+    def _league_id(self, competition: Competition) -> str:
+        cached = self._league_ids.get(competition)
+        if cached:
+            return cached
+        lookup_id = GOAL_API_LEAGUE_LOOKUP_IDS.get(competition)
+        if lookup_id is None:
+            raise FixtureProviderError(f"Goal API has no league mapping for {competition.value}")
+        request = Request(
+            f"{self._base_url}/leagues/{lookup_id}",
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Bearer {self._api_key}",
+                "User-Agent": GOAL_API_USER_AGENT,
+            },
+        )
+        payload = self._request_json(request)
+        data = payload.get("data")
+        if isinstance(data, dict):
+            league = data.get("league")
+            candidates = [data, league] if isinstance(league, dict) else [data]
+            for candidate in candidates:
+                raw_id = candidate.get("id")
+                if isinstance(raw_id, (str, int)) and str(raw_id).strip():
+                    self._league_ids[competition] = str(raw_id)
+                    return str(raw_id)
+        raise FixtureProviderError(
+            f"Goal API could not resolve its internal league id for {competition.value}"
+        )
     def _request_json(self, request: Request) -> dict[str, object]:
         try:
             with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL

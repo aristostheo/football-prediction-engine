@@ -139,6 +139,11 @@ def create_app(
     live_result_cache: dict[
         tuple[Competition, date], tuple[datetime, list[LiveFixture]]
     ] = {}
+    fixture_cache: dict[
+        tuple[Competition, date], tuple[datetime, list[LiveFixture]]
+    ] = {}
+    team_badge_cache: dict[Competition, tuple[datetime, dict[str, str]]] = {}
+    provider_cache_lock = Lock()
 
     def get_engine() -> PredictionEngine:
         nonlocal configured_engine
@@ -165,6 +170,31 @@ def create_app(
             configured_market_odds_provider = TheOddsApiProvider.from_environment()
         return configured_market_odds_provider
 
+    def get_cached_fixtures(competition: Competition, match_date: date) -> list[LiveFixture]:
+        """Reuse Goal API date responses briefly to conserve the daily request quota."""
+        cache_key = (competition, match_date)
+        now = datetime.now(UTC)
+        with provider_cache_lock:
+            cached = fixture_cache.get(cache_key)
+            if cached and cached[0] > now:
+                return cached[1]
+        fixtures = get_fixture_provider().list_fixtures(competition, match_date)
+        with provider_cache_lock:
+            fixture_cache[cache_key] = (now + timedelta(minutes=10), fixtures)
+        return fixtures
+
+    def get_cached_team_badges(competition: Competition) -> dict[str, str]:
+        """Team catalogues change rarely; cache badge requests for one day."""
+        now = datetime.now(UTC)
+        with provider_cache_lock:
+            cached = team_badge_cache.get(competition)
+            if cached and cached[0] > now:
+                return cached[1]
+        badges = get_fixture_provider().list_team_badges(competition)
+        with provider_cache_lock:
+            team_badge_cache[competition] = (now + timedelta(hours=24), badges)
+        return badges
+
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
@@ -179,7 +209,7 @@ def create_app(
     @app.get("/team-badges", response_model=dict[str, str])
     def team_badges(competition: Competition) -> dict[str, str]:
         try:
-            provider_badges = get_fixture_provider().list_team_badges(competition)
+            provider_badges = get_cached_team_badges(competition)
             available = set(get_engine().available_teams(competition))
         except FixtureProviderError as error:
             raise HTTPException(status_code=503, detail=str(error)) from error
@@ -203,7 +233,7 @@ def create_app(
         try:
             for offset in range(days_ahead):
                 match_date = from_date + timedelta(days=offset)
-                fixtures_for_day = get_fixture_provider().list_fixtures(competition, match_date)
+                fixtures_for_day = get_cached_fixtures(competition, match_date)
                 upcoming = [
                     fixture for fixture in fixtures_for_day
                     if _as_utc(fixture.kickoff_at) > now
@@ -221,7 +251,7 @@ def create_app(
         fixture_date: date = Query(alias="date"),
     ) -> list[LiveFixtureResponse]:
         try:
-            live_fixtures = get_fixture_provider().list_fixtures(competition, fixture_date)
+            live_fixtures = get_cached_fixtures(competition, fixture_date)
         except FixtureProviderError as error:
             raise HTTPException(status_code=503, detail=str(error)) from error
         return [_fixture_response(fixture) for fixture in live_fixtures]

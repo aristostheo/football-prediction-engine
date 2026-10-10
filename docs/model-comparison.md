@@ -41,6 +41,33 @@ smoothed outcome frequencies from the training rows only.
 
 ## Expanding-window season walk-forward
 
+### New European league baselines
+
+The five additional leagues were evaluated separately with the existing Elo
+baseline. These are expanding-window tests on the five complete seasons from
+2021-22 through 2025-26; incomplete 2026-27 data is not scored. Training starts
+with all available prior seasons (shown as the first-fold count below), then
+expands before each later test season. Same-day matches use only results from
+earlier dates. The production predictor continues to use Elo for these leagues;
+no league-specific parameters or model policy were selected from these scores.
+
+| Competition | First-fold training matches | Test matches | Test date range | Model | Log loss | Brier | RPS | Accuracy |
+| --- | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: |
+| La Liga | 1,140 | 1,900 | 2021-08-13–2026-05-24 | Elo | 1.0022 | 0.5982 | 0.2032 | 52.47% |
+| Bundesliga | 918 | 1,530 | 2021-08-13–2026-05-16 | Elo | 1.0038 | 0.5998 | 0.2068 | 50.72% |
+| Serie A | 1,140 | 1,900 | 2021-08-21–2026-05-24 | Elo | 1.0034 | 0.6001 | 0.2014 | 50.89% |
+| Ligue 1 | 1,039 | 1,678 | 2021-08-06–2026-05-17 | Elo | 1.0161 | 0.6085 | 0.2118 | 51.37% |
+| Primeira Liga | 918 | 1,530 | 2021-08-06–2026-05-16 | Elo | 0.9549 | 0.5647 | 0.1911 | 54.64% |
+
+The first-fold training ranges are 2018-19 through 2020-21. France includes the
+279 available 2019-20 results in training, but that shortened season is excluded
+as a test fold. These scores establish a reproducible baseline, not a ranking
+against other leagues: league strength, result distributions, and test samples
+differ. We have not run a historical closing-odds comparison for these five
+leagues. New-league live fixture discovery through Goal API resolves each
+provider's internal league ID once per server process; real-key confirmation is
+still required in the user's local environment.
+
 Each test fold is one complete season. Training uses all earlier matches, and
 the feature stream updates ratings online within the test season. The most
 recent five complete Premier League seasons and every available complete Greek

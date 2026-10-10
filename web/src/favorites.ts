@@ -14,6 +14,11 @@ export function loadFavoriteTeams(): FavoriteTeams {
     return {
       premier_league: cleanTeamList(value.premier_league),
       super_league_greece: cleanTeamList(value.super_league_greece),
+      la_liga: cleanTeamList(value.la_liga),
+      bundesliga: cleanTeamList(value.bundesliga),
+      serie_a: cleanTeamList(value.serie_a),
+      ligue_1: cleanTeamList(value.ligue_1),
+      primeira_liga: cleanTeamList(value.primeira_liga),
     };
   } catch {
     return {};

@@ -1,8 +1,13 @@
 {
-  "dataset_sha256": "21ce84a7d8973c8ad5c1884c0a74eaeb2ed37089512b791487b4a9a5e63c670a",
-  "generated_at": "2026-10-02T19:11:30.779254+00:00",
+  "dataset_sha256": "dbade9347b82c5588eac7a1eacd3107a69e1a1adf8b68b27150660bbfd0128c9",
+  "generated_at": "2026-10-10T17:52:08.109206+00:00",
   "matches_by_competition": {
+    "bundesliga": 2484,
+    "la_liga": 3109,
+    "ligue_1": 2762,
     "premier_league": 9930,
+    "primeira_liga": 2510,
+    "serie_a": 3090,
     "super_league_greece": 1065
   },
   "schema_version": 2,
@@ -346,7 +351,457 @@
       "season": "2026-27",
       "source_sha256": "672b39e513df59ae9699d0a5f590b23931fc1bdbc122c43d540a4c6ab7dd4883",
       "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2026-27_gr1.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2018-19",
+      "source_sha256": "01121b41832cdd3349771de9e2bfc8c656b35961555f1198254f0648253a14fc",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2018-19/1-liga.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2019-20",
+      "source_sha256": "0923ab019bf02832b5922780c396c08d1fd0c9cc6bf104174b7250f3927a759a",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2019-20/1-liga.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2020-21",
+      "source_sha256": "1e1aab72bce76ade31c5b1359eac26b00d0d51bb6342585c96e1b5ad3f7b9bb9",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2020-21/1-liga.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2021-22",
+      "source_sha256": "bf303f9b6800ad3600693f46e657c61908e1d717669aecfd0906a3aa4210122b",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2021-22/1-liga.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2022-23",
+      "source_sha256": "96f29c344e6d257f20b673c004ff5b279332336b7ad4fac3dc68549151a67480",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2022-23/1-liga.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2023-24",
+      "source_sha256": "d76af43f3d344065510393ad175927e8054c255953ab1de86dbfe50d929e3d50",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2023-24/1-liga.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2024-25",
+      "source_sha256": "4d882637dbcab8c99ff87dc16b7033acbaaeaa6ae91cc304cf19e0395852665f",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2024-25/1-liga.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2025-26",
+      "source_sha256": "90644c845aeebae82a97cd6d926e2158826e04bfb4f5c3c0db1a8ebb8bdc90eb",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2025-26/1-liga.txt"
+    },
+    {
+      "competition": "la_liga",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 69,
+      "season": "2026-27",
+      "source_sha256": "1ab49c2553bc7919916495160a49af226ce55e44bf81f93161d60632242374ce",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2026-27/1-liga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2018-19",
+      "source_sha256": "f5f9cd985326672bf99042341f7bd6b18476d4877ee5fb825d3e7726ed828087",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2018-19/1-bundesliga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2019-20",
+      "source_sha256": "48cd18364e37b2873ae398fc32b55cc81bd29524c64b925cc1d29532683d5930",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2019-20/1-bundesliga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2020-21",
+      "source_sha256": "365832ec60bd8978365a3217a49783b3a512b171ee0abf27e377560ece388997",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2020-21/1-bundesliga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2021-22",
+      "source_sha256": "46032813d658fb2003281e1e2d05cfb68716c1d7c79aca009f2758b49243887c",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2021-22/1-bundesliga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2022-23",
+      "source_sha256": "69af1fbc06a5cde9a203fe70e142f627f9ac36ef7e03768d52d11acb2145b737",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2022-23/1-bundesliga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2023-24",
+      "source_sha256": "77093efd6edf1090b9638f266e970236a7cc3f7ea5864f4cd8785bbbe4e91e64",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2023-24/1-bundesliga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2024-25",
+      "source_sha256": "ec0f75ef3eb01eee6f2176998a05fbfce35cf6a5a82203fce676c7024b84bd3d",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2024-25/1-bundesliga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2025-26",
+      "source_sha256": "c1858a191c8dddf7cc04014c29c63f401b400af0be4d20329d85af893a6b7e56",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2025-26/1-bundesliga.txt"
+    },
+    {
+      "competition": "bundesliga",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 36,
+      "season": "2026-27",
+      "source_sha256": "5e4293123c962b1255dfa09a9ed2ad26a6a09e52e224f91558991c6b4a0dfa5e",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2026-27/1-bundesliga.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2018-19",
+      "source_sha256": "e46a64bdb7e0853250b2a5a4f8db049440d43ad870bca8cb08af4f90ab3add0c",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2018-19/1-seriea.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2019-20",
+      "source_sha256": "79e02e24b4e940440163262947035e8d5ba26b81ce11fac121d4af3e42978a31",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2019-20/1-seriea.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2020-21",
+      "source_sha256": "7159a81e510786917059af31d607883edcee537a3549a839259b6da265635205",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2020-21/1-seriea.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2021-22",
+      "source_sha256": "5102980f4c6b04189c57358da2243c8d8f2d0f27f53581c45363c7879d28c1ef",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2021-22/1-seriea.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2022-23",
+      "source_sha256": "a62e782eeff447946ad0f9c48ed4f32eafb240f5a0a96b6fec03df67a84529d5",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2022-23/1-seriea.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2023-24",
+      "source_sha256": "c638a06f138285d65ce9ba8ac5cc1e89a32caa1912e68811ea9e592d61485227",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2023-24/1-seriea.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2024-25",
+      "source_sha256": "e8eaa0bfed869b661ee86df792c0d53b336ca4c9f2a9c27306fb6b4897b0fc0e",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2024-25/1-seriea.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2025-26",
+      "source_sha256": "a746c3bb7c1c3a90fa54c50d52b7dd3b5ad5f5c440ebcadb044bbc8554c93a82",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2025-26/1-seriea.txt"
+    },
+    {
+      "competition": "serie_a",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 50,
+      "season": "2026-27",
+      "source_sha256": "a4e67afdee7bbda2b1b920d3f8cead73ed792f024b1bcc50141acae551202710",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2026-27/1-seriea.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2018-19",
+      "source_sha256": "664c8be6445cee6268ac15fd95a559ad6e232d50d47a759b54a8264db8b7d6d1",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2018-19_fr1.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 279,
+      "season": "2019-20",
+      "source_sha256": "5cf3583441ac7510fe6fc2334e217157e19ab21a062e19569069915f3900124d",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2019-20_fr1.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2020-21",
+      "source_sha256": "40f8e3575843933c43d7e6941ae6543475900917878b437d5105b6602926dd73",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2020-21_fr1.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2021-22",
+      "source_sha256": "a534c4c765b3dfcaed072e6f2bd32513f542f2c84fb61ce44ad24c067ed7984f",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2021-22_fr1.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": true,
+      "expected_matches_per_team": 38,
+      "expected_team_count": 20,
+      "match_count": 380,
+      "season": "2022-23",
+      "source_sha256": "bfb04c9b90a8aff058e7631d740f5c9c4d968025a1c14d752c6261cbfd1828aa",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2022-23_fr1.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2023-24",
+      "source_sha256": "c4a6995827f65e7c1d36bdc528d5cea284684f27d1fa8f5e5c88fd7d373f8ca9",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2023-24_fr1.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2024-25",
+      "source_sha256": "169b86f635d04fefb786cf8e644e57d21bbd5c1dcc36ca1f1469560c699af19b",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2024-25_fr1.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2025-26",
+      "source_sha256": "d173d6d5e41ca1f42c1b6b0b4b65fd7eabdd49130867c47dfd3ad2007869d347",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2025-26_fr1.txt"
+    },
+    {
+      "competition": "ligue_1",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 45,
+      "season": "2026-27",
+      "source_sha256": "f223f2239669717fb3331bdfa04d181e9596ca1f967dd49e13dc4587ae19df0e",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2026-27_fr1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2018-19",
+      "source_sha256": "303807322184d100390847e766ddd8a61f6753ecfea8426a564293fee0914271",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2018-19_pt1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2019-20",
+      "source_sha256": "0e57f8019ed50e449428fec2cad7fa8eb35bd868cbcbc7356eae4af9b678e013",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2019-20_pt1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2020-21",
+      "source_sha256": "381113f27961277c23f9bbc27543a263f6459236860cc3b9c0698e547ab64b12",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2020-21_pt1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2021-22",
+      "source_sha256": "5e5593b409d4b4ca31782960897b4e40917cc55370101cd68fea1af51a2a3b1c",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2021-22_pt1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2022-23",
+      "source_sha256": "fa7d1938a28199b2e714437769c4f56ac28f184e0f1ebdfd2603683c1a850a34",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2022-23_pt1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2023-24",
+      "source_sha256": "7f19ddec6033a465ffa1e76b70103aea3005b63c0d27e3f723d0924c814da511",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2023-24_pt1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2024-25",
+      "source_sha256": "3bb1acda8822a01e1aef1e70f03607650b97fb6722fd0d777f2ef9bf6544ed6c",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2024-25_pt1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": true,
+      "expected_matches_per_team": 34,
+      "expected_team_count": 18,
+      "match_count": 306,
+      "season": "2025-26",
+      "source_sha256": "967a4cde722b5598a5c28da8efa65a0ab28da9b1778cee74455b463216dd1adb",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2025-26_pt1.txt"
+    },
+    {
+      "competition": "primeira_liga",
+      "complete_season": false,
+      "expected_matches_per_team": null,
+      "expected_team_count": null,
+      "match_count": 62,
+      "season": "2026-27",
+      "source_sha256": "2674da5ac659796117342f216a20508152df491523dcc65634696ae066183e84",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2026-27_pt1.txt"
     }
   ],
-  "total_matches": 10995
+  "total_matches": 24950
 }

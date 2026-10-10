@@ -21,6 +21,11 @@ from football_predictor.validation import validate_completed_season, validate_ma
 
 OPENFOOTBALL_ENGLAND_RAW = "https://raw.githubusercontent.com/openfootball/england/master"
 OPENFOOTBALL_EUROPE_RAW = "https://raw.githubusercontent.com/openfootball/europe/master"
+OPENFOOTBALL_SPAIN_RAW = "https://raw.githubusercontent.com/openfootball/espana/master"
+OPENFOOTBALL_GERMANY_RAW = "https://raw.githubusercontent.com/openfootball/deutschland/master"
+OPENFOOTBALL_ITALY_RAW = "https://raw.githubusercontent.com/openfootball/italy/master"
+
+ADDITIONAL_LEAGUE_START_SEASON = 2018
 
 PREMIER_LEAGUE_FIRST_SEASON = 2000
 GREEK_SUPER_LEAGUE_ARCHIVE_SEASONS = (
@@ -61,7 +66,7 @@ class OpenFootballFile:
 def initial_openfootball_files(
     *, england_root: Path, europe_root: Path, as_of: date | None = None
 ) -> tuple[OpenFootballFile, ...]:
-    """Return all archived seasons plus the current season for both leagues."""
+    """Return archived and current-season source files for every supported league."""
     current_season = _football_season(as_of or datetime.now(UTC).date())
     current_start_year = int(current_season[:4])
     premier_league_seasons = tuple(
@@ -104,7 +109,59 @@ def initial_openfootball_files(
         )
         for season in greek_seasons
     )
-    return premier_league_completed + (premier_league_current,) + super_league_greece
+    additional_leagues = tuple(
+        source
+        for competition, repository, path_pattern in (
+            (Competition.LA_LIGA, OPENFOOTBALL_SPAIN_RAW, "{season}/1-liga.txt"),
+            (Competition.BUNDESLIGA, OPENFOOTBALL_GERMANY_RAW, "{season}/1-bundesliga.txt"),
+            (Competition.SERIE_A, OPENFOOTBALL_ITALY_RAW, "{season}/1-seriea.txt"),
+            (Competition.LIGUE_1, OPENFOOTBALL_EUROPE_RAW, "france/{season}_fr1.txt"),
+            (Competition.PRIMEIRA_LIGA, OPENFOOTBALL_EUROPE_RAW, "portugal/{season}_pt1.txt"),
+        )
+        for year in range(ADDITIONAL_LEAGUE_START_SEASON, current_start_year + 1)
+        for season in (f"{year}-{str(year + 1)[-2:]}",)
+        for source in (
+            OpenFootballFile(
+                competition=competition,
+                season=season,
+                path=europe_root / competition.value / path_pattern.format(season=season),
+                source_url=f"{repository}/{path_pattern.format(season=season)}",
+                expected_matches_per_team=(
+                    _expected_matches_per_team(competition, season)
+                    if year < current_start_year
+                    and not (competition is Competition.LIGUE_1 and season == "2019-20")
+                    else None
+                ),
+                expected_team_count=(
+                    _expected_team_count(competition, season)
+                    if year < current_start_year
+                    and not (competition is Competition.LIGUE_1 and season == "2019-20")
+                    else None
+                ),
+            ),
+        )
+    )
+    return premier_league_completed + (premier_league_current,) + super_league_greece + additional_leagues
+
+
+def _expected_matches_per_team(competition: Competition, season: str) -> int:
+    if competition is Competition.BUNDESLIGA:
+        return 34
+    if competition is Competition.LIGUE_1 and season >= "2023-24":
+        return 34
+    if competition is Competition.PRIMEIRA_LIGA:
+        return 34
+    return 38
+
+
+def _expected_team_count(competition: Competition, season: str) -> int:
+    if competition is Competition.BUNDESLIGA:
+        return 18
+    if competition is Competition.LIGUE_1 and season >= "2023-24":
+        return 18
+    if competition is Competition.PRIMEIRA_LIGA:
+        return 18
+    return 20
 
 
 def _football_season(as_of: date) -> str:

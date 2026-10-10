@@ -209,6 +209,14 @@ def _expected_season_dimensions(competition: str, season: str) -> tuple[int | No
         return 38, 20
     if competition == "super_league_greece":
         return (30, 16) if season == "2018-19" else (26, 14)
+    if competition == "bundesliga":
+        return 34, 18
+    if competition == "ligue_1" and season >= "2023-24":
+        return 34, 18
+    if competition == "primeira_liga":
+        return 34, 18
+    if competition in {"la_liga", "serie_a", "ligue_1"}:
+        return 38, 20
     return None, None
 
 
