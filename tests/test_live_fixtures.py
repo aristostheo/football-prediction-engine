@@ -95,20 +95,27 @@ def test_goal_api_provider_supports_greece_and_split_date_fields(monkeypatch) ->
 
 
 @pytest.mark.parametrize(
-    ("competition", "expected_search", "catalogue_name"),
+    ("competition", "expected_search", "catalogue_name", "country_name"),
     [
-        (Competition.LA_LIGA, "La Liga", "Primera División"),
-        (Competition.BUNDESLIGA, "Bundesliga", "Bundesliga"),
-        (Competition.SERIE_A, "Serie A", "Serie A"),
-        (Competition.LIGUE_1, "Ligue 1", "Ligue 1"),
-        (Competition.PRIMEIRA_LIGA, "Primeira Liga", "Liga Portugal Betclic"),
+        (Competition.LA_LIGA, "La Liga", "Primera División", "Spain"),
+        (Competition.BUNDESLIGA, "Bundesliga", "Bundesliga", "Germany"),
+        (Competition.SERIE_A, "Serie A", "Serie A", "Italy"),
+        (Competition.LIGUE_1, "Ligue 1", "Ligue 1", "France"),
+        (Competition.PRIMEIRA_LIGA, "Primeira Liga", "Liga Portugal Betclic", "Portugal"),
     ],
 )
 def test_goal_api_resolves_new_league_from_catalogue_and_caches_id(
-    monkeypatch, competition, expected_search, catalogue_name
+    monkeypatch, competition, expected_search, catalogue_name, country_name
 ) -> None:  # type: ignore[no-untyped-def]
     lookup = json.dumps(
-        {"success": True, "data": [{"id": f"goal-internal-{competition.value}", "name": catalogue_name}]}
+        {
+            "success": True,
+            "data": [{
+                "id": f"goal-internal-{competition.value}",
+                "name": catalogue_name,
+                "country": {"name": country_name},
+            }],
+        }
     ).encode()
     fixtures = b'{"success":true,"data":[],"pagination":{"total":0,"hasMore":false}}'
     requests = []
@@ -130,6 +137,28 @@ def test_goal_api_resolves_new_league_from_catalogue_and_caches_id(
     assert len(search_requests) == 1
     assert f"search={expected_search.replace(' ', '+')}" in search_requests[0]
     assert all(f"leagueId=goal-internal-{competition.value}" in url for url in fixture_requests)
+
+
+def test_goal_api_disambiguates_same_league_name_by_country(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    lookup = b'''{"success":true,"data":[
+      {"id":"wrong-country","name":"Serie A","country":{"name":"Brazil"}},
+      {"id":"italy-serie-a","name":"Serie A","country":{"name":"Italy"}},
+      {"id":"another-wrong-country","name":"Serie A","country":{"name":"Ecuador"}}
+    ]}'''
+    fixture_response = b'{"success":true,"data":[],"pagination":{"total":0,"hasMore":false}}'
+    requests = []
+
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        requests.append(request.full_url)
+        if "/leagues?search=" in request.full_url:
+            return io.BytesIO(lookup)
+        return io.BytesIO(fixture_response)
+
+    monkeypatch.setattr(live_fixtures, "urlopen", fake_urlopen)
+    GoalApiFixtureProvider("test-key").list_fixtures(Competition.SERIE_A, date(2026, 10, 4))
+
+    fixture_request = next(url for url in requests if "/fixtures/date/" in url)
+    assert "leagueId=italy-serie-a" in fixture_request
 
 
 def test_goal_api_fixture_accepts_direct_badges_and_rejects_untrusted_badge_hosts(

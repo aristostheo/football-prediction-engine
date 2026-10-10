@@ -47,6 +47,13 @@ GOAL_API_LEAGUE_NAME_ALIASES = {
     Competition.LIGUE_1: {"ligue 1"},
     Competition.PRIMEIRA_LIGA: {"primeira liga", "liga portugal", "liga portugal betclic"},
 }
+GOAL_API_LEAGUE_COUNTRIES = {
+    Competition.LA_LIGA: {"spain"},
+    Competition.BUNDESLIGA: {"germany"},
+    Competition.SERIE_A: {"italy"},
+    Competition.LIGUE_1: {"france"},
+    Competition.PRIMEIRA_LIGA: {"portugal"},
+}
 
 
 @dataclass(frozen=True)
@@ -191,7 +198,8 @@ class GoalApiFixtureProvider:
             return cached
         search_name = GOAL_API_LEAGUE_SEARCH_NAMES.get(competition)
         aliases = GOAL_API_LEAGUE_NAME_ALIASES.get(competition)
-        if search_name is None or aliases is None:
+        countries = GOAL_API_LEAGUE_COUNTRIES.get(competition)
+        if search_name is None or aliases is None or countries is None:
             raise FixtureProviderError(f"Goal API has no league mapping for {competition.value}")
         query = urlencode({"search": search_name, "limit": 100})
         request = Request(
@@ -217,9 +225,17 @@ class GoalApiFixtureProvider:
             candidate = league if isinstance(league, dict) else item
             raw_name = candidate.get("name") or candidate.get("leagueName") or candidate.get("league_name")
             raw_id = candidate.get("id")
+            country = candidate.get("country") or item.get("country")
+            country_name = (
+                country.get("name")
+                if isinstance(country, dict)
+                else country or candidate.get("countryName") or item.get("countryName")
+            )
             if (
                 isinstance(raw_name, str)
                 and _normalize_league_name(raw_name) in aliases
+                and isinstance(country_name, str)
+                and _normalize_league_name(country_name) in countries
                 and isinstance(raw_id, (str, int))
                 and str(raw_id).strip()
             ):
