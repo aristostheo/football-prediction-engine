@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 2529)
+Total output lines: 170
+
 # Live fixtures and API service
 
 The service exposes an optional live-fixture adapter and a prediction endpoint:
@@ -31,109 +34,7 @@ found in the initial three-week window, users can search the following window.
 ## Provider decision
 
 V1 prefers the optional [Goal API](https://goal-api.com/) adapter for current
-fixture discovery. The user's free plan allows 1,000 requests per day. The
-date-fixture endpoint's `leagueId` filter uses Goal API's internal league `id`
-from `/leagues`, not its numeric coverage/API identifier. Existing Premier
-League and Greece internal IDs are configured directly. For the five new
-competitions, the provider searches `/leagues?search=...`, requires an exact
-league-name match, and caches the returned internal ID for that server process.
-Each resolved league costs one additional request on first use after a server
-restart.
-
-The API caches fixture dates for ten minutes and team badge catalogues for a
-day. A first uncached "next match" search can still query one date at a time,
-up to the configured 21-day window. Switching leagues or reloading after cache
-expiry uses more requests, so avoid repeatedly refreshing while testing. These
-caches are in-memory and reset when the local server restarts.
-
-[API-Football](https://www.api-football.com/) remains an optional fallback when
-`API_FOOTBALL_KEY` is also configured. Provider order is:
-
-1. Goal API when `GOAL_API_KEY` is present.
-2. API-Football when `API_FOOTBALL_KEY` is present and Goal API fails, or when
-   it is the only configured provider.
-
-Keys are read only by the backend from environment variables and must never be
-committed or exposed to the browser. Manual prediction remains available with
-no fixture-provider key. Live market odds are optional; set `THE_ODDS_API_KEY`
-in the backend environment (including the Render service environment) to enable
-the dashboard's **Load live market odds** control. The user interface can still
-accept manually entered 1X2 odds without this key.
-
-The live odds adapter uses The Odds API sport keys for the selected competition,
-European bookmaker region, and 1X2 h2h market. It averages
-per-book margin-removed probabilities across books that quote all three
-outcomes, then presents fair decimal prices for the existing market forecast
-path. A fixture must match both teams and kickoff time. A missing quote or
-provider error is shown in the dashboard; no quote is guessed. The adapter is
-for prospective dashboard use only: its free-tier data is not used for
-historical training or walk-forward evaluation. Quotes are fetched on demand
-and cached in memory for ten minutes.
-
-Run the server from the repository root. Predictions load the included
-`data/model/historical_matches.csv.gz` by default. Set `HISTORICAL_MATCHES_PATH`
-only when you want to use a different historical dataset.
-
-To update that bundled history from OpenFootball locally, run
-`uv run python -m football_predictor --refresh` from the repository root. It
-downloads and validates all configured seasons, rejects unexpected fixture
-removals, and writes a provenance manifest. GitHub Actions also runs the same
-check every Tuesday and can be started manually from the Actions tab. It
-commits only when match results change; the hosted Render service then deploys
-that commit. The API itself does not fetch results per request. For local
-development, restart the service after refreshing the dataset.
-
-## Prospective scorecard
-
-The dashboard records timestamped forecasts only when an upcoming fixture has
-an exact timezone-aware kickoff time, which comes from live fixture discovery.
-Records stay in that browser's local storage; they are not uploaded as user
-history or shared across browsers. Forecast requests that arrive after kickoff
-are rejected. Hypothetical matchup forecasts have no scheduled kickoff and are
-not included in the prospective scorecard.
-
-The scorecard looks up completed outcomes in the bundled dataset and reports
-log loss, Brier score, ranked probability score, classwise calibration error,
-and accuracy. For unresolved forecasts dated within the last 14 days, it also
-checks the configured live fixture provider for a finished score (cached for
-five minutes). This lets local users settle recent forecasts without waiting
-for a Git pull; if the provider is unavailable, those entries stay pending
-until the bundled history is refreshed. If odds were entered, it scores the
-model and margin-removed market
-probabilities on the same fixtures. Re-forecasting a fixture replaces its
-saved entry, so the scorecard uses the latest timestamped forecast before
-kickoff. The live sample is exploratory; historical walk-forward results
-remain the primary evidence until enough prospective matches have completed.
-
-## Freshness guardrail
-
-The response always reports `history_through` and `history_age_days`. The
-service deliberately refuses to back-predict a date at or before the local
-history's latest recorded match, preventing future information from entering a
-historical prediction. Fixture discovery requires a live-provider key, while a
-prediction only needs the local historical dataset. The predictor resolves
-registered provider labels and club aliases. A registered club with no results
-gets a 1400 Elo starting prior, and its probabilities are shrunk halfway toward
-the league's training-period outcome rates; the `model_policy` response marks
-this with `_promoted_prior`. Unregistered names remain rejected. Results can be
-refreshed weekly from OpenFootball; explicit mapping through provider team IDs
-remains future hardening work.
-
-The live calibration gap is a five-bin, classwise expected calibration error over
-home-win, draw, and away-win probabilities; lower is better. It is descriptive
-only, and can move substantially with a small prospective sample.
-
-## Forecast context
-
-`POST /predict` also returns a `context` object with both teams' Elo ratings,
-last-five (or fewer, after a long gap) points and goal rates, and home/away
-venue points per match. The dashboard shows this snapshot alongside the
-probabilities. These values describe the pre-match inputs; they are not an
-exact causal decomposition of the predicted probability. The Premier League
-policy combines Elo with recent-form and goal-rate features. The current Greek
-policy uses Elo only; its recent-form and venue figures are contextual. Home
-advantage is included in the Elo comparison. If three odds are entered, they
-are converted to margin-removed market probabilities and shown beside the
+fixture discovery. The user's free plan allows 1,000 re…1529 tokens truncated…nverted to margin-removed market probabilities and shown beside the
 unchanged model forecast. Injuries, lineups, weather, and odds are not features
 in the current model.
 
