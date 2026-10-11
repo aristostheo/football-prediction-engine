@@ -108,6 +108,10 @@ npm run dev
 The production Docker image builds the dashboard and serves it from FastAPI as
 one deployable service. See [deployment setup](docs/deployment.md).
 
+An alternate interactive design is available through **UPDATED MOCKUP** or
+`/updated-mockup`. It uses isolated demo data and makes no backend/API calls.
+See the [Touchline concept and preview gallery](docs/design/touchline.md).
+
 ## Project status
 
 The foundation, canonical match schema, source selection, leakage-safe feature

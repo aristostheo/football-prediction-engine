@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import "./fonts.css";
 
 :root {
   font-family: "Manrope", sans-serif;
@@ -28,6 +28,8 @@ a { color: inherit; text-decoration: none; }
 nav { display: flex; align-items: center; gap: 32px; color: #a6b1aa; font-size: 13px; font-weight: 600; }
 nav a:hover { color: #fff; }
 .github-link { padding: 10px 16px; border: 1px solid #36443d; border-radius: 999px; color: #fff; }
+.mockup-preview-link { color: var(--lime); font: 500 10px "DM Mono", monospace; letter-spacing: .05em; padding: 10px 13px; border: 1px solid rgba(184,255,69,.35); border-radius: 999px; }
+.mockup-preview-link:hover { background: rgba(184,255,69,.1); }
 
 .hero { max-width: 1540px; margin: auto; padding: 76px 44px 100px; display: grid; grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr); gap: clamp(36px, 5vw, 76px); align-items: center; position: relative; }
 .hero::before { content: ""; position: absolute; width: 540px; height: 540px; right: -280px; top: -170px; background: #235f49; filter: blur(160px); opacity: .42; pointer-events: none; }

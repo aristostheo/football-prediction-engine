@@ -1,10 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./styles.css";
+import Experience from "./Experience";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <Experience />
   </StrictMode>,
 );

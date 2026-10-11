@@ -14,6 +14,7 @@ import {
 } from "./api";
 import { calculateMetrics, calculateTopPickCalibration, loadForecasts, saveForecast, StoredForecast } from "./scorecard";
 import { FavoriteTeams, loadFavoriteTeams, saveFavoriteTeams } from "./favorites";
+import "./styles.css";
 
 const LEAGUES: Record<Competition, { name: string; short: string; code: string }> = {
   premier_league: { name: "Premier League", short: "England", code: "PL" },
@@ -503,6 +504,7 @@ function App() {
           <a href="#predict">Predict</a>
           <a href="#performance">Performance</a>
           <a href="#scorecard">Live scorecard</a>
+          <a className="mockup-preview-link" href="/updated-mockup">UPDATED MOCKUP ↗</a>
           <a className="github-link" href="https://github.com/aristostheo/football-prediction-engine">GitHub ↗</a>
         </nav>
       </header>
