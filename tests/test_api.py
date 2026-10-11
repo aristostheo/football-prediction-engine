@@ -62,6 +62,9 @@ class StubEngine:
     def find_results(self, fixtures):  # type: ignore[no-untyped-def]
         return {fixture[0]: "H" for fixture in fixtures}
 
+    def find_scores(self, fixtures):  # type: ignore[no-untyped-def]
+        return {fixture[0]: (2, 1) for fixture in fixtures}
+
 
 class StubFixtureProvider:
     def list_fixtures(self, competition: Competition, fixture_date: date) -> list[LiveFixture]:
@@ -100,9 +103,7 @@ def test_api_loads_bundled_history_by_default_and_honors_override(
 
     app = create_app()
     predict = next(
-        route.endpoint
-        for route in app.routes
-        if getattr(route, "path", None) == "/predict"
+        route.endpoint for route in app.routes if getattr(route, "path", None) == "/predict"
     )
     request = PredictionRequest(
         competition="premier_league",
@@ -210,12 +211,15 @@ def test_scorecard_checks_live_provider_for_recent_results_missing_from_history(
                     home_team="Arsenal FC",
                     away_team="Chelsea FC",
                     result="H",
+                    home_goals=2,
+                    away_goals=1,
                 )
             ]
 
     app = create_app(engine=PendingResultsEngine(), fixture_provider=FinishedFixtureProvider())
     endpoint = next(
-        route.endpoint for route in app.routes
+        route.endpoint
+        for route in app.routes
         if getattr(route, "path", None) == "/scorecard/results"
     )
 
@@ -234,6 +238,8 @@ def test_scorecard_checks_live_provider_for_recent_results_missing_from_history(
     )
 
     assert results[0].result == "H"
+    assert (results[0].home_goals, results[0].away_goals) == (2, 1)
+    assert results[0].source == "live_provider"
     assert provider_calls == [(Competition.PREMIER_LEAGUE, match_date)]
 
 
@@ -260,8 +266,7 @@ def test_next_fixture_scans_forward_and_returns_the_first_future_match() -> None
 
     app = create_app(engine=StubEngine(), fixture_provider=ScanningProvider())
     endpoint = next(
-        route.endpoint for route in app.routes
-        if getattr(route, "path", None) == "/fixtures/next"
+        route.endpoint for route in app.routes if getattr(route, "path", None) == "/fixtures/next"
     )
     fixture = endpoint(Competition.PREMIER_LEAGUE, start, 5)
 
@@ -297,9 +302,7 @@ def test_live_odds_endpoint_returns_quote_metadata() -> None:
     from types import SimpleNamespace
 
     class StubOddsProvider:
-        def get_match_odds(
-            self, competition, home_team, away_team, kickoff_at
-        ):  # type: ignore[no-untyped-def]
+        def get_match_odds(self, competition, home_team, away_team, kickoff_at):  # type: ignore[no-untyped-def]
             assert competition is Competition.PREMIER_LEAGUE
             assert home_team == "Arsenal"
             assert away_team == "Chelsea"
@@ -311,12 +314,9 @@ def test_live_odds_endpoint_returns_quote_metadata() -> None:
                 fetched_at=datetime.now(UTC),
             )
 
-    app = create_app(
-        engine=StubEngine(), market_odds_provider=StubOddsProvider()
-    )  # type: ignore[arg-type]
+    app = create_app(engine=StubEngine(), market_odds_provider=StubOddsProvider())  # type: ignore[arg-type]
     endpoint = next(
-        route.endpoint for route in app.routes
-        if getattr(route, "path", None) == "/odds"
+        route.endpoint for route in app.routes if getattr(route, "path", None) == "/odds"
     )
     response = endpoint(
         Competition.PREMIER_LEAGUE,
@@ -345,3 +345,81 @@ def test_api_serves_built_dashboard(tmp_path: Path) -> None:
             assert "Match Forecast" in (await client.get("/performance")).text
 
     asyncio.run(exercise_dashboard())
+
+
+def test_journal_returns_final_score_and_source_without_changing_prediction() -> None:
+    app = create_app(engine=StubEngine(), fixture_provider=StubFixtureProvider())
+    routes = {getattr(route, "path", None): route.endpoint for route in app.routes}
+    response = routes["/scorecard/results"](
+        ScorecardResultsRequest(
+            fixtures=[
+                {
+                    "id": "original-forecast",
+                    "competition": "premier_league",
+                    "kickoff_date": "2025-06-01",
+                    "home_team": "Arsenal",
+                    "away_team": "Chelsea",
+                }
+            ]
+        )
+    )[0]
+    assert (response.result, response.home_goals, response.away_goals) == ("H", 2, 1)
+    assert response.source == "bundled_history"
+
+
+def test_journal_never_exposes_unconfirmed_scores() -> None:
+    class PendingEngine(StubEngine):
+        def find_results(self, fixtures):  # type: ignore[no-untyped-def]
+            return {fixture[0]: None for fixture in fixtures}
+
+    app = create_app(engine=PendingEngine(), fixture_provider=StubFixtureProvider())
+    endpoint = next(
+        route.endpoint
+        for route in app.routes
+        if getattr(route, "path", None) == "/scorecard/results"
+    )
+    response = endpoint(
+        ScorecardResultsRequest(
+            fixtures=[
+                {
+                    "id": "pending",
+                    "competition": "premier_league",
+                    "kickoff_date": "2025-06-01",
+                    "home_team": "Arsenal",
+                    "away_team": "Chelsea",
+                }
+            ]
+        )
+    )[0]
+    assert response.result is None
+    assert response.home_goals is None
+    assert response.away_goals is None
+    assert response.source is None
+
+
+def test_next_fixture_skips_postponed_and_cancelled_matches() -> None:
+    match_day = datetime.now(UTC).date() + timedelta(days=1)
+
+    class MixedProvider(StubFixtureProvider):
+        def list_fixtures(self, competition, fixture_date):  # type: ignore[no-untyped-def]
+            return [
+                LiveFixture(
+                    fixture_id=status,
+                    competition=competition,
+                    kickoff_at=datetime.combine(fixture_date, datetime.min.time(), UTC)
+                    + timedelta(hours=index + 12),
+                    home_team="Arsenal",
+                    away_team="Chelsea",
+                    status=status,
+                )
+                for index, status in enumerate(["POSTPONED", "CANC", "SCHEDULED"])
+            ]
+
+    app = create_app(engine=StubEngine(), fixture_provider=MixedProvider())
+    endpoint = next(
+        route.endpoint for route in app.routes if getattr(route, "path", None) == "/fixtures/next"
+    )
+    response = endpoint(Competition.PREMIER_LEAGUE, match_day, 21)
+    assert response.fixture_id == "SCHEDULED"
+    assert response.home_team == "Arsenal FC"
+    assert response.away_team == "Chelsea FC"

@@ -51,6 +51,8 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
     head_to_head_draws: number;
     head_to_head_away_wins: number;
     head_to_head_recent: string[];
+    home_form_results?: string[];
+    away_form_results?: string[];
   };
   components: {
     elo_probabilities: [number, number, number];
@@ -58,10 +60,16 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
     core_model_probabilities: [number, number, number];
     home_goal_rate: number | null;
     away_goal_rate: number | null;
-    top_scorelines: Array<{ home_goals: number; away_goals: number; probability: number }>;
+    top_scorelines: Array<{
+      home_goals: number;
+      away_goals: number;
+      probability: number;
+    }>;
     elo_weight: number;
     base_model_weight: number;
     league_prior_probabilities: [number, number, number] | null;
+    scoreline_home_goal_rate?: number | null;
+    scoreline_away_goal_rate?: number | null;
   };
 }
 
@@ -82,6 +90,10 @@ export interface LiveFixture {
   away_team: string;
   home_badge_url?: string | null;
   away_badge_url?: string | null;
+  status?: string;
+  venue?: string | null;
+  home_goals?: number | null;
+  away_goals?: number | null;
 }
 
 export interface ScorecardFixture {
@@ -94,17 +106,62 @@ export interface ScorecardFixture {
 
 export type MatchOutcome = "H" | "D" | "A";
 
+export interface Settlement {
+  id: string;
+  result: MatchOutcome | null;
+  home_goals: number | null;
+  away_goals: number | null;
+  source: string | null;
+}
+
 const API_ROOT = import.meta.env.DEV ? "/api" : "";
 
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { detail?: string } | null;
-    throw new Error(payload?.detail ?? `Request failed with status ${response.status}`);
+    const payload = (await response.json().catch(() => null)) as {
+      detail?: string | Array<{ msg: string }>;
+    } | null;
+    const detail = payload?.detail;
+    throw new Error(
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((item) => item.msg).join("; ")
+          : `Request failed with status ${response.status}`,
+    );
   }
   return response.json() as Promise<T>;
 }
 
-export async function predictMatch(request: PredictionRequest): Promise<Prediction> {
+// Share reads across StrictMode mounts and repeated league/date switches.
+// Rejected requests are never cached, so retry works immediately.
+const reads = new Map<string, { expires: number; promise: Promise<unknown> }>();
+function cachedRead<T>(url: string, ttl: number): Promise<T> {
+  const current = reads.get(url);
+  if (current && current.expires > Date.now())
+    return current.promise as Promise<T>;
+  const entry = {
+    expires: Infinity,
+    promise: fetch(url).then(parseResponse<T>),
+  };
+  reads.set(url, entry);
+  entry.promise.then(
+    () => {
+      entry.expires = Date.now() + ttl;
+    },
+    () => {
+      if (reads.get(url) === entry) reads.delete(url);
+    },
+  );
+  if (reads.size > 300)
+    for (const [key, value] of reads)
+      if (value.expires < Date.now()) reads.delete(key);
+  return entry.promise;
+}
+
+export async function predictMatch(
+  request: PredictionRequest,
+): Promise<Prediction> {
   const response = await fetch(`${API_ROOT}/predict`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -113,7 +170,9 @@ export async function predictMatch(request: PredictionRequest): Promise<Predicti
   return parseResponse<Prediction>(response);
 }
 
-export async function getMarketOdds(fixture: LiveFixture): Promise<MarketOddsQuote> {
+export async function getMarketOdds(
+  fixture: LiveFixture,
+): Promise<MarketOddsQuote> {
   const params = new URLSearchParams({
     competition: fixture.competition,
     fixture_id: fixture.fixture_id,
@@ -126,22 +185,34 @@ export async function getMarketOdds(fixture: LiveFixture): Promise<MarketOddsQuo
 }
 
 export async function getTeams(competition: Competition): Promise<string[]> {
-  const response = await fetch(`${API_ROOT}/teams?${new URLSearchParams({ competition })}`);
-  return parseResponse<string[]>(response);
+  return cachedRead<string[]>(
+    `${API_ROOT}/teams?${new URLSearchParams({ competition })}`,
+    3600000,
+  );
 }
 
-export async function getTeamBadges(competition: Competition): Promise<Record<string, string>> {
-  const response = await fetch(`${API_ROOT}/team-badges?${new URLSearchParams({ competition })}`);
-  return parseResponse<Record<string, string>>(response);
+export async function getTeamBadges(
+  competition: Competition,
+): Promise<Record<string, string>> {
+  return cachedRead<Record<string, string>>(
+    `${API_ROOT}/team-badges?${new URLSearchParams({ competition })}`,
+    86400000,
+  );
 }
 
 export async function getNextFixture(
   competition: Competition,
   fromDate: string,
 ): Promise<LiveFixture | null> {
-  const params = new URLSearchParams({ competition, from: fromDate, days_ahead: "21" });
-  const response = await fetch(`${API_ROOT}/fixtures/next?${params}`);
-  return parseResponse<LiveFixture | null>(response);
+  const params = new URLSearchParams({
+    competition,
+    from: fromDate,
+    days_ahead: "21",
+  });
+  return cachedRead<LiveFixture | null>(
+    `${API_ROOT}/fixtures/next?${params}`,
+    120000,
+  );
 }
 
 export async function getFixtures(
@@ -149,22 +220,46 @@ export async function getFixtures(
   fixtureDate: string,
 ): Promise<LiveFixture[]> {
   const params = new URLSearchParams({ competition, date: fixtureDate });
-  const response = await fetch(`${API_ROOT}/fixtures?${params}`);
-  return parseResponse<LiveFixture[]>(response);
+  return cachedRead<LiveFixture[]>(`${API_ROOT}/fixtures?${params}`, 600000);
 }
 
 export async function getScorecardResults(
   fixtures: ScorecardFixture[],
 ): Promise<Record<string, MatchOutcome | null>> {
-  const results: Record<string, MatchOutcome | null> = {};
+  const details = await getScorecardSettlements(fixtures);
+  return Object.fromEntries(
+    Object.entries(details).map(([id, item]) => [id, item.result]),
+  );
+}
+
+const settling = new Map<string, Promise<Record<string, Settlement>>>();
+export function getScorecardSettlements(
+  fixtures: ScorecardFixture[],
+): Promise<Record<string, Settlement>> {
+  const key = JSON.stringify(fixtures);
+  const existing = settling.get(key);
+  if (existing) return existing;
+  const request = readSettlements(fixtures);
+  settling.set(key, request);
+  request.then(
+    () => settling.delete(key),
+    () => settling.delete(key),
+  );
+  return request;
+}
+
+async function readSettlements(
+  fixtures: ScorecardFixture[],
+): Promise<Record<string, Settlement>> {
+  const results: Record<string, Settlement> = {};
   for (let start = 0; start < fixtures.length; start += 500) {
     const response = await fetch(`${API_ROOT}/scorecard/results`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fixtures: fixtures.slice(start, start + 500) }),
     });
-    const page = await parseResponse<Array<{ id: string; result: MatchOutcome | null }>>(response);
-    for (const item of page) results[item.id] = item.result;
+    const page = await parseResponse<Settlement[]>(response);
+    for (const item of page) results[item.id] = item;
   }
   return results;
 }

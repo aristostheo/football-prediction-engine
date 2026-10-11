@@ -1,8 +1,9 @@
 # Touchline: alternate dashboard concept
 
-The **UPDATED MOCKUP** link in the original dashboard opens `/updated-mockup`.
-The original dashboard remains at `/`. This preview is a separate, interactive
-design direction; it does not change the production predictor.
+The approved Touchline design is now the live dashboard at `/`; see
+[live integration](touchline-live.md). The original dashboard remains at
+`/classic`. This document describes the separate interactive design demo at
+`/updated-mockup`, which retains illustrative data and makes no provider calls.
 
 ## Visual direction
 
@@ -62,7 +63,8 @@ For frontend development, `cd web && npm run dev` supports the same route.
 
 ## Implementation
 
-- `web/src/Experience.tsx` selects and lazily loads the two experiences and CSS.
+- `web/src/Experience.tsx` selects and lazily loads the live dashboard, classic
+  dashboard, and isolated demo with their CSS.
 - `web/src/mockup/UpdatedMockup.tsx` owns the concept's UI and in-memory actions.
 - `web/src/mockup/demoData.ts` contains sample data and UI-only probability logic.
 - `web/src/mockup/mockup.css` contains both themes and responsive layouts.
@@ -70,8 +72,9 @@ For frontend development, `cd web && npm run dev` supports the same route.
 - The original dashboard's existing Manrope and DM Mono fonts are also served
   locally, avoiding external stylesheet failure during lazy loading.
 
-Club badges were retrieved from the public API-Sports media CDN for this concept
-and remain the respective clubs' marks. Google Fonts supplies the typefaces;
+Club badges were retrieved from the public API-Sports media CDN and Goal API
+media CDN (the corrected AEK Athens crest) and remain the respective clubs'
+marks. Google Fonts supplies the typefaces;
 their OFL notices are included beside the local font files.
 
 ## Verification

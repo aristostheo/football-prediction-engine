@@ -112,7 +112,7 @@ Sat Aug 19
 
     assert len(matches) == 1
     assert (matches[0].home_team, matches[0].away_team, matches[0].home_goals) == (
-        "Hellas Verona FC",
+        "Hellas Verona",
         "AS Roma",
         3,
     )

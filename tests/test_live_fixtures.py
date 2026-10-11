@@ -110,11 +110,13 @@ def test_goal_api_resolves_new_league_from_catalogue_and_caches_id(
     lookup = json.dumps(
         {
             "success": True,
-            "data": [{
-                "id": f"goal-internal-{competition.value}",
-                "name": catalogue_name,
-                "country": {"name": country_name},
-            }],
+            "data": [
+                {
+                    "id": f"goal-internal-{competition.value}",
+                    "name": catalogue_name,
+                    "country": {"name": country_name},
+                }
+            ],
         }
     ).encode()
     fixtures = b'{"success":true,"data":[],"pagination":{"total":0,"hasMore":false}}'
@@ -140,11 +142,11 @@ def test_goal_api_resolves_new_league_from_catalogue_and_caches_id(
 
 
 def test_goal_api_disambiguates_same_league_name_by_country(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    lookup = b'''{"success":true,"data":[
+    lookup = b"""{"success":true,"data":[
       {"id":"wrong-country","name":"Serie A","country":{"name":"Brazil"}},
       {"id":"italy-serie-a","name":"Serie A","country":{"name":"Italy"}},
       {"id":"another-wrong-country","name":"Serie A","country":{"name":"Ecuador"}}
-    ]}'''
+    ]}"""
     fixture_response = b'{"success":true,"data":[],"pagination":{"total":0,"hasMore":false}}'
     requests = []
 
@@ -164,12 +166,12 @@ def test_goal_api_disambiguates_same_league_name_by_country(monkeypatch) -> None
 def test_goal_api_fixture_accepts_direct_badges_and_rejects_untrusted_badge_hosts(
     monkeypatch,
 ) -> None:  # type: ignore[no-untyped-def]
-    payload = b'''{"success":true,"data":[{
+    payload = b"""{"success":true,"data":[{
       "id":"direct-badges","kickoffUtc":"2026-10-04T15:00:00Z",
       "homeTeam":{"name":"Arsenal"},"awayTeam":{"name":"Chelsea"},
       "teamHomeBadge":"https://media.goal-api.com/badges/a.png",
       "teamAwayBadge":"https://example.com/not-a-team-logo.png"
-    }]}'''
+    }]}"""
     monkeypatch.setattr(live_fixtures, "urlopen", lambda request, timeout: io.BytesIO(payload))
 
     fixture = GoalApiFixtureProvider("test-key").list_fixtures(
@@ -183,7 +185,7 @@ def test_goal_api_fixture_accepts_direct_badges_and_rejects_untrusted_badge_host
 def test_goal_api_fixture_reads_finished_result_and_ignores_unfinished_scores(
     monkeypatch,
 ) -> None:  # type: ignore[no-untyped-def]
-    payload = b'''{"success":true,"data":[
+    payload = b"""{"success":true,"data":[
       {"id":"finished","kickoffUtc":"2026-10-04T15:00:00Z",
        "matchStatus":"FINISHED","homeTeamFtScore":"1","awayTeamFtScore":"1",
        "homeTeam":{"name":"Arsenal"},"awayTeam":{"name":"Everton"}},
@@ -194,7 +196,7 @@ def test_goal_api_fixture_reads_finished_result_and_ignores_unfinished_scores(
        "matchStatus":"FINISHED","homeTeamFtScore":null,"awayTeamFtScore":null,
        "homeTeamScore":"2","awayTeamScore":"0",
        "homeTeam":{"name":"Liverpool"},"awayTeam":{"name":"Brighton"}}
-    ]}'''
+    ]}"""
     monkeypatch.setattr(live_fixtures, "urlopen", lambda request, timeout: io.BytesIO(payload))
 
     fixtures = GoalApiFixtureProvider("test-key").list_fixtures(
@@ -205,11 +207,11 @@ def test_goal_api_fixture_reads_finished_result_and_ignores_unfinished_scores(
 
 
 def test_goal_api_provider_lists_team_badges_from_league_endpoint(monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    payload = b'''{"success":true,"data":[
+    payload = b"""{"success":true,"data":[
       {"name":"Arsenal","badge":"https://media.goal-api.com/badges/arsenal.png"},
       {"team":{"name":"Chelsea","logo":"https://media.goal-api.com/badges/chelsea.png"}},
       {"teamName":"Unsafe FC","teamBadge":"https://example.com/unsafe.png"}
-    ],"pagination":{"total":3,"limit":100,"offset":0,"hasMore":false}}'''
+    ],"pagination":{"total":3,"limit":100,"offset":0,"hasMore":false}}"""
     requests = []
 
     def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
@@ -370,3 +372,40 @@ def test_fallback_provider_uses_second_provider_after_error() -> None:
     provider = FallbackFixtureProvider(BrokenProvider(), WorkingProvider())
 
     assert provider.list_fixtures(Competition.PREMIER_LEAGUE, date(2026, 10, 4)) == []
+
+
+@pytest.mark.parametrize("home,away", [(0, 0), (0, 1), (2, 0)])
+def test_finished_goal_api_scores_preserve_zero_and_ignore_running_total(home, away):
+    payload = {
+        "matchStatus": "FINISHED",
+        "homeTeamFtScore": home,
+        "awayTeamFtScore": away,
+        "homeTeamScore": 9,
+        "awayTeamScore": 9,
+    }
+    assert live_fixtures._goal_api_score(payload) == (home, away)
+    assert live_fixtures._goal_api_result(payload) == (
+        "H" if home > away else "A" if away > home else "D"
+    )
+
+
+def test_extra_time_and_penalties_use_only_regulation_scores():
+    goal = {
+        "matchStatus": "PEN",
+        "homeTeamFtScore": "1",
+        "awayTeamFtScore": "1",
+        "homeTeamScore": "5",
+        "awayTeamScore": "4",
+    }
+    assert live_fixtures._goal_api_result(goal) == "D"
+    assert live_fixtures._goal_api_score(
+        {"matchStatus": "AET", "homeTeamScore": "3", "awayTeamScore": "2"}
+    ) == (None, None)
+    football = {
+        "fixture": {"status": {"short": "AET"}},
+        "goals": {"home": 3, "away": 2},
+        "score": {"fulltime": {"home": 1, "away": 1}},
+    }
+    assert live_fixtures._api_football_result(football) == "D"
+    football.pop("score")
+    assert live_fixtures._api_football_result(football) is None

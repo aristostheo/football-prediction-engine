@@ -93,6 +93,11 @@ history or shared across browsers. Forecast requests that arrive after kickoff
 are rejected. Hypothetical matchup forecasts have no scheduled kickoff and are
 not included in the prospective scorecard.
 
+The Touchline forecast journal preserves the saved model probabilities, top
+pick, and (for new entries) predicted scoreline. After a confirmed result, it
+shows those beside the actual outcome and regulation-time final score. Older
+records remain usable; a scoreline that was never saved is shown as unavailable.
+
 The scorecard looks up completed outcomes in the bundled dataset and reports
 log loss, Brier score, ranked probability score, classwise calibration error,
 and accuracy. For unresolved forecasts dated within the last 14 days, it also
@@ -105,6 +110,15 @@ probabilities on the same fixtures. Re-forecasting a fixture replaces its
 saved entry, so the scorecard uses the latest timestamped forecast before
 kickoff. The live sample is exploratory; historical walk-forward results
 remain the primary evidence until enough prospective matches have completed.
+
+While the journal is open and the page is visible, it checks results every five
+minutes; **Check results** also refreshes them. Unfinished, postponed, cancelled,
+and unavailable results remain pending. Scores from extra time or penalties
+are not used to settle a regulation-time 1X2 forecast. Confirmed results are
+cached locally for subsequent journal visits. This is browser-local storage,
+not an account or cross-device sync. An odds comparison added after generating
+a forecast retains the original model probabilities and forecast timestamp;
+the market snapshot has its own timestamp.
 
 ## Freshness guardrail
 

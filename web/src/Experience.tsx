@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 // The mockup never mounts the live dashboard's data-fetching effects. CSS is
 // imported with each experience, so the two visual directions stay isolated.
 const App = lazy(() => import("./App"));
+const Dashboard = lazy(() => import("./touchline/Dashboard"));
 const UpdatedMockup = lazy(() => import("./mockup/UpdatedMockup"));
 
 export default function Experience() {
@@ -24,7 +25,13 @@ export default function Experience() {
         </div>
       }
     >
-      {preview ? <UpdatedMockup /> : <App />}
+      {preview ? (
+        <UpdatedMockup />
+      ) : window.location.pathname.replace(/\/+$/, "") === "/classic" ? (
+        <App />
+      ) : (
+        <Dashboard />
+      )}
     </Suspense>
   );
 }

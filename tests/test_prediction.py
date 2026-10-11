@@ -58,7 +58,9 @@ def test_predict_resolves_provider_team_names_to_historical_labels(
 def test_market_odds_use_margin_removed_probabilities(
     prediction_engine: PredictionEngine,
 ) -> None:
-    kickoff_date = prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE) + timedelta(days=1)
+    kickoff_date = prediction_engine.latest_result_date(Competition.PREMIER_LEAGUE) + timedelta(
+        days=1
+    )
     fixture = dict(
         competition=Competition.PREMIER_LEAGUE,
         kickoff_date=kickoff_date,
@@ -334,9 +336,7 @@ def test_selected_live_fixture_can_be_normalized_by_prediction_endpoint(
             ]
 
     app = create_app(engine=prediction_engine, fixture_provider=Provider())
-    endpoints = {
-        getattr(route, "path", None): route.endpoint for route in app.routes
-    }
+    endpoints = {getattr(route, "path", None): route.endpoint for route in app.routes}
     fixture = endpoints["/fixtures"](competition, fixture_date)[0]
     result = endpoints["/predict"](
         PredictionRequest(
@@ -403,9 +403,7 @@ def test_head_to_head_summary_counts_actual_winner_and_excludes_forecast_day() -
         ]
     )
 
-    summary = _head_to_head_summary(
-        history, "Arsenal FC", "Chelsea FC", date(2025, 1, 6)
-    )
+    summary = _head_to_head_summary(history, "Arsenal FC", "Chelsea FC", date(2025, 1, 6))
 
     assert summary["head_to_head_matches"] == 5
     assert summary["head_to_head_home_wins"] == 2
@@ -413,3 +411,45 @@ def test_head_to_head_summary_counts_actual_winner_and_excludes_forecast_day() -
     assert summary["head_to_head_away_wins"] == 2
     assert summary["head_to_head_recent"][0].startswith("2025-01-05:")
     assert summary["head_to_head_recent"][0].endswith("(D for Arsenal FC)")
+
+
+def test_journal_scores_match_exact_historical_venue_order(
+    prediction_engine: PredictionEngine,
+) -> None:
+    history = pd.read_csv(Path(__file__).parents[1] / "data/model/historical_matches.csv.gz")
+    row = history.iloc[0]
+    match_day = date.fromisoformat(str(row["match_date"]))
+    keys = [
+        ("recorded", str(row["competition"]), match_day, row["home_team"], row["away_team"]),
+        ("reversed", str(row["competition"]), match_day, row["away_team"], row["home_team"]),
+    ]
+    scores = prediction_engine.find_scores(keys)
+    assert scores["recorded"] == (int(row["home_goals"]), int(row["away_goals"]))
+    assert scores["reversed"] is None
+
+
+@pytest.mark.parametrize("competition", list(Competition))
+def test_live_form_and_scoreline_rates_are_real_model_outputs(
+    prediction_engine: PredictionEngine,
+    competition: Competition,
+) -> None:
+    teams = prediction_engine.available_teams(competition)
+    response = prediction_engine.predict(
+        FixtureToPredict(
+            competition=competition,
+            kickoff_date=prediction_engine.latest_result_date(competition) + timedelta(days=7),
+            home_team=teams[0],
+            away_team=teams[1],
+        )
+    )
+    context = response.context
+    for prefix in ("home", "away"):
+        form = getattr(context, f"{prefix}_form_results")
+        count = getattr(context, f"{prefix}_form_matches")
+        assert len(form) == count
+        assert sum(
+            3 if result == "W" else 1 if result == "D" else 0 for result in form
+        ) == pytest.approx(getattr(context, f"{prefix}_form_points_per_match") * count)
+    assert response.components.scoreline_home_goal_rate > 0
+    assert response.components.scoreline_away_goal_rate > 0
+    assert response.components.top_scorelines

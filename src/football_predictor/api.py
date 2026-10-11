@@ -83,6 +83,9 @@ class ScorecardResultsRequest(BaseModel):
 class ScorecardResultResponse(BaseModel):
     id: str
     result: str | None
+    home_goals: int | None = None
+    away_goals: int | None = None
+    source: str | None = None
 
 
 class PredictionResponse(BaseModel):
@@ -116,6 +119,10 @@ class LiveFixtureResponse(BaseModel):
     away_team: str
     home_badge_url: str | None = None
     away_badge_url: str | None = None
+    status: str = "SCHEDULED"
+    venue: str | None = None
+    home_goals: int | None = None
+    away_goals: int | None = None
 
 
 def create_app(
@@ -136,12 +143,8 @@ def create_app(
     configured_provider = fixture_provider
     configured_market_odds_provider = market_odds_provider
     engine_lock = Lock()
-    live_result_cache: dict[
-        tuple[Competition, date], tuple[datetime, list[LiveFixture]]
-    ] = {}
-    fixture_cache: dict[
-        tuple[Competition, date], tuple[datetime, list[LiveFixture]]
-    ] = {}
+    live_result_cache: dict[tuple[Competition, date], tuple[datetime, list[LiveFixture]]] = {}
+    fixture_cache: dict[tuple[Competition, date], tuple[datetime, list[LiveFixture]]] = {}
     team_badge_cache: dict[Competition, tuple[datetime, dict[str, str]]] = {}
     provider_cache_lock = Lock()
 
@@ -235,8 +238,27 @@ def create_app(
                 match_date = from_date + timedelta(days=offset)
                 fixtures_for_day = get_cached_fixtures(competition, match_date)
                 upcoming = [
-                    fixture for fixture in fixtures_for_day
+                    fixture
+                    for fixture in fixtures_for_day
                     if _as_utc(fixture.kickoff_at) > now
+                    and fixture.result is None
+                    and fixture.status.upper()
+                    not in {
+                        "PST",
+                        "POSTPONED",
+                        "CANC",
+                        "CANCELLED",
+                        "CANCELED",
+                        "SUSP",
+                        "SUSPENDED",
+                        "ABD",
+                        "ABANDONED",
+                        "FINISHED",
+                        "FT",
+                        "AET",
+                        "PEN",
+                        "PENALTIES",
+                    }
                 ]
                 if upcoming:
                     first_fixture = min(upcoming, key=lambda item: _as_utc(item.kickoff_at))
@@ -305,15 +327,20 @@ def create_app(
                 fixture.id,
                 fixture.competition.value,
                 fixture.kickoff_date,
-                fixture.home_team,
-                fixture.away_team,
+                canonical_team_name(fixture.home_team, fixture.competition),
+                canonical_team_name(fixture.away_team, fixture.competition),
             )
             for fixture in request.fixtures
         ]
         results = engine.find_results(keys)
+        scores = engine.find_scores(keys)
+        sources = {
+            key: "bundled_history" if value is not None else None for key, value in results.items()
+        }
         today_utc = datetime.now(UTC).date()
         recent_pending = [
-            fixture for fixture in request.fixtures
+            fixture
+            for fixture in request.fixtures
             if results[fixture.id] is None
             and today_utc - timedelta(days=14) <= fixture.kickoff_date <= today_utc
         ]
@@ -353,8 +380,25 @@ def create_app(
                 )
                 for fixture_id in match_to_ids.get(live_key, []):
                     results[fixture_id] = live_fixture.result
+                    scores[fixture_id] = (
+                        (live_fixture.home_goals, live_fixture.away_goals)
+                        if live_fixture.home_goals is not None
+                        and live_fixture.away_goals is not None
+                        else None
+                    )
+                    sources[fixture_id] = "live_provider"
         return [
-            ScorecardResultResponse(id=fixture.id, result=results[fixture.id])
+            ScorecardResultResponse(
+                id=fixture.id,
+                result=results[fixture.id],
+                home_goals=scores[fixture.id][0]
+                if results[fixture.id] and scores[fixture.id]
+                else None,
+                away_goals=scores[fixture.id][1]
+                if results[fixture.id] and scores[fixture.id]
+                else None,
+                source=sources[fixture.id],
+            )
             for fixture in request.fixtures
         ]
 
@@ -387,10 +431,14 @@ def _fixture_response(fixture: LiveFixture) -> LiveFixtureResponse:
         fixture_id=fixture.fixture_id,
         competition=fixture.competition,
         kickoff_at=fixture.kickoff_at.isoformat(),
-        home_team=fixture.home_team,
-        away_team=fixture.away_team,
+        home_team=canonical_team_name(fixture.home_team, fixture.competition),
+        away_team=canonical_team_name(fixture.away_team, fixture.competition),
         home_badge_url=fixture.home_badge_url,
         away_badge_url=fixture.away_badge_url,
+        status=fixture.status,
+        venue=fixture.venue,
+        home_goals=fixture.home_goals,
+        away_goals=fixture.away_goals,
     )
 
 

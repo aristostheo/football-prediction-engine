@@ -66,6 +66,10 @@ class LiveFixture:
     home_badge_url: str | None = None
     away_badge_url: str | None = None
     result: str | None = None
+    home_goals: int | None = None
+    away_goals: int | None = None
+    status: str = "SCHEDULED"
+    venue: str | None = None
 
 
 class FixtureProvider(Protocol):
@@ -223,7 +227,9 @@ class GoalApiFixtureProvider:
                 continue
             league = item.get("league")
             candidate = league if isinstance(league, dict) else item
-            raw_name = candidate.get("name") or candidate.get("leagueName") or candidate.get("league_name")
+            raw_name = (
+                candidate.get("name") or candidate.get("leagueName") or candidate.get("league_name")
+            )
             raw_id = candidate.get("id")
             country = candidate.get("country") or item.get("country")
             country_name = (
@@ -252,6 +258,7 @@ class GoalApiFixtureProvider:
         raise FixtureProviderError(
             f"Goal API could not resolve its internal league id for {competition.value}"
         )
+
     def _request_json(self, request: Request) -> dict[str, object]:
         try:
             with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
@@ -316,6 +323,10 @@ class ApiFootballFixtureProvider:
                     home_badge_url=_safe_badge_url(item["teams"]["home"].get("logo")),
                     away_badge_url=_safe_badge_url(item["teams"]["away"].get("logo")),
                     result=_api_football_result(item),
+                    home_goals=_api_football_score(item)[0],
+                    away_goals=_api_football_score(item)[1],
+                    status=str(item["fixture"].get("status", {}).get("short", "SCHEDULED")),
+                    venue=(item["fixture"].get("venue") or {}).get("name"),
                 )
                 for item in payload["response"]
             ]
@@ -472,28 +483,53 @@ def _goal_api_fixture(item: dict[str, object], competition: Competition) -> Live
         home_badge_url=_goal_api_badge_url(item, "home"),
         away_badge_url=_goal_api_badge_url(item, "away"),
         result=_goal_api_result(item),
+        home_goals=_goal_api_score(item)[0],
+        away_goals=_goal_api_score(item)[1],
+        status=str(item.get("matchStatus") or item.get("status") or "SCHEDULED").upper(),
+        venue=item.get("matchStadium") if isinstance(item.get("matchStadium"), str) else None,
     )
 
 
 def _goal_api_result(item: dict[str, object]) -> str | None:
+    return _outcome(*_goal_api_score(item))
+
+
+def _goal_api_score(item: dict[str, object]) -> tuple[int | None, int | None]:
     status = str(item.get("matchStatus") or item.get("status") or "").strip().upper()
     if status not in {"FINISHED", "FT", "AET", "PEN", "PENALTIES"}:
+        return None, None
+
+    # 1X2 markets settle on regulation time, never on penalties/extra time.
+    def score(side: str) -> int | None:
+        full_time = _nonnegative_score(item.get(f"{side}TeamFtScore"))
+        if full_time is not None:
+            return full_time
+        if status in {"FINISHED", "FT"}:
+            return _nonnegative_score(item.get(f"{side}TeamScore"))
         return None
-    home = _nonnegative_score(item.get("homeTeamFtScore") or item.get("homeTeamScore"))
-    away = _nonnegative_score(item.get("awayTeamFtScore") or item.get("awayTeamScore"))
-    return _outcome(home, away)
+
+    home, away = score("home"), score("away")
+    return (home, away) if home is not None and away is not None else (None, None)
 
 
 def _api_football_result(item: dict[str, object]) -> str | None:
+    return _outcome(*_api_football_score(item))
+
+
+def _api_football_score(item: dict[str, object]) -> tuple[int | None, int | None]:
     fixture = item.get("fixture")
     goals = item.get("goals")
     if not isinstance(fixture, dict) or not isinstance(goals, dict):
-        return None
+        return None, None
     status = fixture.get("status")
     short_status = status.get("short") if isinstance(status, dict) else None
     if short_status not in {"FT", "AET", "PEN"}:
-        return None
-    return _outcome(_nonnegative_score(goals.get("home")), _nonnegative_score(goals.get("away")))
+        return None, None
+    scores = item.get("score")
+    full_time = scores.get("fulltime") if isinstance(scores, dict) else None
+    source = full_time if isinstance(full_time, dict) else goals if short_status == "FT" else {}
+    home, away = _nonnegative_score(source.get("home")), _nonnegative_score(source.get("away"))
+    return (home, away) if home is not None and away is not None else (None, None)
 
 
 def _nonnegative_score(value: object) -> int | None:

@@ -68,8 +68,8 @@ def test_additional_leagues_have_reproducible_current_and_historical_sources() -
         Competition.LA_LIGA: ("espana", "1-liga.txt"),
         Competition.BUNDESLIGA: ("deutschland", "1-bundesliga.txt"),
         Competition.SERIE_A: ("italy", "1-seriea.txt"),
-        Competition.LIGUE_1: ("europe/france", "_fr1.txt"),
-        Competition.PRIMEIRA_LIGA: ("europe/portugal", "_pt1.txt"),
+        Competition.LIGUE_1: ("europe/master/france", "_fr1.txt"),
+        Competition.PRIMEIRA_LIGA: ("europe/master/portugal", "_pt1.txt"),
     }
     for competition, (source_part, filename_part) in expected.items():
         league_files = [item for item in files if item.competition is competition]

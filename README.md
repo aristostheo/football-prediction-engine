@@ -108,9 +108,16 @@ npm run dev
 The production Docker image builds the dashboard and serves it from FastAPI as
 one deployable service. See [deployment setup](docs/deployment.md).
 
-An alternate interactive design is available through **UPDATED MOCKUP** or
-`/updated-mockup`. It uses isolated demo data and makes no backend/API calls.
-See the [Touchline concept and preview gallery](docs/design/touchline.md).
+Touchline is the main dashboard at `/`. It uses the real fixture catalogue,
+production predictor, optional live odds, and the browser's existing favourites
+and forecast journal. For a single local server, run `npm run build` in `web`,
+then `uv run uvicorn football_predictor.api:app --reload` from the repository
+root and open `http://localhost:8000`.
+
+The previous dashboard remains at `/classic`. The isolated design demo remains
+at `/updated-mockup` and makes no backend/API calls. See the
+[live Touchline integration](docs/design/touchline-live.md) and
+[concept preview gallery](docs/design/touchline.md).
 
 ## Project status
 
@@ -141,6 +148,8 @@ model/market blend. Live quotes do not alter model probabilities. See
 [live fixture setup](docs/live-fixtures.md).
 
 The dashboard also keeps a prospective 2026-27 scorecard in the current
-browser. It scores timestamped fixture forecasts after their results enter the
-refreshed history and compares model versus market probabilities when both
-were recorded; see [live fixture setup](docs/live-fixtures.md) for its limits.
+browser. The journal shows the saved model probabilities and predicted score
+beside the confirmed result and regulation-time score. It checks recent results
+with the configured fixture provider and also uses the refreshed history. It
+compares model versus market probabilities when both were recorded; see
+[live fixture setup](docs/live-fixtures.md) for its limits.

@@ -15,6 +15,12 @@ export interface StoredForecast {
   model_policy: string;
   model_probabilities: [number, number, number];
   market_probabilities: [number, number, number] | null;
+  predicted_scoreline?: {
+    home_goals: number;
+    away_goals: number;
+    probability: number;
+  } | null;
+  market_fetched_at?: string;
 }
 
 export interface ScoreMetrics {
@@ -39,21 +45,51 @@ export function loadForecasts(): StoredForecast[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isStoredForecast).slice(-MAX_FORECASTS);
+    return parsed
+      .filter(isStoredForecast)
+      .slice(-MAX_FORECASTS)
+      .map((item) => ({
+        ...item,
+        market_probabilities: validProbabilities(item.market_probabilities)
+          ? item.market_probabilities
+          : null,
+        predicted_scoreline:
+          item.predicted_scoreline &&
+          Number.isInteger(item.predicted_scoreline.home_goals) &&
+          Number.isInteger(item.predicted_scoreline.away_goals) &&
+          item.predicted_scoreline.home_goals >= 0 &&
+          item.predicted_scoreline.away_goals >= 0 &&
+          Number.isFinite(item.predicted_scoreline.probability) &&
+          item.predicted_scoreline.probability >= 0 &&
+          item.predicted_scoreline.probability <= 1
+            ? item.predicted_scoreline
+            : undefined,
+      }));
   } catch {
     return [];
   }
 }
 
-export function saveForecast(prediction: Prediction): StoredForecast[] {
-  if (!prediction.kickoff_at) return loadForecasts();
-  const marketProbabilities = prediction.market_home_win_probability === null
-    ? null
-    : [
-        prediction.market_home_win_probability,
-        prediction.market_draw_probability,
-        prediction.market_away_win_probability,
-      ] as [number, number, number];
+export function saveForecast(
+  prediction: Prediction,
+  currentForecasts: StoredForecast[] = loadForecasts(),
+): StoredForecast[] {
+  if (
+    !prediction.kickoff_at ||
+    !Number.isFinite(Date.parse(prediction.kickoff_at)) ||
+    Date.parse(prediction.kickoff_at) <= Date.now() ||
+    !Number.isFinite(Date.parse(prediction.forecasted_at)) ||
+    Date.parse(prediction.forecasted_at) >= Date.parse(prediction.kickoff_at)
+  )
+    return currentForecasts;
+  const marketProbabilities =
+    prediction.market_home_win_probability === null
+      ? null
+      : ([
+          prediction.market_home_win_probability,
+          prediction.market_draw_probability,
+          prediction.market_away_win_probability,
+        ] as [number, number, number]);
   const forecast: StoredForecast = {
     id: createForecastId(),
     competition: prediction.competition,
@@ -70,8 +106,9 @@ export function saveForecast(prediction: Prediction): StoredForecast[] {
       prediction.model_away_win_probability,
     ],
     market_probabilities: marketProbabilities,
+    predicted_scoreline: prediction.components.top_scorelines[0] ?? null,
   };
-  const existing = loadForecasts();
+  const existing = [...currentForecasts];
   const key = forecastKey(forecast);
   const previous = existing.findIndex((item) => forecastKey(item) === key);
   if (previous >= 0) {
@@ -89,8 +126,54 @@ export function saveForecast(prediction: Prediction): StoredForecast[] {
   return updated;
 }
 
-export function forecastKey(forecast: Pick<StoredForecast, "competition" | "kickoff_date" | "home_team" | "away_team">): string {
-  return [forecast.competition, forecast.kickoff_date, forecast.home_team, forecast.away_team].join("|");
+export function removeForecast(
+  id: string,
+  currentForecasts = loadForecasts(),
+): StoredForecast[] {
+  return persistForecasts(currentForecasts.filter((item) => item.id !== id));
+}
+
+export function attachMarketComparison(
+  prediction: Prediction,
+  probabilities: [number, number, number],
+  currentForecasts = loadForecasts(),
+): StoredForecast[] {
+  if (!prediction.kickoff_at || Date.parse(prediction.kickoff_at) <= Date.now())
+    return currentForecasts;
+  return persistForecasts(
+    currentForecasts.map((item) =>
+      forecastKey(item) === forecastKey(prediction)
+        ? {
+            ...item,
+            market_probabilities: probabilities,
+            market_fetched_at: new Date().toISOString(),
+          }
+        : item,
+    ),
+  );
+}
+
+function persistForecasts(forecasts: StoredForecast[]): StoredForecast[] {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(forecasts));
+  } catch {
+    /* Keep session usable. */
+  }
+  return forecasts;
+}
+
+export function forecastKey(
+  forecast: Pick<
+    StoredForecast,
+    "competition" | "kickoff_date" | "home_team" | "away_team"
+  >,
+): string {
+  return [
+    forecast.competition,
+    forecast.kickoff_date,
+    forecast.home_team,
+    forecast.away_team,
+  ].join("|");
 }
 
 function createForecastId(): string {
@@ -120,15 +203,17 @@ export function calculateMetrics(
   for (const { actual, probs } of scored) {
     const actualIndex = outcomeIndex[actual];
     logLoss -= Math.log(Math.max(probs[actualIndex], 1e-15));
-    brier += probs.reduce((sum, probability, index) => (
-      sum + (probability - Number(index === actualIndex)) ** 2
-    ), 0);
+    brier += probs.reduce(
+      (sum, probability, index) =>
+        sum + (probability - Number(index === actualIndex)) ** 2,
+      0,
+    );
     const homeObserved = Number(actualIndex === 0);
     const drawObserved = Number(actualIndex === 1);
-    rankedProbabilityScore += (
-      (probs[0] - homeObserved) ** 2
-      + (probs[0] + probs[1] - homeObserved - drawObserved) ** 2
-    ) / 2;
+    rankedProbabilityScore +=
+      ((probs[0] - homeObserved) ** 2 +
+        (probs[0] + probs[1] - homeObserved - drawObserved) ** 2) /
+      2;
     if (probs.indexOf(Math.max(...probs)) === actualIndex) correct += 1;
   }
   const binCount = 5;
@@ -136,17 +221,22 @@ export function calculateMetrics(
     for (let bin = 0; bin < binCount; bin += 1) {
       const lower = bin / binCount;
       const upper = (bin + 1) / binCount;
-      const members = scored.filter(({ probs }) => (
-        probs[outcomeIndex] >= lower
-        && (probs[outcomeIndex] < upper || (bin === binCount - 1 && probs[outcomeIndex] <= upper))
-      ));
+      const members = scored.filter(
+        ({ probs }) =>
+          probs[outcomeIndex] >= lower &&
+          (probs[outcomeIndex] < upper ||
+            (bin === binCount - 1 && probs[outcomeIndex] <= upper)),
+      );
       if (!members.length) continue;
-      const meanProbability = members.reduce((sum, item) => sum + item.probs[outcomeIndex], 0)
-        / members.length;
-      const observedRate = members.filter((item) => outcomeIndex === outcomeIndexOf(item.actual))
-        .length / members.length;
-      calibrationError += members.length / (scored.length * 3)
-        * Math.abs(meanProbability - observedRate);
+      const meanProbability =
+        members.reduce((sum, item) => sum + item.probs[outcomeIndex], 0) /
+        members.length;
+      const observedRate =
+        members.filter((item) => outcomeIndex === outcomeIndexOf(item.actual))
+          .length / members.length;
+      calibrationError +=
+        (members.length / (scored.length * 3)) *
+        Math.abs(meanProbability - observedRate);
     }
   }
   return {
@@ -179,7 +269,12 @@ export function calculateTopPickCalibration(
     const members = forecasts.flatMap((forecast) => {
       const actual = results[forecast.id];
       const probs = probabilities(forecast);
-      if (!actual || !probs || probs.some((probability) => !Number.isFinite(probability))) return [];
+      if (
+        !actual ||
+        !probs ||
+        probs.some((probability) => !Number.isFinite(probability))
+      )
+        return [];
       const confidence = Math.max(...probs);
       if (confidence < range.lower || confidence >= range.upper) return [];
       const predictedIndex = probs.indexOf(confidence);
@@ -187,12 +282,17 @@ export function calculateTopPickCalibration(
       return [{ confidence, correct: predictedIndex === actualIndex }];
     });
     if (!members.length) return [];
-    return [{
-      label: range.label,
-      count: members.length,
-      meanConfidence: members.reduce((sum, item) => sum + item.confidence, 0) / members.length,
-      observedAccuracy: members.filter((item) => item.correct).length / members.length,
-    }];
+    return [
+      {
+        label: range.label,
+        count: members.length,
+        meanConfidence:
+          members.reduce((sum, item) => sum + item.confidence, 0) /
+          members.length,
+        observedAccuracy:
+          members.filter((item) => item.correct).length / members.length,
+      },
+    ];
   });
 }
 
@@ -203,13 +303,40 @@ function outcomeIndexOf(outcome: MatchOutcome): number {
 function isStoredForecast(value: unknown): value is StoredForecast {
   if (!value || typeof value !== "object") return false;
   const item = value as Partial<StoredForecast>;
-  return typeof item.id === "string"
-    && ["premier_league", "super_league_greece", "la_liga", "bundesliga", "serie_a", "ligue_1", "primeira_liga"]
-      .some((competition) => competition === item.competition)
-    && typeof item.kickoff_date === "string"
-    && typeof item.kickoff_at === "string"
-    && typeof item.home_team === "string"
-    && typeof item.away_team === "string"
-    && Array.isArray(item.model_probabilities)
-    && item.model_probabilities.length === 3;
+  return (
+    typeof item.id === "string" &&
+    [
+      "premier_league",
+      "super_league_greece",
+      "la_liga",
+      "bundesliga",
+      "serie_a",
+      "ligue_1",
+      "primeira_liga",
+    ].some((competition) => competition === item.competition) &&
+    typeof item.kickoff_date === "string" &&
+    typeof item.kickoff_at === "string" &&
+    typeof item.home_team === "string" &&
+    typeof item.away_team === "string" &&
+    Number.isFinite(Date.parse(item.forecasted_at ?? "")) &&
+    Number.isFinite(Date.parse(item.kickoff_at)) &&
+    Date.parse(item.forecasted_at ?? "") < Date.parse(item.kickoff_at) &&
+    Array.isArray(item.model_probabilities) &&
+    item.model_probabilities.length === 3 &&
+    item.model_probabilities.every(
+      (p) => Number.isFinite(p) && p >= 0 && p <= 1,
+    ) &&
+    Math.abs(item.model_probabilities.reduce((a, b) => a + b, 0) - 1) < 0.01
+  );
+}
+
+function validProbabilities(value: unknown): value is [number, number, number] {
+  return (
+    Array.isArray(value) &&
+    value.length === 3 &&
+    value.every(
+      (p) => typeof p === "number" && Number.isFinite(p) && p >= 0 && p <= 1,
+    ) &&
+    Math.abs(value.reduce((sum, p) => sum + p, 0) - 1) < 0.01
+  );
 }

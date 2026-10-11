@@ -79,6 +79,8 @@ class PredictionContext:
     head_to_head_draws: int = 0
     head_to_head_away_wins: int = 0
     head_to_head_recent: tuple[str, ...] = ()
+    home_form_results: tuple[str, ...] = ()
+    away_form_results: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -101,6 +103,8 @@ class PredictionComponents:
     base_model_weight: float
     league_prior_probabilities: tuple[float, float, float] | None
     top_scorelines: tuple[ScorelineForecast, ...] = ()
+    scoreline_home_goal_rate: float | None = None
+    scoreline_away_goal_rate: float | None = None
 
 
 class PredictionEngine:
@@ -125,6 +129,13 @@ class PredictionEngine:
         self._result_lookup = {
             (str(row.competition), row.match_date, str(row.home_team), str(row.away_team)): str(
                 row.result
+            )
+            for row in self._history.itertuples(index=False)
+        }
+        self._score_lookup = {
+            (str(row.competition), row.match_date, str(row.home_team), str(row.away_team)): (
+                int(row.home_goals),
+                int(row.away_goals),
             )
             for row in self._history.itertuples(index=False)
         }
@@ -172,9 +183,7 @@ class PredictionEngine:
             known_teams
         )
         unregistered_teams = {
-            team
-            for team in unknown_teams
-            if not is_registered_team(team, fixture.competition)
+            team for team in unknown_teams if not is_registered_team(team, fixture.competition)
         }
         if unregistered_teams:
             raise ValueError(
@@ -206,7 +215,9 @@ class PredictionEngine:
         fixture_features = self._fixture_features(canonical_fixture, fixture_states)
         feature = fixture_features.iloc[0]
         h2h = _head_to_head_summary(
-            history, canonical_fixture.home_team, canonical_fixture.away_team,
+            history,
+            canonical_fixture.home_team,
+            canonical_fixture.away_team,
             canonical_fixture.kickoff_date,
         )
         context = PredictionContext(
@@ -222,6 +233,14 @@ class PredictionEngine:
             away_form_goals_against_per_match=float(feature["away_form_goals_against_per_match"]),
             home_venue_points_per_match=float(feature["home_home_points_per_match"]),
             away_venue_points_per_match=float(feature["away_away_points_per_match"]),
+            home_form_results=_form_results(
+                fixture_states[(competition, canonical_fixture.home_team)],
+                int(feature["home_matches_played"]),
+            ),
+            away_form_results=_form_results(
+                fixture_states[(competition, canonical_fixture.away_team)],
+                int(feature["away_matches_played"]),
+            ),
             **h2h,
         )
         elo = add_elo_probabilities(fixture_features)
@@ -294,6 +313,8 @@ class PredictionEngine:
                 ),
                 away_goal_rate=away_rate,
                 top_scorelines=scorelines,
+                scoreline_home_goal_rate=home_rate,
+                scoreline_away_goal_rate=away_rate,
                 elo_weight=elo_weight,
                 base_model_weight=base_model_weight,
                 league_prior_probabilities=prior_probabilities,
@@ -317,11 +338,19 @@ class PredictionEngine:
         return sorted(set(latest["home_team"].astype(str)) | set(latest["away_team"].astype(str)))
 
     def find_results(
-        self, fixtures: list[tuple[str, date, str, str]]
+        self, fixtures: list[tuple[str, str, date, str, str]]
     ) -> dict[str, str | None]:
         """Look up completed outcomes for canonical prospective forecast keys."""
         return {
             fixture_id: self._result_lookup.get((competition, match_date, home_team, away_team))
+            for fixture_id, competition, match_date, home_team, away_team in fixtures
+        }
+
+    def find_scores(
+        self, fixtures: list[tuple[str, str, date, str, str]]
+    ) -> dict[str, tuple[int, int] | None]:
+        return {
+            fixture_id: self._score_lookup.get((competition, match_date, home_team, away_team))
             for fixture_id, competition, match_date, home_team, away_team in fixtures
         }
 
@@ -337,6 +366,15 @@ class PredictionEngine:
             away_team=fixture.away_team,
             final_states=final_states or self._final_states,
         )
+
+
+def _form_results(state: TeamState, count: int) -> tuple[str, ...]:
+    if count == 0:
+        return ()
+    return tuple(
+        "W" if points == 3 else "D" if points == 1 else "L"
+        for _, _, points in list(state.all_results)[-count:]
+    )
 
 
 def _top_scorelines_from_goal_rates(
@@ -392,7 +430,9 @@ def _head_to_head_summary(
             away_wins += 1
             outcome = "A"
         descriptions.append(
-            f"{row.match_date}: {row.home_team} {int(row.home_goals)}–{int(row.away_goals)} {row.away_team} ({outcome} for {home_team})"
+            f"{row.match_date}: {row.home_team} "
+            f"{int(row.home_goals)}–{int(row.away_goals)} {row.away_team} "
+            f"({outcome} for {home_team})"
         )
     return {
         "head_to_head_matches": len(meetings),
@@ -427,7 +467,6 @@ def _shrink_to_prior(
     adjusted = probabilities.copy()
     for column, prior_probability in prior.items():
         adjusted[column] = (
-            model_weight * adjusted[column].to_numpy()
-            + (1 - model_weight) * prior_probability
+            model_weight * adjusted[column].to_numpy() + (1 - model_weight) * prior_probability
         )
     return adjusted

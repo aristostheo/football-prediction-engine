@@ -88,9 +88,7 @@ def initial_openfootball_files(
         competition=Competition.PREMIER_LEAGUE,
         season=current_season,
         path=england_root / current_season / "1-premierleague.txt",
-        source_url=(
-            f"{OPENFOOTBALL_ENGLAND_RAW}/{current_season}/1-premierleague.txt"
-        ),
+        source_url=(f"{OPENFOOTBALL_ENGLAND_RAW}/{current_season}/1-premierleague.txt"),
     )
     greek_seasons = list(GREEK_SUPER_LEAGUE_ARCHIVE_SEASONS)
     greek_seasons.extend(
@@ -141,7 +139,12 @@ def initial_openfootball_files(
             ),
         )
     )
-    return premier_league_completed + (premier_league_current,) + super_league_greece + additional_leagues
+    return (
+        premier_league_completed
+        + (premier_league_current,)
+        + super_league_greece
+        + additional_leagues
+    )
 
 
 def _expected_matches_per_team(competition: Competition, season: str) -> int:
@@ -317,9 +320,7 @@ def refresh_openfootball_dataset(
     return {**manifest, **change_summary}
 
 
-def _dataset_payload_is_unchanged(
-    previous: pd.DataFrame | None, refreshed: pd.DataFrame
-) -> bool:
+def _dataset_payload_is_unchanged(previous: pd.DataFrame | None, refreshed: pd.DataFrame) -> bool:
     """Ignore retrieval timestamps when checking whether stored match data changed."""
     if previous is None or set(previous.columns) != set(refreshed.columns):
         return False
