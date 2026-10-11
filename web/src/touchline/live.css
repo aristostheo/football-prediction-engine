@@ -24,6 +24,12 @@
 .tl-live .tl-fixture {
   min-width: 300px;
 }
+.tl-live .tl-fixture-strip {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
 .tl-live .tl-fixture-clubs > span {
   font-size: 12px;
   min-width: 0;
