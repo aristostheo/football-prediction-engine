@@ -134,3 +134,10 @@ def test_resolver_supports_old_only_history_and_refuses_ambiguous_fallback() -> 
 def test_archive_and_current_labels_share_one_club_identity(competition, old, current) -> None:
     assert canonical_team_name(old, competition) == current
     assert canonical_team_name(current, competition) == current
+
+
+def test_celta_provider_spelling_is_explicit_and_league_scoped():
+    assert is_registered_team("Celta de Vigo", Competition.LA_LIGA)
+    assert canonical_team_name("Celta de Vigo", Competition.LA_LIGA) == "RC Celta de Vigo"
+    assert not is_registered_team("Celta de Vigo B", Competition.LA_LIGA)
+    assert not is_registered_team("Celta de Vigo", Competition.PREMIER_LEAGUE)

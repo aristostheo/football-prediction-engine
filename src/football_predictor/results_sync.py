@@ -9,6 +9,7 @@ from collections import Counter
 from datetime import UTC, date, datetime, timedelta
 from numbers import Integral
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from urllib.parse import quote, urlencode
 from urllib.request import Request
 
@@ -42,19 +43,96 @@ class ResultsSyncError(ValueError):
     """The result import cannot safely update the model's historical inputs."""
 
 
+class UnknownClubError(ResultsSyncError):
+    def __init__(self, competition: Competition, teams: list[str]) -> None:
+        self.competition = competition
+        self.teams = teams
+        super().__init__(f"unregistered clubs in {competition.value}: {', '.join(teams)}")
+
+
 class BudgetedGoalProvider(GoalApiFixtureProvider):
-    def __init__(self, api_key: str, *, max_requests: int = 250) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        *,
+        max_requests: int = 250,
+        cache_dir: Path | None = None,
+        fresh: bool = False,
+    ) -> None:
         super().__init__(api_key)
         if not 1 <= max_requests <= 1000:
             raise ResultsSyncError("max_requests must be between 1 and 1000")
         self.max_requests = max_requests
         self.requests_used = 0
+        self.cache_hits = 0
+        self.cache_dir = cache_dir
+        self.fresh = fresh
+        self.response_metadata: list[dict[str, object]] = []
+        self.fixture_retrieved_at: dict[tuple[Competition, date, str], datetime] = {}
+        self.last_fetched_at = datetime.now(UTC)
 
     def _request_json(self, request: Request) -> dict[str, object]:
+        now = datetime.now(UTC)
+        cache_path = (
+            self.cache_dir / f"{hashlib.sha256(request.full_url.encode()).hexdigest()}.json"
+            if self.cache_dir is not None
+            else None
+        )
+        if cache_path is not None and not self.fresh:
+            try:
+                record = json.loads(cache_path.read_text())
+                fetched_at = datetime.fromisoformat(record["fetched_at"])
+                age = (now - fetched_at).total_seconds()
+                payload = record["payload"]
+                if (
+                    record.get("url") == request.full_url
+                    and record.get("version") == 1
+                    and 0 <= age < 3600
+                    and isinstance(payload, dict)
+                    and payload.get("success") is True
+                ):
+                    self.cache_hits += 1
+                    self.last_fetched_at = fetched_at
+                    self.response_metadata.append(
+                        {
+                            "url": request.full_url,
+                            "fetched_at": fetched_at.isoformat(),
+                            "cached": True,
+                        }
+                    )
+                    return payload
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
         if self.requests_used >= self.max_requests:
             raise ResultsSyncError("request budget exhausted; no snapshot was updated")
         self.requests_used += 1
-        return super()._request_json(request)
+        payload = super()._request_json(request)
+        self.last_fetched_at = datetime.now(UTC)
+        self.response_metadata.append(
+            {
+                "url": request.full_url,
+                "fetched_at": self.last_fetched_at.isoformat(),
+                "cached": False,
+            }
+        )
+        if cache_path is not None and payload.get("success") is True:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            with NamedTemporaryFile(dir=cache_path.parent, mode="w", delete=False) as tmp:
+                temporary_path = Path(tmp.name)
+                json.dump(
+                    {
+                        "version": 1,
+                        "url": request.full_url,
+                        "fetched_at": self.last_fetched_at.isoformat(),
+                        "payload": payload,
+                    },
+                    tmp,
+                )
+            try:
+                temporary_path.replace(cache_path)
+            finally:
+                temporary_path.unlink(missing_ok=True)
+        return payload
 
     def result_items(self, competition: Competition, day: date) -> list[dict[str, object]]:
         """Require complete pagination instead of accepting a repeated/truncated page."""
@@ -110,6 +188,7 @@ class BudgetedGoalProvider(GoalApiFixtureProvider):
                 if str(item.get("leagueId", "")) != league_id:
                     raise ResultsSyncError("response contains a different or unverified league")
                 seen_ids.add(fixture_id)
+                self.fixture_retrieved_at[(competition, day, fixture_id)] = self.last_fetched_at
             items.extend(page)
             if not has_more:
                 if len(items) != total:
@@ -151,9 +230,13 @@ def completed_match(
             raise ResultsSyncError("invalid regulation-time score")
     if fixture.home_goals is None or fixture.away_goals is None:
         raise ResultsSyncError("finished fixture has missing or invalid regulation-time goals")
-    for team in (fixture.home_team, fixture.away_team):
-        if not is_registered_team(team, competition):
-            raise ResultsSyncError(f"unregistered club in {competition.value}: {team}")
+    unknown = [
+        team
+        for team in (fixture.home_team, fixture.away_team)
+        if not is_registered_team(team, competition)
+    ]
+    if unknown:
+        raise UnknownClubError(competition, unknown)
     match = HistoricalMatch(
         match_date=day,
         competition=competition,
@@ -258,18 +341,25 @@ def sync_results(
         raise ResultsSyncError("CSV and manifest paths must differ")
     if not plan or any(day >= now.astimezone(UTC).date() for _, day in plan):
         raise ResultsSyncError("sync requires earlier dates, excluding today")
-    if len(plan) > provider.max_requests:
-        raise ResultsSyncError("planned date queries already exceed request budget")
     before = merge_history(history, history.iloc[:0])
     matches = []
     skipped: Counter[str] = Counter()
     queries = []
+    unknown_clubs: set[tuple[str, str]] = set()
     for index, (competition, day) in enumerate(plan, 1):
         items = provider.result_items(competition, day)
         accepted = 0
         for item in items:
-            match, reason = completed_match(item, competition, day, retrieved_at=now)
+            try:
+                match, reason = completed_match(item, competition, day, retrieved_at=now)
+            except UnknownClubError as error:
+                unknown_clubs.update((competition.value, team) for team in error.teams)
+                skipped["unregistered_club"] += 1
+                continue
             if match:
+                fetched_at = provider.fixture_retrieved_at.get((competition, day, str(item["id"])))
+                if fetched_at is not None:
+                    match = match.model_copy(update={"retrieved_at": fetched_at})
                 matches.append(match)
                 accepted += 1
             else:
@@ -288,8 +378,15 @@ def sync_results(
         if progress:
             progress(
                 f"[{index}/{len(plan)}] {competition.value} {day}: "
-                f"{accepted} completed results; requests {provider.requests_used}"
+                f"{accepted} completed results; requests {provider.requests_used}; "
+                f"cached responses {provider.cache_hits}"
             )
+    if unknown_clubs:
+        details = "; ".join(f"{league}: {team}" for league, team in sorted(unknown_clubs))
+        raise ResultsSyncError(
+            f"unregistered clubs need explicit alias review: {details}. "
+            "No model snapshot was updated; successful responses are reusable for one hour."
+        )
     incoming = build_match_dataframe(matches) if matches else before.iloc[:0].copy()
     merged = merge_history(before, incoming)
     added = len(merged) - len(before)
@@ -300,6 +397,7 @@ def sync_results(
             "added_matches": 0,
             "total_matches": len(before),
             "requests_used": provider.requests_used,
+            "cache_hits": provider.cache_hits,
             "written": False,
             "skipped": dict(skipped),
             "coverage": history_coverage(before, as_of=now.date()),
@@ -308,6 +406,8 @@ def sync_results(
         "source_name": "Goal API",
         "requested_at": now.isoformat(),
         "requests_used": provider.requests_used,
+        "cache_hits": provider.cache_hits,
+        "response_metadata": provider.response_metadata,
         "date_queries": queries,
         "accepted_rows": len(incoming),
         "skipped": dict(skipped),
@@ -325,6 +425,7 @@ def sync_results(
         **manifest,
         "added_matches": added,
         "requests_used": provider.requests_used,
+        "cache_hits": provider.cache_hits,
         "written": True,
         "skipped": dict(skipped),
         "coverage": history_coverage(merged, as_of=now.date()),
@@ -339,6 +440,9 @@ def main() -> None:
     )
     parser.add_argument("--league", action="append", choices=[c.value for c in Competition])
     parser.add_argument("--max-requests", type=int, default=250)
+    parser.add_argument(
+        "--fresh", action="store_true", help="bypass the one-hour local retry cache"
+    )
     parser.add_argument(
         "--dry-run", action="store_true", help="show query plan without API requests"
     )
@@ -357,15 +461,12 @@ def main() -> None:
             c not in GoalApiFixtureProvider("plan")._league_ids for c in set(competitions)
         )
         minimum = len(plan) + catalogue_allowance
-        if minimum > args.max_requests:
-            raise ResultsSyncError(
-                f"at least {minimum} requests needed; budget is {args.max_requests}"
-            )
         print(
             f"Date queries: {len(plan)}; catalogue queries: up to {catalogue_allowance}; "
             f"hard request cap: {args.max_requests} (pagination included).",
             flush=True,
         )
+        print(f"Uncached request estimate: at least {minimum}; retries may reuse saved responses.")
         for competition in competitions:
             days = [day for league, day in plan if league == competition]
             print(f"{competition.value}: {min(days)} through {max(days)}", flush=True)
@@ -373,6 +474,8 @@ def main() -> None:
             return
         provider = BudgetedGoalProvider.from_environment()
         provider.max_requests = args.max_requests
+        provider.cache_dir = LOCAL_HISTORY.parent / "goal_api_cache"
+        provider.fresh = args.fresh
         report = sync_results(
             provider=provider,
             history=history,
@@ -382,6 +485,7 @@ def main() -> None:
             progress=lambda message: print(message, flush=True),
         )
         print(f"Added {report['added_matches']} results using {report['requests_used']} requests.")
+        print(f"Reused {report['cache_hits']} cached responses.")
         print(format_coverage(report["coverage"]))
         if report["written"]:
             print(f"Saved {LOCAL_HISTORY}. Restart the backend to load it.")

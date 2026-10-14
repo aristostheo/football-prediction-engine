@@ -22,7 +22,8 @@ The default checks all seven leagues, starting two days before each league's
 latest stored result and ending yesterday in UTC. On the October 14 snapshot,
 that is September 18 through October 13: 182 date queries and up to five league
 catalogue lookups. Extra pages also count against the **250-request hard cap**.
-The cap applies to this run, not your account's total daily usage. A provider
+The cap applies to new network requests in this run, not your account's total
+daily usage. Cached responses do not consume the cap. A provider
 error or exhausted request budget stops the run without publishing partial
 results. There are no automatic retries that consume more quota.
 
@@ -74,7 +75,9 @@ and does not use your local key or upload Goal API results.
 
 Postponed, cancelled, live, extra-time/penalty and nonregular-stage fixtures are
 excluded. Missing stage/season metadata on a finished fixture fails the import;
-unknown club labels require a reviewed registry addition. Wrong-league responses,
+unknown club labels require a reviewed registry addition. The importer collects
+all unknown clubs across the selected dates and leagues, reports them together,
+and refuses to publish the snapshot until they are resolved. Wrong-league responses,
 repeated pages, changing totals, missing pagination and partial pages fail closed.
 
 ## Merge and provenance
@@ -88,8 +91,12 @@ source review, while newly introduced repetitions remain blocked.
 
 Rows retain source name, provider fixture URL and retrieval timestamp. The local
 manifest records query dates, accepted/skipped counts, response hashes, input-facts
-hash, dataset checksum and requests used. Raw API responses and credentials are
-not stored. Files are staged before replacement; a failed manifest publication
+hash, dataset checksum and requests used. Credentials are never stored. Successful
+raw responses are cached locally for one hour under `data/local/goal_api_cache/`,
+which is ignored by Git; this allows retries after a failed import to reuse
+completed requests. The original fetch times are retained in imported rows and
+manifest response metadata. `--fresh` bypasses the cache, and expired or invalid
+cache entries are refetched. Files are staged before replacement; a failed manifest publication
 rolls back the CSV. An unchanged rerun preserves both files' bytes. An empty
 response does not create a fresh-looking local snapshot.
 
@@ -109,8 +116,17 @@ runtime path selection and pre-match leakage controls. Authenticated provider
 verification requires running the command on the computer with your key. Until
 that succeeds and the reported cutoff advances, freshness remains unresolved.
 
-Validation on October 14: the full 199-test backend suite passed before the last
-two integration tests were added; all 53 targeted API/sync tests then passed,
-covering those additions (201 backend tests total). Ten frontend tests, frontend
-lint/build, backend lint and the diff whitespace check also passed. The refresh
-workflow runs ingestion, coverage and sync tests without provider credentials.
+Validation after the alias/retry fix on October 14: all 210 backend tests,
+backend lint and the diff whitespace check passed. The earlier sync checkpoint
+also passed ten frontend tests and frontend lint/build. The refresh workflow runs
+ingestion, coverage and sync tests without provider credentials.
+
+## October 14 alias fix
+
+The provider spelling `Celta de Vigo` is now an explicit alias of `RC Celta de Vigo`.
+Tests cover both the completed-result parsing path and league isolation; reserve-team
+names are not guessed. The previously failed version had no retry cache, so its
+54 responses cannot be recovered. One retry must fetch those dates again; subsequent
+immediate retries reuse the new cache. The user's log confirms 10 newer Premier
+League and seven newer Greek results were returned, but none was published by
+that failed run. Coverage remains pending a successful complete merge.

@@ -439,3 +439,118 @@ def test_cli_imports_to_local_output_with_environment_key(tmp_path, monkeypatch,
     text = capsys.readouterr().out
     assert "Added 1 results using 2 requests" in text
     assert "configured-test-key" not in text
+
+
+def test_celta_de_vigo_payload_uses_existing_canonical_club():
+    match, reason = completed_match(
+        fixture(homeTeam={"name": "Celta de Vigo"}, awayTeam={"name": "Real Madrid"}),
+        Competition.LA_LIGA,
+        DAY,
+        retrieved_at=NOW,
+    )
+    assert reason == "accepted"
+    assert match.home_team == "RC Celta de Vigo"
+    assert match.away_team == "Real Madrid CF"
+
+
+def test_cache_reuses_raw_payload_after_alias_failure_and_keeps_fetch_timestamp(
+    tmp_path, monkeypatch
+):
+    from football_predictor import results_sync
+    from football_predictor.team_names import is_registered_team as registered
+
+    calls = fake_http(monkeypatch, [page([fixture(homeTeam={"name": "New Alias"})])])
+    cache = tmp_path / "cache"
+    output, manifest = tmp_path / "matches.csv.gz", tmp_path / "manifest.json"
+    first = BudgetedGoalProvider("not-in-cache", cache_dir=cache)
+    with pytest.raises(ResultsSyncError, match="New Alias"):
+        sync_results(
+            provider=first,
+            history=baseline(),
+            plan=[(PL, DAY)],
+            output_path=output,
+            manifest_path=manifest,
+            as_of=NOW,
+        )
+    assert not output.exists() and not manifest.exists()
+    assert len(list(cache.glob("*.json"))) == 1
+    record = json.loads(next(cache.glob("*.json")).read_text())
+    assert "not-in-cache" not in json.dumps(record)
+
+    original = results_sync.completed_match
+
+    def newly_reviewed_alias(item, competition, day, *, retrieved_at):
+        # Simulate a reviewed registry mapping without altering the cache.
+        if item["homeTeam"]["name"] == "New Alias":
+            item = {**item, "homeTeam": {"name": "Fulham"}}
+        return original(item, competition, day, retrieved_at=retrieved_at)
+
+    monkeypatch.setattr(results_sync, "completed_match", newly_reviewed_alias)
+    second = BudgetedGoalProvider("not-in-cache", max_requests=1, cache_dir=cache)
+    report = sync_results(
+        provider=second,
+        history=baseline(),
+        plan=[(PL, DAY)],
+        output_path=output,
+        manifest_path=manifest,
+        as_of=NOW,
+    )
+    assert second.requests_used == 0 and second.cache_hits == 1
+    assert len(calls) == 1
+    assert report["added_matches"] == 1
+    written = pd.read_csv(output)
+    timestamp = written.loc[written["source_name"] == "Goal API", "retrieved_at"].iloc[0]
+    assert timestamp == record["fetched_at"]
+    assert registered("Fulham", PL)
+
+
+def test_all_unknown_clubs_are_reported_in_one_pass_without_publishing(tmp_path, monkeypatch):
+    fake_http(
+        monkeypatch,
+        [
+            page([fixture(homeTeam={"name": "Unknown One"})]),
+            page([fixture(homeTeam={"name": "Unknown Two"}, kickoffUtc="2026-10-13T15:00:00Z")]),
+        ],
+    )
+    provider = BudgetedGoalProvider("key", cache_dir=tmp_path / "cache")
+    output = tmp_path / "snapshot.csv.gz"
+    with pytest.raises(ResultsSyncError, match="Unknown One.*Unknown Two"):
+        sync_results(
+            provider=provider,
+            history=baseline(),
+            plan=[(PL, DAY), (PL, date(2026, 10, 13))],
+            output_path=output,
+            manifest_path=tmp_path / "manifest.json",
+            as_of=NOW,
+        )
+    assert provider.requests_used == 2
+    assert len(list((tmp_path / "cache").glob("*.json"))) == 2
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("corruption", ["expired", "bad_json", "wrong_url", "bad_payload"])
+def test_unusable_cache_is_refetched(tmp_path, monkeypatch, corruption):
+    calls = fake_http(monkeypatch, [page([fixture()]), page([])])
+    first = BudgetedGoalProvider("key", cache_dir=tmp_path)
+    first.result_items(PL, DAY)
+    path = next(tmp_path.glob("*.json"))
+    record = json.loads(path.read_text())
+    if corruption == "expired":
+        record["fetched_at"] = "2020-01-01T00:00:00+00:00"
+    elif corruption == "wrong_url":
+        record["url"] = "https://example.com/wrong"
+    elif corruption == "bad_payload":
+        record["payload"] = {"success": False}
+    path.write_text("{not json" if corruption == "bad_json" else json.dumps(record))
+    second = BudgetedGoalProvider("key", cache_dir=tmp_path)
+    assert second.result_items(PL, DAY) == []
+    assert second.requests_used == 1 and second.cache_hits == 0
+    assert len(calls) == 2
+
+
+def test_fresh_flag_bypasses_valid_cache(tmp_path, monkeypatch):
+    calls = fake_http(monkeypatch, [page([fixture()]), page([])])
+    BudgetedGoalProvider("key", cache_dir=tmp_path).result_items(PL, DAY)
+    refreshed = BudgetedGoalProvider("key", cache_dir=tmp_path, fresh=True)
+    assert refreshed.result_items(PL, DAY) == []
+    assert len(calls) == 2 and refreshed.cache_hits == 0

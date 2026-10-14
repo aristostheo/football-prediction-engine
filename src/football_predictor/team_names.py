@@ -107,7 +107,7 @@ TEAM_ALIASES: dict[Competition, dict[str, tuple[str, ...]]] = {
         "FC Barcelona": ("Barcelona", "Barça"),
         "Getafe CF": ("Getafe",),
         "Levante UD": ("Levante",),
-        "RC Celta de Vigo": ("Celta Vigo", "Celta"),
+        "RC Celta de Vigo": ("Celta Vigo", "Celta de Vigo", "Celta"),
         "RCD Espanyol de Barcelona": ("Espanyol", "RCD Espanyol"),
         "Rayo Vallecano de Madrid": ("Rayo Vallecano",),
         "Real Betis Balompié": ("Real Betis", "Betis"),
