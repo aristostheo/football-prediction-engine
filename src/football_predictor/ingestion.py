@@ -14,7 +14,7 @@ from urllib.request import Request, urlopen
 
 import pandas as pd
 
-from football_predictor.dataset import build_match_dataframe
+from football_predictor.dataset import build_match_dataframe, canonicalize_match_labels
 from football_predictor.domain import Competition, HistoricalMatch
 from football_predictor.sources.openfootball import parse_openfootball_results
 from football_predictor.validation import validate_completed_season, validate_match_collection
@@ -352,12 +352,14 @@ def _check_refresh_regressions(
             "removed_matches": 0,
         }
     identity_columns = ["competition", "season", "match_date", "home_team", "away_team"]
-    previous = previous.copy()
-    refreshed = refreshed.copy()
+    previous = canonicalize_match_labels(previous)
+    refreshed = canonicalize_match_labels(refreshed)
     previous["match_date"] = pd.to_datetime(previous["match_date"]).dt.strftime("%Y-%m-%d")
     refreshed["match_date"] = pd.to_datetime(refreshed["match_date"]).dt.strftime("%Y-%m-%d")
     previous_rows = previous.set_index(identity_columns)
     refreshed_rows = refreshed.set_index(identity_columns)
+    if previous_rows.index.has_duplicates or refreshed_rows.index.has_duplicates:
+        raise ValueError("duplicate fixture identities after canonical team-name normalization")
     removed = previous_rows.index.difference(refreshed_rows.index)
     if len(removed) and not allow_removed_matches:
         sample = list(removed[:5])

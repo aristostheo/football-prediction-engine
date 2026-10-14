@@ -5,12 +5,20 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import pandas as pd
+
+from football_predictor.data_status import format_coverage, history_coverage
 from football_predictor.ingestion import refresh_openfootball_dataset, write_initial_dataset
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Build or safely refresh the OpenFootball historical dataset."
+    )
+    parser.add_argument(
+        "--check-data",
+        action="store_true",
+        help="report each league's actual result cutoff without downloading or changing files",
     )
     parser.add_argument(
         "--refresh",
@@ -28,13 +36,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    if args.check_data:
+        if args.refresh or args.england_root or args.europe_root or args.allow_removed_matches:
+            parser.error("--check-data cannot be combined with ingestion options")
+        path = args.output or Path("data/model/historical_matches.csv.gz")
+        print(format_coverage(history_coverage(pd.read_csv(path))))
+        return
+
     if args.refresh:
         if args.england_root or args.europe_root:
             parser.error("--refresh cannot be combined with local source roots")
         manifest = refresh_openfootball_dataset(
             output_path=args.output or Path("data/model/historical_matches.csv.gz"),
-            manifest_path=args.manifest
-            or Path("data/model/historical_matches.manifest.json"),
+            manifest_path=args.manifest or Path("data/model/historical_matches.manifest.json"),
             allow_removed_matches=args.allow_removed_matches,
         )
         print(

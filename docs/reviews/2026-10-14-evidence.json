@@ -1,0 +1,923 @@
+{
+  "review_date": "2026-10-14",
+  "reviewed_main": "e668d1e81ee5bddc348824acb89a9b368caee530",
+  "tests": {
+    "python": 143,
+    "frontend": 10,
+    "production_lint": "pass",
+    "full_repo_lint_findings": 52,
+    "frontend_build": "pass",
+    "frontend_lint": "pass"
+  },
+  "runtime": {
+    "snapshot": {
+      "rows": 24950,
+      "columns": [
+        "match_date",
+        "competition",
+        "season",
+        "home_team",
+        "away_team",
+        "home_goals",
+        "away_goals",
+        "result",
+        "source_name",
+        "source_url",
+        "retrieved_at"
+      ],
+      "sha_match": true,
+      "dataset_sha256": "dbade9347b82c5588eac7a1eacd3107a69e1a1adf8b68b27150660bbfd0128c9",
+      "generated_at": "2026-10-10T17:52:08.109206+00:00",
+      "duplicates": 0,
+      "bad_teams": 0,
+      "same_team": 0,
+      "negative_or_noninteger_goals": 0
+    },
+    "providers_configured": {
+      "GOAL_API_KEY": false,
+      "API_FOOTBALL_KEY": false,
+      "THE_ODDS_API_KEY": false
+    },
+    "engine_init_seconds": 14.785476641998684,
+    "leagues": {
+      "premier_league": {
+        "rows": 9930,
+        "date_min": "2000-08-19",
+        "date_max": "2026-09-20",
+        "seasons": {
+          "2000-01": 380,
+          "2001-02": 380,
+          "2002-03": 380,
+          "2003-04": 380,
+          "2004-05": 380,
+          "2005-06": 380,
+          "2006-07": 380,
+          "2007-08": 380,
+          "2008-09": 380,
+          "2009-10": 380,
+          "2010-11": 380,
+          "2011-12": 380,
+          "2012-13": 380,
+          "2013-14": 380,
+          "2014-15": 380,
+          "2015-16": 380,
+          "2016-17": 380,
+          "2017-18": 380,
+          "2018-19": 380,
+          "2019-20": 380,
+          "2020-21": 380,
+          "2021-22": 380,
+          "2022-23": 380,
+          "2023-24": 380,
+          "2024-25": 380,
+          "2025-26": 380,
+          "2026-27": 50
+        },
+        "current_teams": 20,
+        "policy": "elo_poisson_25_75",
+        "probabilities": [
+          0.6574282798030248,
+          0.20107176542409866,
+          0.14149995477287663
+        ],
+        "example": "Arsenal FC vs Chelsea FC",
+        "predict_ms": 22.75740000186488,
+        "scoreline": {
+          "home_goals": 2,
+          "away_goals": 0,
+          "probability": 0.1129676161066866
+        },
+        "goal_rates": [
+          2.157769199524046,
+          0.8678880057714281
+        ],
+        "warm_ms": {
+          "median": 22.245107000344433,
+          "max": 28.24640299877501
+        },
+        "fresh_elo_walk_forward": {
+          "matches": 1900,
+          "log_loss": 0.9786583125764041,
+          "brier_score": 0.5826384511960374,
+          "ranked_probability_score": 0.20088822832385014,
+          "accuracy": 0.5410526315789473
+        },
+        "inner_cv_boundaries": [
+          {
+            "train_last": "2006-12-30 00:00:00",
+            "validation_first": "2006-12-30 00:00:00",
+            "same_date": true
+          },
+          {
+            "train_last": "2013-08-31 00:00:00",
+            "validation_first": "2013-08-31 00:00:00",
+            "same_date": true
+          },
+          {
+            "train_last": "2019-12-14 00:00:00",
+            "validation_first": "2019-12-14 00:00:00",
+            "same_date": true
+          }
+        ]
+      },
+      "la_liga": {
+        "rows": 3109,
+        "date_min": "2018-08-17",
+        "date_max": "2026-09-20",
+        "seasons": {
+          "2018-19": 380,
+          "2019-20": 380,
+          "2020-21": 380,
+          "2021-22": 380,
+          "2022-23": 380,
+          "2023-24": 380,
+          "2024-25": 380,
+          "2025-26": 380,
+          "2026-27": 69
+        },
+        "current_teams": 20,
+        "policy": "elo",
+        "probabilities": [
+          0.38937838938491304,
+          0.27223938582968704,
+          0.33838222478539987
+        ],
+        "example": "Real Madrid CF vs FC Barcelona",
+        "predict_ms": 13.855429999239277,
+        "scoreline": {
+          "home_goals": 1,
+          "away_goals": 1,
+          "probability": 0.11214696841335182
+        },
+        "goal_rates": [
+          1.4057690851816056,
+          1.5805048462451357
+        ],
+        "warm_ms": {
+          "median": 14.778343997022603,
+          "max": 20.241800000803778
+        },
+        "fresh_elo_walk_forward": {
+          "matches": 1900,
+          "log_loss": 1.0022417157461125,
+          "brier_score": 0.5982222495108559,
+          "ranked_probability_score": 0.20322230361191912,
+          "accuracy": 0.5247368421052632
+        },
+        "inner_cv_boundaries": [
+          {
+            "train_last": "2020-09-26 00:00:00",
+            "validation_first": "2020-09-27 00:00:00",
+            "same_date": false
+          },
+          {
+            "train_last": "2022-09-03 00:00:00",
+            "validation_first": "2022-09-04 00:00:00",
+            "same_date": false
+          },
+          {
+            "train_last": "2024-09-19 00:00:00",
+            "validation_first": "2024-09-20 00:00:00",
+            "same_date": false
+          }
+        ]
+      },
+      "bundesliga": {
+        "rows": 2484,
+        "date_min": "2018-08-24",
+        "date_max": "2026-09-20",
+        "seasons": {
+          "2018-19": 306,
+          "2019-20": 306,
+          "2020-21": 306,
+          "2021-22": 306,
+          "2022-23": 306,
+          "2023-24": 306,
+          "2024-25": 306,
+          "2025-26": 306,
+          "2026-27": 36
+        },
+        "current_teams": 18,
+        "policy": "elo",
+        "probabilities": [
+          0.5356686809858707,
+          0.2525885591923879,
+          0.21174275982174157
+        ],
+        "example": "FC Bayern M\u00fcnchen vs Borussia Dortmund",
+        "predict_ms": 17.196109998621978,
+        "scoreline": {
+          "home_goals": 2,
+          "away_goals": 1,
+          "probability": 0.08578972121058763
+        },
+        "goal_rates": [
+          2.6721256526157418,
+          1.3742308202747986
+        ],
+        "warm_ms": {
+          "median": 14.082274999964284,
+          "max": 16.52644500063616
+        },
+        "fresh_elo_walk_forward": {
+          "matches": 1530,
+          "log_loss": 1.003765151600463,
+          "brier_score": 0.5997818841675896,
+          "ranked_probability_score": 0.2067909608813423,
+          "accuracy": 0.5071895424836601
+        },
+        "inner_cv_boundaries": [
+          {
+            "train_last": "2020-09-20 00:00:00",
+            "validation_first": "2020-09-25 00:00:00",
+            "same_date": false
+          },
+          {
+            "train_last": "2022-08-14 00:00:00",
+            "validation_first": "2022-08-19 00:00:00",
+            "same_date": false
+          },
+          {
+            "train_last": "2024-09-15 00:00:00",
+            "validation_first": "2024-09-20 00:00:00",
+            "same_date": false
+          }
+        ]
+      },
+      "serie_a": {
+        "rows": 3090,
+        "date_min": "2018-08-18",
+        "date_max": "2026-09-20",
+        "seasons": {
+          "2018-19": 380,
+          "2019-20": 380,
+          "2020-21": 380,
+          "2021-22": 380,
+          "2022-23": 380,
+          "2023-24": 380,
+          "2024-25": 380,
+          "2025-26": 380,
+          "2026-27": 50
+        },
+        "current_teams": 20,
+        "policy": "elo",
+        "probabilities": [
+          0.620236545251147,
+          0.22919553849270646,
+          0.15056791625614652
+        ],
+        "example": "FC Internazionale Milano vs AC Milan",
+        "predict_ms": 18.038077003438957,
+        "scoreline": {
+          "home_goals": 2,
+          "away_goals": 0,
+          "probability": 0.10210529305518
+        },
+        "goal_rates": [
+          2.218008419877276,
+          0.963815134529824
+        ],
+        "warm_ms": {
+          "median": 15.650237000954803,
+          "max": 19.372067999938736
+        },
+        "fresh_elo_walk_forward": {
+          "matches": 1900,
+          "log_loss": 1.003443924551029,
+          "brier_score": 0.6000898042918275,
+          "ranked_probability_score": 0.20136508146591353,
+          "accuracy": 0.5094736842105263
+        },
+        "inner_cv_boundaries": [
+          {
+            "train_last": "2020-09-27 00:00:00",
+            "validation_first": "2020-09-27 00:00:00",
+            "same_date": true
+          },
+          {
+            "train_last": "2022-08-27 00:00:00",
+            "validation_first": "2022-08-28 00:00:00",
+            "same_date": false
+          },
+          {
+            "train_last": "2024-09-15 00:00:00",
+            "validation_first": "2024-09-16 00:00:00",
+            "same_date": false
+          }
+        ]
+      },
+      "ligue_1": {
+        "rows": 2762,
+        "date_min": "2018-08-10",
+        "date_max": "2026-09-20",
+        "seasons": {
+          "2018-19": 380,
+          "2019-20": 279,
+          "2020-21": 380,
+          "2021-22": 380,
+          "2022-23": 380,
+          "2023-24": 306,
+          "2024-25": 306,
+          "2025-26": 306,
+          "2026-27": 45
+        },
+        "current_teams": 18,
+        "policy": "elo",
+        "probabilities": [
+          0.5263723030571467,
+          0.2546366670096995,
+          0.21899102993315403
+        ],
+        "example": "Paris Saint-Germain FC vs Olympique de Marseille",
+        "predict_ms": 17.723704000673024,
+        "scoreline": {
+          "home_goals": 1,
+          "away_goals": 1,
+          "probability": 0.11530514167110793
+        },
+        "goal_rates": [
+          1.6713258491944512,
+          1.0718618973917002
+        ],
+        "warm_ms": {
+          "median": 15.028892001282657,
+          "max": 101.02625099898432
+        },
+        "fresh_elo_walk_forward": {
+          "matches": 1678,
+          "log_loss": 1.0160771971918432,
+          "brier_score": 0.6085112811992449,
+          "ranked_probability_score": 0.21182120308286506,
+          "accuracy": 0.5143027413587604
+        },
+        "inner_cv_boundaries": [
+          {
+            "train_last": "2020-09-19 00:00:00",
+            "validation_first": "2020-09-20 00:00:00",
+            "same_date": false
+          },
+          {
+            "train_last": "2022-04-30 00:00:00",
+            "validation_first": "2022-05-01 00:00:00",
+            "same_date": false
+          },
+          {
+            "train_last": "2024-04-28 00:00:00",
+            "validation_first": "2024-04-28 00:00:00",
+            "same_date": true
+          }
+        ]
+      },
+      "primeira_liga": {
+        "rows": 2510,
+        "date_min": "2018-08-10",
+        "date_max": "2026-09-20",
+        "seasons": {
+          "2018-19": 306,
+          "2019-20": 306,
+          "2020-21": 306,
+          "2021-22": 306,
+          "2022-23": 306,
+          "2023-24": 306,
+          "2024-25": 306,
+          "2025-26": 306,
+          "2026-27": 62
+        },
+        "current_teams": 18,
+        "policy": "elo",
+        "probabilities": [
+          0.46980487557231915,
+          0.2648197344932265,
+          0.2653753899344543
+        ],
+        "example": "FC Porto vs Sport Lisboa e Benfica",
+        "predict_ms": 18.508030003431486,
+        "scoreline": {
+          "home_goals": 1,
+          "away_goals": 1,
+          "probability": 0.11074196365609075
+        },
+        "goal_rates": [
+          1.7375965834021276,
+          1.1862872596577672
+        ],
+        "warm_ms": {
+          "median": 17.106743001932045,
+          "max": 21.473223001521546
+        },
+        "fresh_elo_walk_forward": {
+          "matches": 1530,
+          "log_loss": 0.9549472244308009,
+          "brier_score": 0.564743232272292,
+          "ranked_probability_score": 0.19114653149619443,
+          "accuracy": 0.545751633986928
+        },
+        "inner_cv_boundaries": [
+          {
+            "train_last": "2020-09-28 00:00:00",
+            "validation_first": "2020-10-02 00:00:00",
+            "same_date": false
+          },
+          {
+            "train_last": "2022-08-28 00:00:00",
+            "validation_first": "2022-08-28 00:00:00",
+            "same_date": true
+          },
+          {
+            "train_last": "2024-09-21 00:00:00",
+            "validation_first": "2024-09-21 00:00:00",
+            "same_date": true
+          }
+        ]
+      },
+      "super_league_greece": {
+        "rows": 1065,
+        "date_min": "2018-08-25",
+        "date_max": "2026-09-20",
+        "seasons": {
+          "2018-19": 240,
+          "2019-20": 182,
+          "2020-21": 182,
+          "2023-24": 182,
+          "2024-25": 182,
+          "2025-26": 62,
+          "2026-27": 35
+        },
+        "current_teams": 14,
+        "policy": "elo",
+        "probabilities": [
+          0.4462996732064425,
+          0.2678719416476803,
+          0.2858283851458773
+        ],
+        "example": "Olympiakos Piraeus vs Panathinaikos",
+        "predict_ms": 15.731676001450978,
+        "scoreline": {
+          "home_goals": 1,
+          "away_goals": 1,
+          "probability": 0.12997657104173577
+        },
+        "goal_rates": [
+          1.193189813160952,
+          1.2345395944645035
+        ],
+        "warm_ms": {
+          "median": 12.960611999005778,
+          "max": 16.709422001440544
+        },
+        "fresh_elo_walk_forward": {
+          "matches": 728,
+          "log_loss": 0.9854335295861472,
+          "brier_score": 0.5861455596768416,
+          "ranked_probability_score": 0.19850461868046396,
+          "accuracy": 0.5288461538461539
+        },
+        "inner_cv_boundaries": [
+          {
+            "train_last": "2019-09-22 00:00:00",
+            "validation_first": "2019-09-22 00:00:00",
+            "same_date": true
+          },
+          {
+            "train_last": "2021-01-16 00:00:00",
+            "validation_first": "2021-01-16 00:00:00",
+            "same_date": true
+          },
+          {
+            "train_last": "2024-08-25 00:00:00",
+            "validation_first": "2024-08-26 00:00:00",
+            "same_date": false
+          }
+        ]
+      }
+    },
+    "leakage_mutation": {
+      "rows_at_or_before_cutoff": 22629,
+      "features_unchanged": true
+    },
+    "future_gap_parity": {
+      "fixture_date": "2027-05-01",
+      "live_form_count": 5.0,
+      "historical_form_count": 0.0,
+      "live_elo": 1843.2875735411158,
+      "historical_elo": 1724.3449959536745
+    },
+    "api_concurrency": {
+      "health_ms_during_8_predictions": 2.5969340022129472,
+      "health_status": 200,
+      "prediction_statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    },
+    "settlement_example": {
+      "status": 200,
+      "body": [
+        {
+          "id": "review-final",
+          "result": "A",
+          "home_goals": 1,
+          "away_goals": 2,
+          "source": "bundled_history"
+        }
+      ],
+      "expected": [
+        1,
+        2
+      ]
+    },
+    "routes": {
+      "/": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "detail": null
+      },
+      "/classic": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "detail": null
+      },
+      "/updated-mockup": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "detail": null
+      },
+      "/not-a-real-route": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "detail": null
+      },
+      "/assets/missing.js": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "detail": null
+      },
+      "/fixtures/next?competition=premier_league&from=2026-10-14": {
+        "status": 503,
+        "content_type": "application/json",
+        "detail": {
+          "detail": "GOAL_API_KEY or API_FOOTBALL_KEY must be configured for live fixtures"
+        }
+      },
+      "/odds?competition=premier_league&fixture_id=x&home_team=Arsenal&away_team=Chelsea&kickoff_at=2026-10-18T16:00:00Z": {
+        "status": 503,
+        "content_type": "application/json",
+        "detail": {
+          "detail": "THE_ODDS_API_KEY is not configured"
+        }
+      }
+    },
+    "missing_history_readiness": {
+      "health": 200,
+      "teams": 400
+    }
+  },
+  "contracts": {
+    "cache_stampede": {
+      "identical_requests": 8,
+      "upstream_calls": 8,
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    },
+    "journal_horizon": [
+      {
+        "days_old": 1,
+        "provider_called": true,
+        "returned": [
+          {
+            "id": "1",
+            "result": "H",
+            "home_goals": 2,
+            "away_goals": 0,
+            "source": "live_provider"
+          }
+        ]
+      },
+      {
+        "days_old": 14,
+        "provider_called": true,
+        "returned": [
+          {
+            "id": "14",
+            "result": "H",
+            "home_goals": 2,
+            "away_goals": 0,
+            "source": "live_provider"
+          }
+        ]
+      },
+      {
+        "days_old": 15,
+        "provider_called": false,
+        "returned": [
+          {
+            "id": "15",
+            "result": null,
+            "home_goals": null,
+            "away_goals": null,
+            "source": null
+          }
+        ]
+      }
+    ],
+    "market_timestamp": {
+      "bookmaker_last_update": "2026-10-13T00:00:00Z",
+      "displayed_fetched_at": "2026-10-14 04:17:59.856135+00:00",
+      "bookmakers": 1
+    },
+    "invalid_market_price": {
+      "accepted_inf": true,
+      "probabilities": {
+        "p_home_win": 0.0,
+        "p_draw": 0.5714285714285715,
+        "p_away_win": 0.4285714285714286
+      }
+    }
+  },
+  "benchmark": {
+    "premier_league": {
+      "folds": [
+        {
+          "season": "2021-22",
+          "train": 7980,
+          "train_start": "2000-08-19",
+          "train_end": "2021-05-23",
+          "test": 380,
+          "test_start": "2021-08-13",
+          "test_end": "2022-05-22",
+          "market_matches": 380,
+          "log_loss": 0.9579668603163466
+        },
+        {
+          "season": "2022-23",
+          "train": 8360,
+          "train_start": "2000-08-19",
+          "train_end": "2022-05-22",
+          "test": 380,
+          "test_start": "2022-08-05",
+          "test_end": "2023-05-28",
+          "market_matches": 380,
+          "log_loss": 0.9764594052109054
+        },
+        {
+          "season": "2023-24",
+          "train": 8740,
+          "train_start": "2000-08-19",
+          "train_end": "2023-05-28",
+          "test": 380,
+          "test_start": "2023-08-11",
+          "test_end": "2024-05-19",
+          "market_matches": 380,
+          "log_loss": 0.9266778108551774
+        },
+        {
+          "season": "2024-25",
+          "train": 9120,
+          "train_start": "2000-08-19",
+          "train_end": "2024-05-19",
+          "test": 380,
+          "test_start": "2024-08-16",
+          "test_end": "2025-05-25",
+          "market_matches": 380,
+          "log_loss": 0.9874558857166872
+        },
+        {
+          "season": "2025-26",
+          "train": 9500,
+          "train_start": "2000-08-19",
+          "train_end": "2025-05-25",
+          "test": 380,
+          "test_start": "2025-08-15",
+          "test_end": "2026-05-24",
+          "market_matches": 380,
+          "log_loss": 1.021803026953326
+        }
+      ],
+      "production": {
+        "metrics": {
+          "matches": 1900,
+          "log_loss": 0.9740725978104885,
+          "brier_score": 0.5798969778495292,
+          "ranked_probability_score": 0.19968951265859772,
+          "accuracy": 0.5384210526315789
+        },
+        "calibration_error": {
+          "H": 0.01962520346805327,
+          "D": 0.005181179544525667,
+          "A": 0.012213048669724155
+        }
+      },
+      "elo": {
+        "metrics": {
+          "matches": 1900,
+          "log_loss": 0.9786583125764041,
+          "brier_score": 0.5826384511960374,
+          "ranked_probability_score": 0.20088822832385014,
+          "accuracy": 0.5410526315789473
+        },
+        "calibration_error": {
+          "H": 0.025096024921393466,
+          "D": 0.014389421590611351,
+          "A": 0.026914432862013286
+        }
+      },
+      "climatology": {
+        "metrics": {
+          "matches": 1900,
+          "log_loss": 1.069459134066334,
+          "brier_score": 0.647080139681092,
+          "ranked_probability_score": 0.23255179537405202,
+          "accuracy": 0.44157894736842107
+        },
+        "calibration_error": {
+          "H": 0.017768504045971023,
+          "D": 0.009555210477836779,
+          "A": 0.027323714523807774
+        }
+      },
+      "market": {
+        "metrics": {
+          "matches": 1900,
+          "log_loss": 0.9569762076452025,
+          "brier_score": 0.5679119889591442,
+          "ranked_probability_score": 0.19397360284281562,
+          "accuracy": 0.5536842105263158
+        },
+        "calibration_error": {
+          "H": 0.022869952426646762,
+          "D": 0.008043056206188566,
+          "A": 0.01251479586766371
+        }
+      },
+      "production_on_market_subset": {
+        "metrics": {
+          "matches": 1900,
+          "log_loss": 0.9740725978104885,
+          "brier_score": 0.5798969778495292,
+          "ranked_probability_score": 0.19968951265859772,
+          "accuracy": 0.5384210526315789
+        },
+        "calibration_error": {
+          "H": 0.01962520346805327,
+          "D": 0.005181179544525667,
+          "A": 0.012213048669724155
+        }
+      }
+    },
+    "super_league_greece": {
+      "folds": [
+        {
+          "season": "2023-24",
+          "train": 604,
+          "train_start": "2018-08-25",
+          "train_end": "2021-03-14",
+          "test": 182,
+          "test_start": "2023-08-18",
+          "test_end": "2024-03-03",
+          "market_matches": 179,
+          "log_loss": 0.9968843391802333
+        },
+        {
+          "season": "2024-25",
+          "train": 786,
+          "train_start": "2018-08-25",
+          "train_end": "2024-03-03",
+          "test": 182,
+          "test_start": "2024-08-17",
+          "test_end": "2025-03-09",
+          "market_matches": 182,
+          "log_loss": 1.0055886474313394
+        }
+      ],
+      "production": {
+        "metrics": {
+          "matches": 364,
+          "log_loss": 1.0012364933057865,
+          "brier_score": 0.5969458264857834,
+          "ranked_probability_score": 0.20527937785976388,
+          "accuracy": 0.532967032967033
+        },
+        "calibration_error": {
+          "H": 0.08624268879833746,
+          "D": 0.012841546230332568,
+          "A": 0.06460914152383505
+        }
+      },
+      "elo": {
+        "metrics": {
+          "matches": 364,
+          "log_loss": 1.0012364933057865,
+          "brier_score": 0.5969458264857834,
+          "ranked_probability_score": 0.20527937785976388,
+          "accuracy": 0.532967032967033
+        },
+        "calibration_error": {
+          "H": 0.08624268879833746,
+          "D": 0.012841546230332568,
+          "A": 0.06460914152383505
+        }
+      },
+      "climatology": {
+        "metrics": {
+          "matches": 364,
+          "log_loss": 1.0786330757887985,
+          "brier_score": 0.6533827730027483,
+          "ranked_probability_score": 0.23289395640464028,
+          "accuracy": 0.4258241758241758
+        },
+        "calibration_error": {
+          "H": 0.03130776396572782,
+          "D": 0.0025823566627620753,
+          "A": 0.033890120628489895
+        }
+      },
+      "market": {
+        "metrics": {
+          "matches": 361,
+          "log_loss": 0.9252152677138756,
+          "brier_score": 0.5449117204883149,
+          "ranked_probability_score": 0.18041772204268522,
+          "accuracy": 0.554016620498615
+        },
+        "calibration_error": {
+          "H": 0.053435527423777766,
+          "D": 0.020619669139020705,
+          "A": 0.06285558615422525
+        }
+      },
+      "production_on_market_subset": {
+        "metrics": {
+          "matches": 361,
+          "log_loss": 1.0001276812746511,
+          "brier_score": 0.5961220904367943,
+          "ranked_probability_score": 0.2043921591557027,
+          "accuracy": 0.5346260387811634
+        },
+        "calibration_error": {
+          "H": 0.08607428041954691,
+          "D": 0.01071869492966393,
+          "A": 0.06998369791808962
+        }
+      }
+    }
+  },
+  "same_day_and_payload": {
+    "same_day": {
+      "future_kickoff": "2026-10-14 23:59:00+00:00",
+      "history_latest": "2026-10-14",
+      "error": "fixture date must be after the latest locally recorded result"
+    },
+    "malformed_api_football": {
+      "type": "AttributeError",
+      "message": "'list' object has no attribute 'get'"
+    }
+  },
+  "live_benchmark_parity": {
+    "match": "Sunderland AFC vs West Ham United FC",
+    "date": "2025-08-16",
+    "live_engine_probs": [
+      0.2432245844268372,
+      0.24865470816385613,
+      0.5081207074093066
+    ],
+    "historical_benchmark_probs": [
+      0.3297092420610769,
+      0.2656740140962229,
+      0.40461674384270013
+    ],
+    "live_home_elo": 1452.6017280719002,
+    "benchmark_home_elo": 1499.8436417833777,
+    "live_home_form_matches": 5,
+    "benchmark_home_form_matches": 0.0,
+    "live_policy": "elo_poisson_25_75"
+  },
+  "refresh_actions": {
+    "runs": [
+      {
+        "id": 38427415627,
+        "date": "2026-10-13",
+        "conclusion": "failure"
+      },
+      {
+        "id": 37485887201,
+        "date": "2026-10-06",
+        "conclusion": "failure"
+      }
+    ],
+    "error": "Unable to resolve action astral-sh/setup-uv@v10, unable to find version v10"
+  }
+}

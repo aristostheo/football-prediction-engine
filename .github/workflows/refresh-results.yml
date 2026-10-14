@@ -1,6 +1,13 @@
 name: Refresh historical results
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/refresh-results.yml
+      - src/football_predictor/ingestion.py
+      - src/football_predictor/team_names.py
+      - src/football_predictor/data_status.py
   schedule:
     - cron: "17 8 * * 2"
   workflow_dispatch:
@@ -21,7 +28,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           enable-cache: false
 
@@ -30,6 +37,10 @@ jobs:
 
       - name: Refresh and validate results
         run: uv run python -m football_predictor --refresh
+
+      - name: Report actual results coverage
+        if: always()
+        run: uv run python -m football_predictor --check-data | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Verify ingestion tests
         run: uv run pytest tests/test_ingestion.py -q

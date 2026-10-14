@@ -115,3 +115,22 @@ def test_resolver_supports_old_only_history_and_refuses_ambiguous_fallback() -> 
     league = Competition.PREMIER_LEAGUE
     assert resolve_team_name("Man Utd", league, {"Manchester United"}) == "Manchester United"
     assert resolve_team_name("Example", league, {"Example FC", "Example AFC"}) == "Example"
+
+
+@pytest.mark.parametrize(
+    ("competition", "old", "current"),
+    [
+        (Competition.BUNDESLIGA, "Bayern München", "FC Bayern München"),
+        (Competition.BUNDESLIGA, "Bor. Mönchengladbach", "Borussia Mönchengladbach"),
+        (Competition.BUNDESLIGA, "1899 Hoffenheim", "TSG 1899 Hoffenheim"),
+        (Competition.BUNDESLIGA, "Werder Bremen", "SV Werder Bremen"),
+        (Competition.LA_LIGA, "RC Celta", "RC Celta de Vigo"),
+        (Competition.LA_LIGA, "CD Alavés", "Deportivo Alavés"),
+        (Competition.LIGUE_1, "RC Lens", "Racing Club de Lens"),
+        (Competition.PRIMEIRA_LIGA, "SL Benfica", "Sport Lisboa e Benfica"),
+        (Competition.SERIE_A, "Lazio Roma", "SS Lazio"),
+    ],
+)
+def test_archive_and_current_labels_share_one_club_identity(competition, old, current) -> None:
+    assert canonical_team_name(old, competition) == current
+    assert canonical_team_name(current, competition) == current

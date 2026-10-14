@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from collections.abc import Iterable, Mapping
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import date
 from math import nan
 
 import pandas as pd
+
+from football_predictor.dataset import canonicalize_match_labels
 
 
 @dataclass(frozen=True)
@@ -74,7 +77,7 @@ def build_pre_match_features_and_states(
     if config.elo_gap_half_life_days <= 0:
         raise ValueError("Elo gap half-life must be positive")
 
-    ordered = matches.copy()
+    ordered = canonicalize_match_labels(matches)
     ordered["match_date"] = pd.to_datetime(ordered["match_date"], format="ISO8601")
     ordered = ordered.sort_values(
         ["competition", "match_date", "home_team", "away_team"], kind="stable"
@@ -134,10 +137,12 @@ def build_future_fixture_features(
 ) -> pd.DataFrame:
     """Build one future row from cached team states without replaying match history."""
     try:
-        home_state = final_states[(competition, home_team)]
-        away_state = final_states[(competition, away_team)]
+        home_state = deepcopy(final_states[(competition, home_team)])
+        away_state = deepcopy(final_states[(competition, away_team)])
     except KeyError as error:
         raise ValueError(f"team state is unavailable for {error.args[0][1]}") from error
+    _prepare_state_after_gap(home_state, match_date, config)
+    _prepare_state_after_gap(away_state, match_date, config)
     return pd.DataFrame(
         [
             _feature_row(

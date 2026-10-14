@@ -4,8 +4,19 @@ from collections.abc import Iterable
 
 import pandas as pd
 
-from football_predictor.domain import HistoricalMatch
+from football_predictor.domain import Competition, HistoricalMatch
+from football_predictor.team_names import canonical_team_name
 from football_predictor.validation import validate_match_collection
+
+
+def canonicalize_match_labels(matches: pd.DataFrame) -> pd.DataFrame:
+    normalized = matches.copy()
+    for side in ("home_team", "away_team"):
+        normalized[side] = [
+            canonical_team_name(str(name), Competition(competition))
+            for name, competition in zip(matches[side], matches["competition"], strict=True)
+        ]
+    return normalized
 
 
 def build_match_dataframe(matches: Iterable[HistoricalMatch]) -> pd.DataFrame:

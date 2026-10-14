@@ -9,10 +9,39 @@ import pytest
 from football_predictor.domain import Competition
 from football_predictor.ingestion import (
     OpenFootballFile,
+    _check_refresh_regressions,
     initial_openfootball_files,
     parse_openfootball_files,
     refresh_openfootball_dataset,
 )
+
+
+def test_refresh_name_migration_keeps_removal_guard_and_rejects_alias_collisions() -> None:
+    previous = pd.DataFrame(
+        [
+            {
+                "competition": "bundesliga",
+                "season": "2024-25",
+                "match_date": "2025-02-01",
+                "home_team": "Bayern München",
+                "away_team": "Bayer Leverkusen",
+                "home_goals": 2,
+                "away_goals": 0,
+            }
+        ]
+    )
+    renamed = previous.assign(home_team="FC Bayern München", away_team="Bayer 04 Leverkusen")
+    assert _check_refresh_regressions(previous, renamed, allow_removed_matches=False) == {
+        "added_matches": 0,
+        "corrected_scores": 0,
+        "removed_matches": 0,
+    }
+    with pytest.raises(ValueError, match="duplicate fixture identities"):
+        _check_refresh_regressions(
+            pd.concat([previous, renamed], ignore_index=True),
+            renamed,
+            allow_removed_matches=False,
+        )
 
 
 def test_parse_openfootball_files_keeps_per_file_provenance(tmp_path: Path) -> None:
@@ -51,9 +80,9 @@ def test_openfootball_sources_follow_the_current_season() -> None:
     premier_league_current = [
         item for item in files if item.competition is Competition.PREMIER_LEAGUE
     ][-1]
-    greek_current = [
-        item for item in files if item.competition is Competition.SUPER_LEAGUE_GREECE
-    ][-1]
+    greek_current = [item for item in files if item.competition is Competition.SUPER_LEAGUE_GREECE][
+        -1
+    ]
     assert premier_league_current.season == "2026-27"
     assert greek_current.season == "2026-27"
 
@@ -81,7 +110,8 @@ def test_additional_leagues_have_reproducible_current_and_historical_sources() -
         assert league_files[-1].expected_matches_per_team is None
 
     france_2019 = next(
-        item for item in files
+        item
+        for item in files
         if item.competition is Competition.LIGUE_1 and item.season == "2019-20"
     )
     assert france_2019.expected_matches_per_team is None
@@ -114,9 +144,10 @@ def test_refresh_writes_a_checksummed_dataset_and_reports_changes(tmp_path: Path
     assert report["added_matches"] == 1
     assert report["corrected_scores"] == 0
     assert manifest["dataset_sha256"] == hashlib.sha256(output_path.read_bytes()).hexdigest()
-    assert manifest["sources"][0]["source_sha256"] == hashlib.sha256(
-        source_text.encode("utf-8")
-    ).hexdigest()
+    assert (
+        manifest["sources"][0]["source_sha256"]
+        == hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+    )
 
 
 def test_refresh_keeps_dataset_bytes_when_only_provenance_changes(tmp_path: Path) -> None:
@@ -152,10 +183,12 @@ def test_refresh_keeps_dataset_bytes_when_only_provenance_changes(tmp_path: Path
         output_path=output_path,
         manifest_path=manifest_path,
         source_files=[source],
-        fetch_text=lambda _: """▪ Matchday 1
+        fetch_text=lambda _: (
+            """▪ Matchday 1
   Sat Sep 19 2026
     Team A v Team B 2-0
-""",
+"""
+        ),
     )
 
     assert report["added_matches"] == 0
@@ -213,10 +246,12 @@ def test_refresh_refuses_to_remove_existing_matches_without_replacing_files(
             output_path=output_path,
             manifest_path=manifest_path,
             source_files=[source],
-            fetch_text=lambda _: """▪ Matchday 1
+            fetch_text=lambda _: (
+                """▪ Matchday 1
   Sat Sep 19 2026
     Team A v Team B 1-0
-""",
+"""
+            ),
         )
 
     assert output_path.read_bytes() == before

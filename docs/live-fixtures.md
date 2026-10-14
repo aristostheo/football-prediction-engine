@@ -123,9 +123,12 @@ the market snapshot has its own timestamp.
 ## Freshness guardrail
 
 The response always reports `history_through` and `history_age_days`. The
-service deliberately refuses to back-predict a date at or before the local
-history's latest recorded match, preventing future information from entering a
-historical prediction. Fixture discovery requires a live-provider key, while a
+service refuses dates before the local history's latest recorded match. If a
+future kickoff falls on that latest date, a cached earlier-day engine excludes
+all results from the target day from features, model fitting and outcome priors.
+This lets later same-day fixtures work without using earlier same-day results
+whose availability cannot be reconstructed from date-only history. Past kickoffs
+remain rejected. Fixture discovery requires a live-provider key, while a
 prediction only needs the local historical dataset. The predictor resolves
 registered provider labels and club aliases. A registered club with no results
 gets a 1400 Elo starting prior, and its probabilities are shrunk halfway toward

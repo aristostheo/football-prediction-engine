@@ -6,10 +6,12 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from math import exp
 from pathlib import Path
+from threading import Lock
 
 import pandas as pd
 from threadpoolctl import threadpool_limits
 
+from football_predictor.dataset import canonicalize_match_labels
 from football_predictor.domain import Competition
 from football_predictor.evaluation import add_elo_probabilities
 from football_predictor.features import (
@@ -24,10 +26,13 @@ from football_predictor.models import (
     _outcome_probabilities_from_goal_rates,
     blend_probabilities,
 )
+from football_predictor.policy import (
+    PROMOTED_TEAM_MODEL_WEIGHT,
+    PROMOTED_TEAM_START_ELO,
+    shrink_to_prior,
+    smoothed_outcome_prior,
+)
 from football_predictor.team_names import is_registered_team, resolve_team_name
-
-PROMOTED_TEAM_START_ELO = 1400.0
-PROMOTED_TEAM_MODEL_WEIGHT = 0.5
 
 
 @dataclass(frozen=True)
@@ -108,7 +113,7 @@ class PredictionComponents:
 
 
 class PredictionEngine:
-    """Build on the entire available history and predict strictly after it."""
+    """Predict from completed earlier days, excluding same-day results when needed."""
 
     def __init__(self, historical_matches: pd.DataFrame) -> None:
         required = {
@@ -124,8 +129,10 @@ class PredictionEngine:
         missing = required.difference(historical_matches.columns)
         if missing:
             raise ValueError(f"missing historical columns: {sorted(missing)}")
-        self._history = historical_matches.copy()
+        self._history = canonicalize_match_labels(historical_matches)
         self._history["match_date"] = pd.to_datetime(self._history["match_date"]).dt.date
+        self._prior_day_engines: dict[str, PredictionEngine] = {}
+        self._prior_day_lock = Lock()
         self._result_lookup = {
             (str(row.competition), row.match_date, str(row.home_team), str(row.away_team)): str(
                 row.result
@@ -141,7 +148,7 @@ class PredictionEngine:
         }
         self._features, self._final_states = build_pre_match_features_and_states(self._history)
         self._outcome_priors = {
-            competition: _smoothed_outcome_prior(matches["result"])
+            competition: smoothed_outcome_prior(matches["result"])
             for competition, matches in self._history.groupby("competition", sort=False)
         }
         with threadpool_limits(limits=1):
@@ -163,7 +170,7 @@ class PredictionEngine:
         if history.empty:
             raise ValueError(f"no historical matches for {competition}")
         history_through = self.latest_result_date(fixture.competition)
-        if fixture.kickoff_date <= history_through:
+        if fixture.kickoff_date < history_through:
             raise ValueError("fixture date must be after the latest locally recorded result")
         forecasted_at = datetime.now(UTC)
         if fixture.kickoff_at is not None:
@@ -171,6 +178,20 @@ class PredictionEngine:
                 raise ValueError("kickoff_at must include a timezone offset")
             if fixture.kickoff_at <= forecasted_at:
                 raise ValueError("cannot create a prospective forecast after kickoff")
+        if fixture.kickoff_date == history_through:
+            if fixture.kickoff_at is None and fixture.kickoff_date < forecasted_at.date():
+                raise ValueError("fixture date must be after the latest locally recorded result")
+            # Date-only result data cannot establish within-day availability.
+            # Exclude the whole target day from state, model fitting and priors.
+            with self._prior_day_lock:
+                prior_engine = self._prior_day_engines.get(competition)
+                if prior_engine is None:
+                    prior_history = history[history["match_date"] < fixture.kickoff_date]
+                    if prior_history.empty:
+                        raise ValueError("no historical matches available before this kickoff date")
+                    prior_engine = PredictionEngine(prior_history)
+                    self._prior_day_engines[competition] = prior_engine
+            return prior_engine.predict(fixture)
         known_teams = set(history["home_team"]) | set(history["away_team"])
         canonical_fixture = FixtureToPredict(
             competition=fixture.competition,
@@ -273,7 +294,7 @@ class PredictionEngine:
                 prior["p_away_win"],
             )
             base_model_weight = PROMOTED_TEAM_MODEL_WEIGHT
-            probabilities = _shrink_to_prior(
+            probabilities = shrink_to_prior(
                 probabilities,
                 prior,
                 model_weight=base_model_weight,
@@ -449,24 +470,3 @@ def _probability_tuple(values: pd.Series) -> tuple[float, float, float]:
         float(values["p_draw"]),
         float(values["p_away_win"]),
     )
-
-
-def _smoothed_outcome_prior(results: pd.Series) -> dict[str, float]:
-    counts = results.value_counts()
-    denominator = len(results) + 3
-    return {
-        "p_home_win": float((counts.get("H", 0) + 1) / denominator),
-        "p_draw": float((counts.get("D", 0) + 1) / denominator),
-        "p_away_win": float((counts.get("A", 0) + 1) / denominator),
-    }
-
-
-def _shrink_to_prior(
-    probabilities: pd.DataFrame, prior: dict[str, float], *, model_weight: float
-) -> pd.DataFrame:
-    adjusted = probabilities.copy()
-    for column, prior_probability in prior.items():
-        adjusted[column] = (
-            model_weight * adjusted[column].to_numpy() + (1 - model_weight) * prior_probability
-        )
-    return adjusted

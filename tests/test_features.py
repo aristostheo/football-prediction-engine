@@ -1,9 +1,16 @@
+from copy import deepcopy
+from datetime import date
 from math import isnan
 
 import pandas as pd
 import pytest
 
-from football_predictor.features import FeatureConfig, build_pre_match_features
+from football_predictor.features import (
+    FeatureConfig,
+    build_future_fixture_features,
+    build_pre_match_features,
+    build_pre_match_features_and_states,
+)
 
 
 def _matches() -> pd.DataFrame:
@@ -95,3 +102,32 @@ def test_changing_a_result_cannot_change_same_day_features() -> None:
         changed_features.loc[:1, feature_columns],
     )
     assert baseline_features.loc[2, "home_elo"] != changed_features.loc[2, "home_elo"]
+
+
+@pytest.mark.parametrize("target", [date(2024, 8, 17), date(2026, 10, 1)])
+def test_future_features_match_historical_replay_without_mutating_cached_states(target) -> None:
+    prefix = _matches().iloc[:2].copy()
+    _, states = build_pre_match_features_and_states(prefix)
+    original_states = deepcopy(states)
+    fixture = _matches().iloc[[-1]].copy()
+    fixture["match_date"] = target.isoformat()
+    replay = build_pre_match_features(pd.concat([prefix, fixture], ignore_index=True))
+    actual = build_future_fixture_features(
+        competition="premier_league",
+        match_date=target,
+        home_team="Alpha",
+        away_team="Charlie",
+        final_states=states,
+    )
+    pd.testing.assert_frame_equal(
+        actual, replay[list(actual.columns)].iloc[[-1]].reset_index(drop=True)
+    )
+    assert states == original_states
+    repeated = build_future_fixture_features(
+        competition="premier_league",
+        match_date=target,
+        home_team="Alpha",
+        away_team="Charlie",
+        final_states=states,
+    )
+    pd.testing.assert_frame_equal(actual, repeated)

@@ -196,45 +196,172 @@ TEAM_ALIASES: dict[Competition, dict[str, tuple[str, ...]]] = {
     },
 }
 
+
+def _register_historical_labels(
+    competition: Competition, labels: dict[str, tuple[str, ...]]
+) -> None:
+    for label, aliases in labels.items():
+        TEAM_ALIASES[competition].setdefault(label, aliases)
+
+
 # Keep every historical canonical label registered, including clubs that have
 # since left the top division. These entries intentionally add no guessed
 # aliases; known live-provider variants are listed explicitly above.
-TEAM_ALIASES[Competition.BUNDESLIGA].update({
-    "1. FC Heidenheim 1846": (), "1. FC Nürnberg": (), "1899 Hoffenheim": (),
-    "Arminia Bielefeld": (), "Bor. Mönchengladbach": (), "Borussia M'gladbach": (),
-    "FC St. Pauli 1910": (), "Fortuna Düsseldorf": (), "Hannover 96": (),
-    "Heidenheim": (), "Hertha BSC": (), "Holstein Kiel": (), "SC Paderborn 07": (),
-    "SV 07 Elversberg": (), "SV Darmstadt 98": (), "SpVgg Greuther Fürth 1903": (),
-    "St. Pauli": (), "VfL Bochum 1848": (), "VfL Wolfsburg": (), "Wolfsburg": (),
-})
-TEAM_ALIASES[Competition.LA_LIGA].update({
-    "CD Alavés": (), "CD Leganés": (), "Cádiz CF": (), "Espanyol Barcelona": (),
-    "Girona FC": (), "Granada CF": (), "Málaga CF": (), "RC Celta": (),
-    "RC Deportivo La Coruña": (), "RCD Mallorca": (), "Real Oviedo": (),
-    "Real Racing Club de Santander": (), "Real Valladolid": (),
-    "SD Eibar": (), "SD Huesca": (), "UD Almería": (), "UD Las Palmas": (),
-})
-TEAM_ALIASES[Competition.LIGUE_1].update({
-    "AC Ajaccio": (), "AS Saint-Étienne": (), "Amiens SC": (), "Clermont Foot 63": (),
-    "Dijon FCO": (), "EA Guingamp": (), "ES Troyes AC": (), "ESTAC Troyes": (),
-    "FC Metz": (), "FC Nantes": (), "Girondins Bordeaux": (), "Le Mans FC": (),
-    "Montpellier HSC": (), "Nîmes Olympique": (), "Olympique Marseille": (),
-    "RC Lens": (), "RC Strasbourg": (), "SM Caen": (), "Stade Brestois": (),
-    "Stade Rennais": (), "Stade de Reims": (),
-})
-TEAM_ALIASES[Competition.PRIMEIRA_LIGA].update({
-    "AVS": (), "Belenenses SAD": (), "Boavista": (),
-    "CD Aves": (), "CD Feirense": (), "CD Tondela": (), "FC Vizela": (),
-    "GD Chaves": (), "GD Estoril": (), "Paços de Ferreira": (),
-    "Portimonense SC": (), "SC Farense": (), "SL Benfica": (), "Vitória Setúbal": (),
-})
-TEAM_ALIASES[Competition.SERIE_A].update({
-    "Benevento Calcio": (), "Brescia Calcio": (), "Chievo Verona": (), "Cremonese": (),
-    "Empoli FC": (), "FC Crotone": (), "Frosinone Calcio": (), "Hellas Verona": (),
-    "Lazio Roma": (), "Pisa": (), "SPAL 2013 Ferrara": (),
-    "Sampdoria": (), "Sassuolo Calcio": (), "Spezia Calcio": (), "UC Sampdoria": (),
-    "US Cremonese": (), "US Salernitana 1919": (),
-})
+_register_historical_labels(
+    Competition.BUNDESLIGA,
+    {
+        "1. FC Heidenheim 1846": (),
+        "1. FC Nürnberg": (),
+        "1899 Hoffenheim": (),
+        "Arminia Bielefeld": (),
+        "Bor. Mönchengladbach": (),
+        "Borussia M'gladbach": (),
+        "FC St. Pauli 1910": (),
+        "Fortuna Düsseldorf": (),
+        "Hannover 96": (),
+        "Heidenheim": (),
+        "Hertha BSC": (),
+        "Holstein Kiel": (),
+        "SC Paderborn 07": (),
+        "SV 07 Elversberg": (),
+        "SV Darmstadt 98": (),
+        "SpVgg Greuther Fürth 1903": (),
+        "St. Pauli": (),
+        "VfL Bochum 1848": (),
+        "VfL Wolfsburg": (),
+        "Wolfsburg": (),
+    },
+)
+_register_historical_labels(
+    Competition.LA_LIGA,
+    {
+        "CD Alavés": (),
+        "CD Leganés": (),
+        "Cádiz CF": (),
+        "Espanyol Barcelona": (),
+        "Girona FC": (),
+        "Granada CF": (),
+        "Málaga CF": (),
+        "RC Celta": (),
+        "RC Deportivo La Coruña": (),
+        "RCD Mallorca": (),
+        "Real Oviedo": (),
+        "Real Racing Club de Santander": (),
+        "Real Valladolid": (),
+        "SD Eibar": (),
+        "SD Huesca": (),
+        "UD Almería": (),
+        "UD Las Palmas": (),
+    },
+)
+_register_historical_labels(
+    Competition.LIGUE_1,
+    {
+        "AC Ajaccio": (),
+        "AS Saint-Étienne": (),
+        "Amiens SC": (),
+        "Clermont Foot 63": (),
+        "Dijon FCO": (),
+        "EA Guingamp": (),
+        "ES Troyes AC": (),
+        "ESTAC Troyes": (),
+        "FC Metz": (),
+        "FC Nantes": (),
+        "Girondins Bordeaux": (),
+        "Le Mans FC": (),
+        "Montpellier HSC": (),
+        "Nîmes Olympique": (),
+        "Olympique Marseille": (),
+        "RC Lens": (),
+        "RC Strasbourg": (),
+        "SM Caen": (),
+        "Stade Brestois": (),
+        "Stade Rennais": (),
+        "Stade de Reims": (),
+    },
+)
+_register_historical_labels(
+    Competition.PRIMEIRA_LIGA,
+    {
+        "AVS": (),
+        "Belenenses SAD": (),
+        "Boavista": (),
+        "CD Aves": (),
+        "CD Feirense": (),
+        "CD Tondela": (),
+        "FC Vizela": (),
+        "GD Chaves": (),
+        "GD Estoril": (),
+        "Paços de Ferreira": (),
+        "Portimonense SC": (),
+        "SC Farense": (),
+        "SL Benfica": (),
+        "Vitória Setúbal": (),
+    },
+)
+_register_historical_labels(
+    Competition.SERIE_A,
+    {
+        "Benevento Calcio": (),
+        "Brescia Calcio": (),
+        "Chievo Verona": (),
+        "Cremonese": (),
+        "Empoli FC": (),
+        "FC Crotone": (),
+        "Frosinone Calcio": (),
+        "Hellas Verona": (),
+        "Lazio Roma": (),
+        "Pisa": (),
+        "SPAL 2013 Ferrara": (),
+        "Sampdoria": (),
+        "Sassuolo Calcio": (),
+        "Spezia Calcio": (),
+        "UC Sampdoria": (),
+        "US Cremonese": (),
+        "US Salernitana 1919": (),
+    },
+)
+
+# Explicit same-club labels, not fuzzy matches: preserve one rating/form stream
+# when archives and current providers use different names for the same club.
+_HISTORICAL_CLUB_IDENTITIES = {
+    Competition.BUNDESLIGA: {
+        "Borussia Mönchengladbach": ("Bor. Mönchengladbach", "Borussia M'gladbach"),
+        "TSG 1899 Hoffenheim": ("1899 Hoffenheim",),
+        "1. FC Heidenheim 1846": ("Heidenheim",),
+        "FC St. Pauli 1910": ("St. Pauli",),
+        "VfL Wolfsburg": ("Wolfsburg",),
+    },
+    Competition.LA_LIGA: {
+        "Deportivo Alavés": ("CD Alavés",),
+        "RCD Espanyol de Barcelona": ("Espanyol Barcelona",),
+        "RC Celta de Vigo": ("RC Celta",),
+    },
+    Competition.LIGUE_1: {
+        "Olympique de Marseille": ("Olympique Marseille",),
+        "Racing Club de Lens": ("RC Lens",),
+        "RC Strasbourg Alsace": ("RC Strasbourg",),
+        "Stade Brestois 29": ("Stade Brestois",),
+        "Stade Rennais FC 1901": ("Stade Rennais",),
+        "ESTAC Troyes": ("ES Troyes AC",),
+    },
+    Competition.PRIMEIRA_LIGA: {
+        "Sport Lisboa e Benfica": ("SL Benfica",),
+        "GD Estoril Praia": ("GD Estoril",),
+    },
+    Competition.SERIE_A: {
+        "SS Lazio": ("Lazio Roma",),
+        "US Sassuolo Calcio": ("Sassuolo Calcio",),
+        "UC Sampdoria": ("Sampdoria",),
+        "US Cremonese": ("Cremonese",),
+    },
+}
+for _competition, _clubs in _HISTORICAL_CLUB_IDENTITIES.items():
+    for _canonical, _labels in _clubs.items():
+        _aliases = TEAM_ALIASES[_competition].get(_canonical, ())
+        for _label in _labels:
+            TEAM_ALIASES[_competition].pop(_label, None)
+        TEAM_ALIASES[_competition][_canonical] = tuple(dict.fromkeys((*_aliases, *_labels)))
 
 
 def _identity(name: str) -> str:

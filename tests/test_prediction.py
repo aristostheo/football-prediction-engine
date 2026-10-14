@@ -453,3 +453,104 @@ def test_live_form_and_scoreline_rates_are_real_model_outputs(
     assert response.components.scoreline_home_goal_rate > 0
     assert response.components.scoreline_away_goal_rate > 0
     assert response.components.top_scorelines
+
+
+def test_returning_team_forecast_matches_real_historical_replay(prediction_engine) -> None:
+    from threadpoolctl import threadpool_limits
+
+    from football_predictor.market import _deployed_model_probabilities
+
+    competition = Competition.PREMIER_LEAGUE
+    history = prediction_engine._history
+    target = prediction_engine._features[
+        (prediction_engine._features["competition"] == competition.value)
+        & (prediction_engine._features["season"] == "2025-26")
+        & prediction_engine._features["home_team"].str.contains("Sunderland")
+    ].iloc[[0]]
+    row = target.iloc[0]
+    target_date = pd.Timestamp(row.match_date).date()
+    prefix = history[
+        (history["competition"] == competition.value) & (history["match_date"] < target_date)
+    ]
+    engine = PredictionEngine(prefix)
+    forecast = engine.predict(
+        FixtureToPredict(
+            competition=competition,
+            kickoff_date=target_date,
+            home_team=row.home_team,
+            away_team=row.away_team,
+        )
+    )
+    assert forecast.context.home_elo == pytest.approx(row.home_elo)
+    assert forecast.context.home_form_matches == row.home_matches_played == 0
+    with threadpool_limits(limits=1):
+        replay = _deployed_model_probabilities(engine._features, target, competition.value)
+    assert forecast.model_probabilities == pytest.approx(
+        tuple(replay.iloc[0][["p_home_win", "p_draw", "p_away_win"]])
+    )
+
+
+def test_same_day_forecast_excludes_results_from_state_training_and_priors(prediction_engine):
+    competition = Competition.SUPER_LEAGUE_GREECE
+    history = prediction_engine._history
+    sample = history[history["competition"] == competition.value].tail(80).copy()
+    kickoff = datetime.now(UTC) + timedelta(hours=2)
+    sample.iloc[-1, sample.columns.get_loc("match_date")] = kickoff.date()
+    row = sample.iloc[-1]
+    fixture = FixtureToPredict(
+        competition=competition,
+        kickoff_date=kickoff.date(),
+        kickoff_at=kickoff,
+        home_team=row.home_team,
+        away_team=row.away_team,
+    )
+    prefix = sample[sample["match_date"] < kickoff.date()]
+    expected = PredictionEngine(prefix).predict(fixture)
+    engine = PredictionEngine(sample)
+    before_states = repr(engine._final_states)
+    actual = engine.predict(fixture)
+    child = engine._prior_day_engines[competition.value]
+    again = engine.predict(fixture)
+    assert engine._prior_day_engines[competition.value] is child
+    assert repr(engine._final_states) == before_states
+    assert actual.model_probabilities == pytest.approx(expected.model_probabilities)
+    assert again.model_probabilities == pytest.approx(expected.model_probabilities)
+    assert actual.context == expected.context
+    assert actual.components == expected.components
+    assert actual.history_through == prefix["match_date"].max()
+    assert child._history["match_date"].max() < kickoff.date()
+    sample.iloc[-1, sample.columns.get_loc("home_goals")] = 9
+    sample.iloc[-1, sample.columns.get_loc("away_goals")] = 0
+    sample.iloc[-1, sample.columns.get_loc("result")] = "H"
+    mutated = PredictionEngine(sample).predict(fixture)
+    assert mutated.model_probabilities == pytest.approx(expected.model_probabilities)
+    assert mutated.context == expected.context
+    assert mutated.components == expected.components
+
+
+def test_unseen_team_prior_matches_benchmark_replay(prediction_engine):
+    from football_predictor.features import build_pre_match_features
+    from football_predictor.market import _deployed_model_probabilities
+
+    competition = Competition.SUPER_LEAGUE_GREECE
+    history = prediction_engine._history
+    prefix = history[history["competition"] == competition.value].iloc[:50].copy()
+    engine = PredictionEngine(prefix)
+    target = prefix.iloc[[-1]].copy()
+    target["match_date"] = prefix["match_date"].max() + timedelta(days=7)
+    target["home_team"] = "Kalamata"
+    target["away_team"] = "Olympiakos Piraeus"
+    fixture = FixtureToPredict(
+        competition=competition,
+        kickoff_date=target.iloc[0].match_date,
+        home_team="Kalamata",
+        away_team="Olympiakos Piraeus",
+    )
+    forecast = engine.predict(fixture)
+    features = build_pre_match_features(pd.concat([prefix, target], ignore_index=True)).iloc[[-1]]
+    replay = _deployed_model_probabilities(engine._features, features, competition.value)
+    assert forecast.context.home_elo == 1400
+    assert forecast.model_policy.endswith("_promoted_prior")
+    assert forecast.model_probabilities == pytest.approx(
+        tuple(replay.iloc[0][["p_home_win", "p_draw", "p_away_win"]])
+    )

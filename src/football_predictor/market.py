@@ -12,6 +12,7 @@ import pandas as pd
 from threadpoolctl import threadpool_limits
 
 from football_predictor.domain import Competition
+from football_predictor.features import FeatureConfig
 from football_predictor.models import (
     FEATURE_COLUMNS,
     ModelScore,
@@ -24,6 +25,12 @@ from football_predictor.models import (
     _score,
     add_elo_probabilities,
     blend_probabilities,
+)
+from football_predictor.policy import (
+    PROMOTED_TEAM_MODEL_WEIGHT,
+    PROMOTED_TEAM_START_ELO,
+    shrink_to_prior,
+    smoothed_outcome_prior,
 )
 from football_predictor.team_names import canonical_team_name
 
@@ -138,15 +145,11 @@ def prepare_market_odds(odds: pd.DataFrame) -> pd.DataFrame:
     ).dt.normalize()
     prepared["home_team"] = [
         canonical_team_name(str(name), Competition(competition))
-        for name, competition in zip(
-            prepared["home_team"], prepared["competition"], strict=True
-        )
+        for name, competition in zip(prepared["home_team"], prepared["competition"], strict=True)
     ]
     prepared["away_team"] = [
         canonical_team_name(str(name), Competition(competition))
-        for name, competition in zip(
-            prepared["away_team"], prepared["competition"], strict=True
-        )
+        for name, competition in zip(prepared["away_team"], prepared["competition"], strict=True)
     ]
     for column in ODDS_COLUMNS:
         prepared[column] = pd.to_numeric(prepared[column], errors="coerce")
@@ -200,9 +203,7 @@ def blend_market_probabilities(
     )
 
 
-def select_market_weight(
-    prior_predictions: pd.DataFrame, *, step: float = 0.01
-) -> float:
+def select_market_weight(prior_predictions: pd.DataFrame, *, step: float = 0.01) -> float:
     """Select a market share from prior out-of-fold forecasts using log loss."""
     required = {
         "result",
@@ -340,9 +341,7 @@ def compare_market_assisted_walk_forward(
             test_oof = oof[(oof["competition"] == competition) & (oof["season"] == season)]
             if test_oof.empty:
                 continue
-            cutoff = comp_features.loc[
-                comp_features["season"] == season, "match_date"
-            ].min()
+            cutoff = comp_features.loc[comp_features["season"] == season, "match_date"].min()
             prior = oof[oof["match_date"] < cutoff].copy()
             prior_seasons = tuple(
                 f"{row.competition}:{row.season}"
@@ -350,20 +349,16 @@ def compare_market_assisted_walk_forward(
                 .drop_duplicates()
                 .itertuples(index=False)
             )
-            if (
-                len(prior) < minimum_tuning_matches
-                or len(prior_seasons) < minimum_tuning_seasons
-            ):
+            if len(prior) < minimum_tuning_matches or len(prior_seasons) < minimum_tuning_seasons:
                 continue
             weight = select_market_weight(prior)
             model_frame = _forecast_frame(test_oof, "model_")
             market_frame = _forecast_frame(test_oof, "market_")
             assist_frame = model_frame.copy()
             for column in PROBABILITY_COLUMNS:
-                assist_frame[column] = (
-                    (1.0 - weight) * model_frame[column].to_numpy()
-                    + weight * market_frame[column].to_numpy()
-                )
+                assist_frame[column] = (1.0 - weight) * model_frame[
+                    column
+                ].to_numpy() + weight * market_frame[column].to_numpy()
             scored_folds.append(
                 MarketAssistFoldScore(
                     season=season,
@@ -404,18 +399,44 @@ def compare_market_assisted_walk_forward(
 def _deployed_model_probabilities(
     train: pd.DataFrame, test: pd.DataFrame, competition: str
 ) -> pd.DataFrame:
-    elo = add_elo_probabilities(test)
+    prepared = test.copy()
+    known = set(train["home_team"]) | set(train["away_team"])
+    unseen = []
+    for side in ("home", "away"):
+        # A missing prior match date distinguishes first-ever appearances from
+        # form cleared after a gap. Later games in the test season have history,
+        # even if the fitted model's training window predates their promotion.
+        mask = (
+            ~prepared[f"{side}_team"].isin(known)
+            & prepared[f"{side}_days_since_last_match"].isna()
+            & prepared[f"{side}_matches_played"].eq(0)
+        )
+        prepared.loc[mask, f"{side}_elo"] = PROMOTED_TEAM_START_ELO
+        unseen.append(mask)
+    prepared["elo_difference"] = (
+        prepared["home_elo"] + FeatureConfig().elo_home_advantage - prepared["away_elo"]
+    )
+    elo = add_elo_probabilities(prepared)
     if competition != "premier_league":
-        return elo
-    poisson = _fit_predict_poisson(train, test)
-    return blend_probabilities(elo, poisson, elo_weight=0.25)
+        probabilities = elo
+    else:
+        poisson = _fit_predict_poisson(train, prepared)
+        probabilities = blend_probabilities(elo, poisson, elo_weight=0.25)
+    mask = unseen[0] | unseen[1]
+    if mask.any():
+        columns = list(PROBABILITY_COLUMNS)
+        adjusted = shrink_to_prior(
+            probabilities.loc[mask],
+            smoothed_outcome_prior(train["result"]),
+            model_weight=PROMOTED_TEAM_MODEL_WEIGHT,
+        )
+        probabilities.loc[mask, columns] = adjusted[columns].to_numpy()
+    return probabilities
 
 
 def _forecast_frame(source: pd.DataFrame, prefix: str) -> pd.DataFrame:
     frame = source[["result"]].copy()
-    for outcome, column in zip(
-        PROBABILITY_COLUMNS, ("home_win", "draw", "away_win"), strict=True
-    ):
+    for outcome, column in zip(PROBABILITY_COLUMNS, ("home_win", "draw", "away_win"), strict=True):
         frame[outcome] = source[f"{prefix}p_{column}"].to_numpy()
     return frame.rename(
         columns={
@@ -507,26 +528,20 @@ def compare_models_to_closing_market(
                 }
                 ensemble, _, _ = _fit_predict_ensemble(train, joined)
             fold["ensemble"] = _probability_view(ensemble)
-            by_season[season] = {
-                name: frame.assign(season=season) for name, frame in fold.items()
-            }
+            by_season[season] = {name: frame.assign(season=season) for name, frame in fold.items()}
 
         if not by_season:
             continue
         model_scores: dict[str, ModelScore] = {}
         for name in sorted(next(iter(by_season.values()))):
-            matched = pd.concat(
-                [fold[name] for fold in by_season.values()], ignore_index=True
-            )
+            matched = pd.concat([fold[name] for fold in by_season.values()], ignore_index=True)
             model_scores[name] = _score(matched)
         intervals = _paired_market_intervals(
             by_season,
             bootstrap_samples=bootstrap_samples,
             random_seed=random_seed,
         )
-        matched_matches = sum(
-            len(fold["closing_market"]) for fold in by_season.values()
-        )
+        matched_matches = sum(len(fold["closing_market"]) for fold in by_season.values())
         comparisons[str(competition)] = MarketBenchmarkComparison(
             tested_seasons=tuple(by_season),
             total_test_matches=total_test_matches,
@@ -550,10 +565,7 @@ def _paired_market_intervals(
 ) -> dict[str, dict[str, float]]:
     names = sorted(next(iter(by_season.values())))
     losses = {
-        season: {
-            name: _log_losses(frame)
-            for name, frame in predictions.items()
-        }
+        season: {name: _log_losses(frame) for name, frame in predictions.items()}
         for season, predictions in by_season.items()
     }
     rng = Random(random_seed)
