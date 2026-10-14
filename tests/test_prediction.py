@@ -554,3 +554,35 @@ def test_unseen_team_prior_matches_benchmark_replay(prediction_engine):
     assert forecast.model_probabilities == pytest.approx(
         tuple(replay.iloc[0][["p_home_win", "p_draw", "p_away_win"]])
     )
+
+
+@pytest.mark.parametrize(
+    ("competition", "home", "away", "expected"),
+    [
+        (Competition.BUNDESLIGA, "Elversberg", "Paderborn", "SV 07 Elversberg"),
+        (
+            Competition.LA_LIGA,
+            "Deportivo de La Coruña",
+            "Racing de Santander",
+            "RC Deportivo La Coruña",
+        ),
+        (Competition.LIGUE_1, "Troyes", "PSG", "ESTAC Troyes"),
+        (Competition.PRIMEIRA_LIGA, "Estrela", "Benfica", "CF Estrela da Amadora"),
+        (Competition.SERIE_A, "Frosinone", "Roma", "Frosinone Calcio"),
+    ],
+)
+def test_sync_short_names_predict_using_recorded_club_history(
+    prediction_engine, competition, home, away, expected
+):
+    prediction = prediction_engine.predict(
+        FixtureToPredict(
+            competition=competition,
+            kickoff_date=prediction_engine.latest_result_date(competition) + timedelta(days=1),
+            home_team=home,
+            away_team=away,
+        )
+    )
+    assert prediction.fixture.home_team == expected
+    assert prediction.model_policy == "elo"
+    assert prediction.context.home_form_matches > 0
+    assert sum(prediction.model_probabilities) == pytest.approx(1)

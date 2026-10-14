@@ -18,8 +18,8 @@ Then import using your existing Goal API key:
 GOAL_API_KEY='YOUR_GOAL_KEY' uv run python -m football_predictor.results_sync
 ```
 
-The default checks all seven leagues, starting two days before each league's
-latest stored result and ending yesterday in UTC. On the October 14 snapshot,
+The initial default catch-up checks all seven leagues, starting two days before
+each league's latest stored result and ending yesterday in UTC. On the October 14 snapshot,
 that is September 18 through October 13: 182 date queries and up to five league
 catalogue lookups. Extra pages also count against the **250-request hard cap**.
 The cap applies to new network requests in this run, not your account's total
@@ -130,3 +130,61 @@ names are not guessed. The previously failed version had no retry cache, so its
 immediate retries reuse the new cache. The user's log confirms 10 newer Premier
 League and seven newer Greek results were returned, but none was published by
 that failed run. Coverage remains pending a successful complete merge.
+
+The complete user retry reported seven more provider spellings. All map to
+clubs already present in the bundle; no new team histories or priors are added:
+
+| Provider label | Existing canonical identity |
+| --- | --- |
+| Elversberg | SV 07 Elversberg |
+| Paderborn | SC Paderborn 07 |
+| Deportivo de La Coruña | RC Deportivo La Coruña |
+| Racing de Santander / Racingde Santander | Real Racing Club de Santander |
+| Troyes | ESTAC Troyes |
+| Estrela | CF Estrela da Amadora |
+| Frosinone | Frosinone Calcio |
+
+Tests cover all aliases, exact historical identity, completed-result parsing,
+reserve-team rejection and serving predictions using the existing histories.
+These mappings do not change the model design. Retry within the one-hour cache
+window to reuse the 187 saved responses; expired entries are fetched again.
+
+Club identity references: [Elversberg](https://sv07elversberg.de/),
+[Paderborn](https://www.scp07.de/),
+[Deportivo](https://www.rcdeportivo.es/es/datos-generales),
+[Racing](https://www.realracingclub.es/el-club),
+[Troyes](https://www.estac.fr/),
+[Estrela](https://www.ligaportugal.pt/team/112/estrela-amadora/20262027),
+[Frosinone](https://www.frosinonecalcio.com/).
+
+
+## Daily quota control
+
+After a complete, validated sync, `data/local/results_sync_state.json` remembers
+the last checked date for each league. Subsequent default runs cover only dates
+since that checkpoint with a one-day overlap, plus unresolved unfinished games
+within the 60-day window. A normal next-day run checks three dates per league:
+21 league/date queries across all seven leagues, plus at most five catalogue
+lookups and extra pages. A same-day repeat normally checks 14 league/date pairs;
+within the one-hour cache window those responses can cost zero new API requests.
+A week without matches does not expand every daily run back to the last result.
+
+The checkpoint advances only after the full selected scope passes validation.
+An empty successful response advances checked dates but never changes the model's
+reported last result. Failed imports keep the checkpoint unchanged. If local
+history is removed or its league cutoff/count changes independently, a matching
+checkpoint is required before skipping dates; otherwise the importer falls back
+to a catch-up plan. `--since` explicitly requests a backfill and overrides the
+short routine window. This remains useful for provider results published more
+than a day late; checked dates are not proof of complete coverage.
+
+Run the sync after matchdays. Opening the dashboard does not invoke this importer.
+`--max-requests` caps new network calls in that run, including extra pages and
+catalogue queries; it cannot account for calls made by the dashboard or other
+clients on the same API key. The 1,000-request account allowance remains shared
+across those clients.
+
+Validation for the seven-alias and daily-quota update: the full 239-test backend
+suite passed, followed by 65 targeted checkpoint/import tests including an added
+failure test. That failure test confirms an unsuccessful CLI import cannot advance
+checked dates or publish a local snapshot. Backend lint and diff checks passed.

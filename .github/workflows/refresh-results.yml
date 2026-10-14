@@ -10,6 +10,7 @@ on:
       - src/football_predictor/data_status.py
       - src/football_predictor/results_sync.py
       - src/football_predictor/history_paths.py
+      - src/football_predictor/sync_checkpoint.py
   schedule:
     - cron: "17 8 * * 2"
   workflow_dispatch:
@@ -45,7 +46,7 @@ jobs:
         run: uv run python -m football_predictor --check-data | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Verify ingestion and sync tests
-        run: uv run pytest tests/test_ingestion.py tests/test_results_sync.py tests/test_data_status.py -q
+        run: uv run pytest tests/test_ingestion.py tests/test_results_sync.py tests/test_sync_checkpoint.py tests/test_data_status.py -q
 
       - name: Commit changed match data
         run: |

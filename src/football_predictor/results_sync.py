@@ -31,6 +31,7 @@ from football_predictor.live_fixtures import (
     _goal_api_fixture,
     _nonnegative_score,
 )
+from football_predictor.sync_checkpoint import checked_dates, read_checkpoint, write_checkpoint
 from football_predictor.team_names import canonical_team_name, is_registered_team
 from football_predictor.validation import validate_match_collection
 
@@ -303,6 +304,8 @@ def sync_plan(
     through: date,
     since: date | None = None,
     as_of: datetime | None = None,
+    checked_through: dict[Competition, date] | None = None,
+    pending_dates: dict[Competition, set[date]] | None = None,
 ) -> list[tuple[Competition, date]]:
     now = as_of or datetime.now(UTC)
     if through >= now.astimezone(UTC).date():
@@ -313,14 +316,23 @@ def sync_plan(
         if league.empty:
             raise ResultsSyncError(f"no baseline history for {competition.value}")
         latest = pd.to_datetime(league["match_date"]).max().date()
+        checked = (checked_through or {}).get(competition)
         start = since or latest - timedelta(days=2)
+        if since is None and checked is not None:
+            start = max(start, checked - timedelta(days=1))
         if start > through or (through - start).days >= 60:
             raise ResultsSyncError("sync range must contain between 1 and 60 days per league")
-        if start > latest + timedelta(days=1):
+        verified_through = max(latest, checked) if checked is not None else latest
+        if start > verified_through + timedelta(days=1):
             raise ResultsSyncError("sync range would skip dates after the latest recorded result")
-        plan.extend(
-            (competition, start + timedelta(days=i)) for i in range((through - start).days + 1)
-        )
+        days = {start + timedelta(days=i) for i in range((through - start).days + 1)}
+        if since is None:
+            days.update(
+                day
+                for day in (pending_dates or {}).get(competition, set())
+                if 0 <= (through - day).days < 60
+            )
+        plan.extend((competition, day) for day in sorted(days))
     return plan
 
 
@@ -370,6 +382,22 @@ def sync_results(
                 "date": day.isoformat(),
                 "fixtures": len(items),
                 "accepted": accepted,
+                "pending": any(
+                    str(item.get("matchStatus") or item.get("status") or "").upper()
+                    not in {
+                        "FINISHED",
+                        "FT",
+                        "AET",
+                        "PEN",
+                        "PENALTIES",
+                        "CANCELLED",
+                        "CANCELED",
+                        "POSTPONED",
+                        "ABANDONED",
+                        "AWARDED",
+                    }
+                    for item in items
+                ),
                 "payload_sha256": hashlib.sha256(
                     json.dumps(items, sort_keys=True).encode()
                 ).hexdigest(),
@@ -401,6 +429,7 @@ def sync_results(
             "written": False,
             "skipped": dict(skipped),
             "coverage": history_coverage(before, as_of=now.date()),
+            "date_queries": queries,
         }
     source = {
         "source_name": "Goal API",
@@ -429,6 +458,7 @@ def sync_results(
         "written": True,
         "skipped": dict(skipped),
         "coverage": history_coverage(merged, as_of=now.date()),
+        "date_queries": queries,
     }
 
 
@@ -454,7 +484,17 @@ def main() -> None:
         else:
             history = merge_history(history, history.iloc[:0])
         competitions = [Competition(x) for x in args.league] if args.league else list(Competition)
-        plan = sync_plan(history, competitions, through=args.through, since=args.since)
+        checkpoint_path = LOCAL_HISTORY.parent / "results_sync_state.json"
+        checkpoint = read_checkpoint(checkpoint_path)
+        cursors, pending = checked_dates(checkpoint, history, args.through)
+        plan = sync_plan(
+            history,
+            competitions,
+            through=args.through,
+            since=args.since,
+            checked_through=cursors,
+            pending_dates=pending,
+        )
         if not 1 <= args.max_requests <= 1000:
             raise ResultsSyncError("max_requests must be between 1 and 1000")
         catalogue_allowance = sum(
@@ -484,6 +524,13 @@ def main() -> None:
             manifest_path=LOCAL_MANIFEST,
             progress=lambda message: print(message, flush=True),
         )
+        try:
+            write_checkpoint(checkpoint_path, checkpoint, report)
+        except (OSError, TypeError, ValueError) as error:
+            print(
+                f"Sync completed, but checked-date state could not be saved: {error}. "
+                "The next run may repeat date queries."
+            )
         print(f"Added {report['added_matches']} results using {report['requests_used']} requests.")
         print(f"Reused {report['cache_hits']} cached responses.")
         print(format_coverage(report["coverage"]))

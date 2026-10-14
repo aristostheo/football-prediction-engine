@@ -141,3 +141,26 @@ def test_celta_provider_spelling_is_explicit_and_league_scoped():
     assert canonical_team_name("Celta de Vigo", Competition.LA_LIGA) == "RC Celta de Vigo"
     assert not is_registered_team("Celta de Vigo B", Competition.LA_LIGA)
     assert not is_registered_team("Celta de Vigo", Competition.PREMIER_LEAGUE)
+
+
+@pytest.mark.parametrize(
+    ("league", "provider_name", "canonical"),
+    [
+        (Competition.BUNDESLIGA, "Elversberg", "SV 07 Elversberg"),
+        (Competition.BUNDESLIGA, "Paderborn", "SC Paderborn 07"),
+        (Competition.LA_LIGA, "Deportivo de La Coruña", "RC Deportivo La Coruña"),
+        (Competition.LA_LIGA, "Racing de Santander", "Real Racing Club de Santander"),
+        (Competition.LA_LIGA, "Racingde Santander", "Real Racing Club de Santander"),
+        (Competition.LIGUE_1, "Troyes", "ESTAC Troyes"),
+        (Competition.PRIMEIRA_LIGA, "Estrela", "CF Estrela da Amadora"),
+        (Competition.SERIE_A, "Frosinone", "Frosinone Calcio"),
+    ],
+)
+def test_completed_sync_provider_aliases_share_existing_history(
+    historical_teams, league, provider_name, canonical
+):
+    assert is_registered_team(provider_name, league)
+    assert canonical_team_name(provider_name, league) == canonical
+    assert canonical in historical_teams[league]
+    assert resolve_team_name(provider_name, league, historical_teams[league]) == canonical
+    assert not is_registered_team(f"{provider_name} U21", league)

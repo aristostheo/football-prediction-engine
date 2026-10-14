@@ -554,3 +554,88 @@ def test_fresh_flag_bypasses_valid_cache(tmp_path, monkeypatch):
     refreshed = BudgetedGoalProvider("key", cache_dir=tmp_path, fresh=True)
     assert refreshed.result_items(PL, DAY) == []
     assert len(calls) == 2 and refreshed.cache_hits == 0
+
+
+@pytest.mark.parametrize(
+    ("league", "home", "away", "expected"),
+    [
+        (Competition.BUNDESLIGA, "Elversberg", "Paderborn", "SV 07 Elversberg"),
+        (
+            Competition.LA_LIGA,
+            "Deportivo de La Coruña",
+            "Racing de Santander",
+            "RC Deportivo La Coruña",
+        ),
+        (Competition.LIGUE_1, "Troyes", "Paris Saint Germain", "ESTAC Troyes"),
+        (Competition.PRIMEIRA_LIGA, "Estrela", "Benfica", "CF Estrela da Amadora"),
+        (Competition.SERIE_A, "Frosinone", "Roma", "Frosinone Calcio"),
+    ],
+)
+def test_reported_aliases_parse_finished_results_without_new_club_identities(
+    league, home, away, expected
+):
+    match, reason = completed_match(
+        fixture(homeTeam={"name": home}, awayTeam={"name": away}),
+        league,
+        DAY,
+        retrieved_at=NOW,
+    )
+    assert reason == "accepted"
+    assert match.home_team == expected
+    assert match.result.value == "D"
+
+
+def test_failed_cli_sync_preserves_checked_date_checkpoint(tmp_path, monkeypatch):
+    import sys
+
+    from football_predictor import results_sync
+
+    bundled, output = tmp_path / "bundle.csv", tmp_path / "local.csv.gz"
+    baseline().to_csv(bundled, index=False)
+    state = tmp_path / "results_sync_state.json"
+    state.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "leagues": {
+                    "premier_league": {
+                        "checked_from": "2026-09-18",
+                        "checked_through": "2026-09-20",
+                        "history_through": "2026-09-20",
+                        "matches": 1,
+                        "pending_dates": [],
+                    }
+                },
+            }
+        )
+    )
+    original = state.read_bytes()
+    monkeypatch.setattr(results_sync, "BUNDLED_HISTORY", bundled)
+    monkeypatch.setattr(results_sync, "LOCAL_HISTORY", output)
+    monkeypatch.setattr(results_sync, "LOCAL_MANIFEST", tmp_path / "manifest.json")
+    monkeypatch.setenv("GOAL_API_KEY", "test")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "results_sync",
+            "--league",
+            "premier_league",
+            "--since",
+            "2026-09-20",
+            "--through",
+            "2026-09-21",
+        ],
+    )
+    fake_http(
+        monkeypatch,
+        [
+            page([]),
+            page([fixture(kickoffUtc="2026-09-21T15:00:00Z", homeTeam={"name": "Unknown Club"})]),
+        ],
+    )
+    with pytest.raises(SystemExit) as stopped:
+        results_sync.main()
+    assert stopped.value.code == 1
+    assert state.read_bytes() == original
+    assert not output.exists()
