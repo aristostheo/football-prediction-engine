@@ -10,6 +10,7 @@ upload/
 scripts/__pycache__/
 data/raw/
 data/processed/
+data/local/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 data/model/*

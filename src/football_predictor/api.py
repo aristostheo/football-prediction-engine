@@ -14,6 +14,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field, model_validator
 
 from football_predictor.domain import Competition
+from football_predictor.history_paths import runtime_history_path
 from football_predictor.live_fixtures import (
     FixtureProvider,
     FixtureProviderError,
@@ -153,11 +154,7 @@ def create_app(
         if configured_engine is None:
             with engine_lock:
                 if configured_engine is None:
-                    history_path = Path(
-                        os.environ.get(
-                            "HISTORICAL_MATCHES_PATH", "data/model/historical_matches.csv.gz"
-                        )
-                    )
+                    history_path = runtime_history_path()
                     configured_engine = PredictionEngine.from_csv(history_path)
         return configured_engine
 

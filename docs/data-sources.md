@@ -56,7 +56,10 @@ CSV format, method, run command, and limits.
 The optional API service prefers Goal API for upcoming fixtures in all seven
 supported leagues, with API-Football available as a fallback. Providers are
 used only to discover fixtures: the versioned historical dataset remains the
-source of model inputs and each prediction exposes its history date. See
+source of model inputs and each prediction exposes its history date. The optional
+[local results sync](results-sync.md) imports validated completed Goal API results
+into an ignored local snapshot; it becomes the runtime input after restarting.
+See
 [live-fixtures.md](live-fixtures.md) for setup and endpoint details.
 
 ## Rebuilding the dataset

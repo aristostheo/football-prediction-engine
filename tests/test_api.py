@@ -86,8 +86,11 @@ class StubFixtureProvider:
 
 @pytest.mark.parametrize("custom_path", [None, "custom/history.csv"])
 def test_api_loads_bundled_history_by_default_and_honors_override(
-    monkeypatch: pytest.MonkeyPatch, custom_path: str | None
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, custom_path: str | None
 ) -> None:
+    from football_predictor import history_paths
+
+    monkeypatch.setattr(history_paths, "LOCAL_HISTORY", tmp_path / "absent-local.csv.gz")
     monkeypatch.delenv("HISTORICAL_MATCHES_PATH", raising=False)
     if custom_path:
         monkeypatch.setenv("HISTORICAL_MATCHES_PATH", custom_path)
@@ -423,3 +426,32 @@ def test_next_fixture_skips_postponed_and_cancelled_matches() -> None:
     assert response.fixture_id == "SCHEDULED"
     assert response.home_team == "Arsenal FC"
     assert response.away_team == "Chelsea FC"
+
+
+def test_api_loads_synced_local_history_after_restart(monkeypatch, tmp_path):
+    from football_predictor import history_paths
+
+    local = tmp_path / "synced.csv.gz"
+    local.write_bytes(b"complete local snapshot")
+    monkeypatch.setattr(history_paths, "LOCAL_HISTORY", local)
+    monkeypatch.delenv("HISTORICAL_MATCHES_PATH", raising=False)
+    loaded = []
+
+    def load_history(path):
+        loaded.append(path)
+        return StubEngine()
+
+    monkeypatch.setattr(PredictionEngine, "from_csv", load_history)
+    app = create_app()
+    predict = next(
+        route.endpoint for route in app.routes if getattr(route, "path", None) == "/predict"
+    )
+    predict(
+        PredictionRequest(
+            competition="premier_league",
+            kickoff_date="2026-10-18",
+            home_team="Arsenal FC",
+            away_team="Chelsea FC",
+        )
+    )
+    assert loaded == [local]

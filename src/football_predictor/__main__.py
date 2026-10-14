@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from football_predictor.data_status import format_coverage, history_coverage
+from football_predictor.history_paths import runtime_history_path
 from football_predictor.ingestion import refresh_openfootball_dataset, write_initial_dataset
 
 
@@ -39,7 +40,8 @@ def main() -> None:
     if args.check_data:
         if args.refresh or args.england_root or args.europe_root or args.allow_removed_matches:
             parser.error("--check-data cannot be combined with ingestion options")
-        path = args.output or Path("data/model/historical_matches.csv.gz")
+        path = args.output or runtime_history_path()
+        print(f"History file: {path}")
         print(format_coverage(history_coverage(pd.read_csv(path))))
         return
 

@@ -98,6 +98,10 @@ without making API requests, or `uv run python -m football_predictor --refresh`
 to download and validate the configured public results sources. A successful
 refresh does not guarantee that those sources contain newer results.
 
+To import more recent completed matches with your Goal API key, see
+[local results sync](docs/results-sync.md). The API automatically loads the
+validated local snapshot after restarting; the tracked bundle is preserved.
+
 ## Run the dashboard
 
 For development, run the API command above and start Vite separately:

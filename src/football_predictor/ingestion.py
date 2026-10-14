@@ -267,10 +267,32 @@ def refresh_openfootball_dataset(
     )
     keep_existing_dataset = _dataset_payload_is_unchanged(previous, dataframe)
 
+    manifest = write_dataset_snapshot(
+        dataframe=dataframe,
+        output_path=output_path,
+        manifest_path=manifest_path,
+        generated_at=retrieved_at,
+        sources=source_manifest,
+        keep_existing_dataset=keep_existing_dataset,
+    )
+    return {**manifest, **change_summary}
+
+
+def write_dataset_snapshot(
+    *,
+    dataframe: pd.DataFrame,
+    output_path: Path,
+    manifest_path: Path,
+    generated_at: datetime,
+    sources: list[dict[str, object]],
+    keep_existing_dataset: bool = False,
+) -> dict[str, object]:
+    """Stage both snapshot files before replacing them; inputs must be validated."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     temporary_csv_path: Path | None = None
     temporary_manifest_path: Path | None = None
+    original_csv = output_path.read_bytes() if output_path.is_file() else None
     try:
         if keep_existing_dataset:
             dataset_sha256 = hashlib.sha256(output_path.read_bytes()).hexdigest()
@@ -290,11 +312,11 @@ def refresh_openfootball_dataset(
         }
         manifest = {
             "schema_version": 2,
-            "generated_at": retrieved_at.isoformat(),
+            "generated_at": generated_at.isoformat(),
             "total_matches": len(dataframe),
             "dataset_sha256": dataset_sha256,
             "matches_by_competition": counts,
-            "sources": source_manifest,
+            "sources": sources,
         }
         with NamedTemporaryFile(
             dir=manifest_path.parent,
@@ -310,14 +332,25 @@ def refresh_openfootball_dataset(
         )
         if temporary_csv_path is not None:
             temporary_csv_path.replace(output_path)
-        temporary_manifest_path.replace(manifest_path)
+        try:
+            temporary_manifest_path.replace(manifest_path)
+        except OSError:
+            # Roll back the CSV if publishing its paired manifest fails.
+            # Readers still see only complete CSV files through replacements.
+            if temporary_csv_path is not None:
+                if original_csv is None:
+                    output_path.unlink(missing_ok=True)
+                else:
+                    temporary_csv_path.write_bytes(original_csv)
+                    temporary_csv_path.replace(output_path)
+            raise
     finally:
         if temporary_csv_path is not None:
             temporary_csv_path.unlink(missing_ok=True)
         if temporary_manifest_path is not None:
             temporary_manifest_path.unlink(missing_ok=True)
 
-    return {**manifest, **change_summary}
+    return manifest
 
 
 def _dataset_payload_is_unchanged(previous: pd.DataFrame | None, refreshed: pd.DataFrame) -> bool:
