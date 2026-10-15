@@ -112,6 +112,7 @@ export interface Settlement {
   home_goals: number | null;
   away_goals: number | null;
   source: string | null;
+  check_status?: "confirmed" | "pending" | "deferred" | "unavailable";
 }
 
 const API_ROOT = import.meta.env.DEV ? "/api" : "";

@@ -116,6 +116,15 @@ test("journal keeps confirmed results through unavailable checks and accepts cor
     live.mergeSettlements({ one: settled }, { one: absent }).one,
     settled,
   );
+  for (const check_status of ["deferred", "unavailable"]) {
+    assert.deepEqual(
+      live.mergeSettlements(
+        { one: settled },
+        { one: { ...absent, check_status } },
+      ).one,
+      settled,
+    );
+  }
   assert.deepEqual(
     live.mergeSettlements(
       { one: settled },

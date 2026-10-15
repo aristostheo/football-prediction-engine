@@ -13,6 +13,7 @@ from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from football_predictor.domain import Competition
+from football_predictor.request_budget import consume_goal_request
 
 API_FOOTBALL_BASE_URL = "https://v3.football.api-sports.io"
 API_FOOTBALL_LEAGUE_IDS = {
@@ -260,6 +261,7 @@ class GoalApiFixtureProvider:
         )
 
     def _request_json(self, request: Request) -> dict[str, object]:
+        consume_goal_request()
         try:
             with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
                 payload = json.load(response)

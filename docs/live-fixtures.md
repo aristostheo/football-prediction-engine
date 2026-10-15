@@ -98,13 +98,13 @@ pick, and (for new entries) predicted scoreline. After a confirmed result, it
 shows those beside the actual outcome and regulation-time final score. Older
 records remain usable; a scoreline that was never saved is shown as unavailable.
 
-The scorecard looks up completed outcomes in the bundled dataset and reports
+The scorecard looks up completed outcomes in the active local history and reports
 log loss, Brier score, ranked probability score, classwise calibration error,
-and accuracy. For unresolved forecasts dated within the last 14 days, it also
-checks the configured live fixture provider for a finished score (cached for
-five minutes). This lets local users settle recent forecasts without waiting
-for a Git pull; if the provider is unavailable, those entries stay pending
-until the bundled history is refreshed. If odds were entered, it scores the
+and accuracy. For unresolved past forecasts, including those older than 14 days,
+it also checks the configured live fixture provider for a confirmed regulation-time
+score. Newest dates are checked first, but never-checked dates take priority over
+reloading expired cache entries so larger journals can make progress.
+If the provider is unavailable, those entries stay pending. If odds were entered, it scores the
 model and margin-removed market
 probabilities on the same fixtures. Re-forecasting a fixture replaces its
 saved entry, so the scorecard uses the latest timestamped forecast before
@@ -119,6 +119,23 @@ cached locally for subsequent journal visits. This is browser-local storage,
 not an account or cross-device sync. An odds comparison added after generating
 a forecast retains the original model probabilities and forecast timestamp;
 the market snapshot has its own timestamp.
+
+Journal backfills are bounded to eight uncached league/date loads per API request
+and eight actual Goal API HTTP attempts, including league catalogue resolution,
+pagination and failed attempts. A shared allowance additionally caps journal checks
+at 100 Goal API attempts per UTC day **per running API process**. These limits do
+not meter fixture discovery, badges, the results-sync command or other clients;
+they are not an account-wide guarantee against the provider's 1,000/day limit.
+Restarting the backend resets this in-memory allowance and cache.
+
+Fixture discovery and journal checks share the same bounded cache and concurrent
+loads: past dates older than 14 days are cached for 24 hours, recent dates for five
+minutes, future dates for ten minutes, and provider errors for five minutes. Empty
+responses are cached too. Local-history and cached lookups cost no provider calls.
+Budget-exhausted entries display **Queued for a later check**; provider failures
+display **Result provider unavailable**. Larger journals can need several checks,
+and a depleted daily allowance resumes after UTC midnight. Saved confirmed results
+and original forecasts survive pending, deferred and unavailable responses.
 
 ## Freshness guardrail
 

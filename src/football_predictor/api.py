@@ -7,6 +7,7 @@ import os
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from threading import Lock
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field, model_validator
 
 from football_predictor.domain import Competition
+from football_predictor.fixture_cache import FixtureCacheMiss, FixtureDateCache
 from football_predictor.history_paths import runtime_history_path
 from football_predictor.live_fixtures import (
     FixtureProvider,
@@ -32,6 +34,7 @@ from football_predictor.prediction import (
     PredictionContext,
     PredictionEngine,
 )
+from football_predictor.request_budget import DailyAllowance, GoalRequestLimit, goal_request_scope
 from football_predictor.team_names import canonical_team_name
 
 
@@ -87,6 +90,7 @@ class ScorecardResultResponse(BaseModel):
     home_goals: int | None = None
     away_goals: int | None = None
     source: str | None = None
+    check_status: Literal["confirmed", "pending", "deferred", "unavailable"] = "pending"
 
 
 class PredictionResponse(BaseModel):
@@ -132,6 +136,7 @@ def create_app(
     fixture_provider: FixtureProvider | None = None,
     market_odds_provider: TheOddsApiProvider | None = None,
     web_dist_path: Path | None = None,
+    journal_goal_daily_limit: int = 100,
 ) -> FastAPI:
     app = FastAPI(title="European Football Prediction Engine", version="0.1.0")
     app.add_middleware(
@@ -144,8 +149,10 @@ def create_app(
     configured_provider = fixture_provider
     configured_market_odds_provider = market_odds_provider
     engine_lock = Lock()
-    live_result_cache: dict[tuple[Competition, date], tuple[datetime, list[LiveFixture]]] = {}
-    fixture_cache: dict[tuple[Competition, date], tuple[datetime, list[LiveFixture]]] = {}
+    journal_allowance = DailyAllowance(journal_goal_daily_limit)
+    fixture_dates = FixtureDateCache(
+        lambda competition, day: get_fixture_provider().list_fixtures(competition, day)
+    )
     team_badge_cache: dict[Competition, tuple[datetime, dict[str, str]]] = {}
     provider_cache_lock = Lock()
 
@@ -171,17 +178,8 @@ def create_app(
         return configured_market_odds_provider
 
     def get_cached_fixtures(competition: Competition, match_date: date) -> list[LiveFixture]:
-        """Reuse Goal API date responses briefly to conserve the daily request quota."""
-        cache_key = (competition, match_date)
-        now = datetime.now(UTC)
-        with provider_cache_lock:
-            cached = fixture_cache.get(cache_key)
-            if cached and cached[0] > now:
-                return cached[1]
-        fixtures = get_fixture_provider().list_fixtures(competition, match_date)
-        with provider_cache_lock:
-            fixture_cache[cache_key] = (now + timedelta(minutes=10), fixtures)
-        return fixtures
+        """Share date lookups across fixture discovery and journal checks."""
+        return fixture_dates.get(competition, match_date)
 
     def get_cached_team_badges(competition: Competition) -> dict[str, str]:
         """Team catalogues change rarely; cache badge requests for one day."""
@@ -335,14 +333,13 @@ def create_app(
             key: "bundled_history" if value is not None else None for key, value in results.items()
         }
         today_utc = datetime.now(UTC).date()
-        recent_pending = [
+        pending_fixtures = [
             fixture
             for fixture in request.fixtures
-            if results[fixture.id] is None
-            and today_utc - timedelta(days=14) <= fixture.kickoff_date <= today_utc
+            if results[fixture.id] is None and fixture.kickoff_date <= today_utc
         ]
         match_to_ids: dict[tuple[Competition, date, str, str], list[str]] = {}
-        for fixture in recent_pending:
+        for fixture in pending_fixtures:
             key = (
                 fixture.competition,
                 fixture.kickoff_date,
@@ -351,39 +348,76 @@ def create_app(
             )
             match_to_ids.setdefault(key, []).append(fixture.id)
 
-        for competition, match_date in {
-            (fixture.competition, fixture.kickoff_date) for fixture in recent_pending
-        }:
-            cache_key = (competition, match_date)
-            now = datetime.now(UTC)
-            cached = live_result_cache.get(cache_key)
-            if cached and cached[0] > now:
-                live_fixtures = cached[1]
-            else:
+        statuses = {
+            key: "confirmed" if value is not None else "pending" for key, value in results.items()
+        }
+        groups = sorted(
+            {(fixture.competition, fixture.kickoff_date) for fixture in pending_fixtures},
+            key=lambda key: (
+                fixture_dates.refresh_priority(*key),
+                -key[1].toordinal(),
+                key[0].value,
+            ),
+        )
+        remaining_dates = 8
+        # A date query may paginate or resolve a league id: cap real Goal HTTP
+        # attempts too, and share a small daily allowance across journal calls.
+        with goal_request_scope(8, journal_allowance):
+            for competition, match_date in groups:
+                group_ids = [
+                    fixture_id
+                    for key, ids in match_to_ids.items()
+                    if key[:2] == (competition, match_date)
+                    for fixture_id in ids
+                ]
                 try:
-                    live_fixtures = get_fixture_provider().list_fixtures(competition, match_date)
+                    try:
+                        live_fixtures = fixture_dates.get(
+                            competition, match_date, allow_fetch=False
+                        )
+                    except FixtureCacheMiss:
+                        if remaining_dates == 0:
+                            raise
+                        remaining_dates -= 1
+                        live_fixtures = fixture_dates.get(competition, match_date)
+                except (FixtureCacheMiss, GoalRequestLimit):
+                    remaining_dates = 0
+                    for fixture_id in group_ids:
+                        statuses[fixture_id] = "deferred"
+                    continue
                 except FixtureProviderError:
-                    # Bundled-history results remain usable if the live provider is unavailable.
+                    for fixture_id in group_ids:
+                        statuses[fixture_id] = "unavailable"
                     continue
-                live_result_cache[cache_key] = (now + timedelta(minutes=5), live_fixtures)
-            for live_fixture in live_fixtures:
-                if live_fixture.result is None:
-                    continue
-                live_key = (
-                    competition,
-                    match_date,
-                    canonical_team_name(live_fixture.home_team, competition),
-                    canonical_team_name(live_fixture.away_team, competition),
-                )
-                for fixture_id in match_to_ids.get(live_key, []):
-                    results[fixture_id] = live_fixture.result
-                    scores[fixture_id] = (
-                        (live_fixture.home_goals, live_fixture.away_goals)
-                        if live_fixture.home_goals is not None
-                        and live_fixture.away_goals is not None
-                        else None
+                for live_fixture in live_fixtures:
+                    home, away = live_fixture.home_goals, live_fixture.away_goals
+                    if (
+                        live_fixture.result is None
+                        or live_fixture.status.upper()
+                        not in {"FINISHED", "FT", "AET", "PEN", "PENALTIES"}
+                        or live_fixture.competition != competition
+                        or _as_utc(live_fixture.kickoff_at).date() != match_date
+                        or _as_utc(live_fixture.kickoff_at) > datetime.now(UTC)
+                        or type(home) is not int
+                        or type(away) is not int
+                        or home < 0
+                        or away < 0
+                    ):
+                        continue
+                    outcome = "H" if home > away else "A" if away > home else "D"
+                    if outcome != live_fixture.result:
+                        continue
+                    live_key = (
+                        competition,
+                        match_date,
+                        canonical_team_name(live_fixture.home_team, competition),
+                        canonical_team_name(live_fixture.away_team, competition),
                     )
-                    sources[fixture_id] = "live_provider"
+                    for fixture_id in match_to_ids.get(live_key, []):
+                        results[fixture_id] = outcome
+                        scores[fixture_id] = (home, away)
+                        sources[fixture_id] = "live_provider"
+                        statuses[fixture_id] = "confirmed"
         return [
             ScorecardResultResponse(
                 id=fixture.id,
@@ -395,6 +429,7 @@ def create_app(
                 if results[fixture.id] and scores[fixture.id]
                 else None,
                 source=sources[fixture.id],
+                check_status=statuses[fixture.id],
             )
             for fixture in request.fixtures
         ]

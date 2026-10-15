@@ -2205,7 +2205,11 @@ export default function Dashboard() {
                                 : "Draw"
                             : Date.parse(record.kickoff_at) > Date.now()
                               ? "Upcoming"
-                              : "Awaiting final result"}
+                              : s?.check_status === "deferred"
+                                ? "Queued for a later check"
+                                : s?.check_status === "unavailable"
+                                  ? "Result provider unavailable"
+                                  : "Awaiting final result"}
                         </span>
                         {s?.home_goals != null && s.away_goals != null && (
                           <strong className="tl-journal-score">
@@ -2296,7 +2300,8 @@ export default function Dashboard() {
           {resultCheckedAt
             ? `Last checked ${timeLabel(resultCheckedAt)}. `
             : ""}
-          Results refresh every five minutes while this journal is open. An
+          Results refresh every five minutes while this journal is open. Older
+          journals may need several checks to finish updating. An
           unfinished, postponed, missing, or unavailable result stays pending.
           Saved model probabilities are never regenerated to match the outcome.
         </p>

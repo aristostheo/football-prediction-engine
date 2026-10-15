@@ -84,6 +84,148 @@ class StubFixtureProvider:
         return {"Arsenal": "https://media.goal-api.com/badges/arsenal.png"}
 
 
+class MissingResultsEngine(StubEngine):
+    def find_results(self, fixtures):
+        return {fixture[0]: None for fixture in fixtures}
+
+
+def journal_request(days):
+    return ScorecardResultsRequest(fixtures=[
+        {"id": str(index), "competition": "premier_league", "kickoff_date": day,
+         "home_team": "Arsenal", "away_team": "Chelsea"}
+        for index, day in enumerate(days)
+    ])
+
+
+def app_routes(app):
+    return {getattr(route, "path", None): route.endpoint for route in app.routes}
+
+
+def test_old_journal_backfills_in_bounded_batches_and_reuses_fixture_discovery():
+    calls = []
+
+    class Provider(StubFixtureProvider):
+        def list_fixtures(self, competition, fixture_date):
+            calls.append(fixture_date)
+            return [LiveFixture(
+                fixture_id=fixture_date.isoformat(), competition=competition,
+                kickoff_at=datetime.combine(fixture_date, datetime.min.time(), UTC),
+                home_team="Arsenal FC", away_team="Chelsea FC",
+                result="D", home_goals=0, away_goals=0, status="FINISHED",
+            )]
+
+    routes = app_routes(create_app(engine=MissingResultsEngine(), fixture_provider=Provider()))
+    days = [datetime.now(UTC).date() - timedelta(days=40 + index) for index in range(12)]
+    routes["/fixtures"](Competition.PREMIER_LEAGUE, days[0])
+    request = journal_request(days)
+    first = routes["/scorecard/results"](request)
+    assert len(calls) == 9  # One discovery call, plus at most eight new journal lookups.
+    assert sum(item.check_status == "confirmed" for item in first) == 9
+    assert sum(item.check_status == "deferred" for item in first) == 3
+    assert all((item.home_goals, item.away_goals) == (0, 0)
+               for item in first if item.result == "D")
+    second = routes["/scorecard/results"](request)
+    assert len(calls) == 12
+    assert all(item.check_status == "confirmed" for item in second)
+    assert all(item.source == "live_provider" for item in second)
+    routes["/scorecard/results"](request)
+    assert len(calls) == 12
+
+
+def test_journal_checks_local_results_before_provider_and_skips_future():
+    class NeverProvider:
+        def list_fixtures(self, *_):
+            pytest.fail("local or future results must not trigger an HTTP lookup")
+
+    days = [datetime.now(UTC).date() - timedelta(days=60)]
+    routes = app_routes(create_app(engine=StubEngine(), fixture_provider=NeverProvider()))
+    result = routes["/scorecard/results"](journal_request(days))[0]
+    assert result.check_status == "confirmed"
+    assert result.source == "bundled_history"
+    routes = app_routes(create_app(engine=MissingResultsEngine(), fixture_provider=NeverProvider()))
+    result = routes["/scorecard/results"](
+        journal_request([datetime.now(UTC).date() + timedelta(days=2)])
+    )[0]
+    assert result.check_status == "pending"
+
+
+def test_journal_failures_are_reported_and_not_retried_immediately():
+    from football_predictor.live_fixtures import FixtureProviderError
+
+    calls = []
+
+    class FailingProvider:
+        def list_fixtures(self, competition, day):
+            calls.append(day)
+            raise FixtureProviderError("provider unavailable")
+
+    routes = app_routes(create_app(
+        engine=MissingResultsEngine(), fixture_provider=FailingProvider()
+    ))
+    request = journal_request([datetime.now(UTC).date() - timedelta(days=60)])
+    for _ in range(2):
+        result = routes["/scorecard/results"](request)[0]
+        assert result.check_status == "unavailable"
+        assert result.result is result.home_goals is result.away_goals is None
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize("changes", [
+    {"status": "LIVE"}, {"status": "POSTPONED"}, {"result": "A"},
+    {"home_goals": -1}, {"home_goals": True}, {"away_goals": None},
+    {"home_team": "Chelsea", "away_team": "Arsenal"},
+    {"competition": Competition.LA_LIGA},
+    {"kickoff_at": datetime.now(UTC) + timedelta(days=1)},
+])
+def test_journal_rejects_unfinished_inconsistent_or_wrong_fixture_results(changes):
+    day = datetime.now(UTC).date() - timedelta(days=60)
+    fixture = dict(
+        fixture_id="finished", competition=Competition.PREMIER_LEAGUE,
+        kickoff_at=datetime.combine(day, datetime.min.time(), UTC),
+        home_team="Arsenal", away_team="Chelsea", status="FINISHED",
+        result="H", home_goals=2, away_goals=1,
+    )
+    fixture.update(changes)
+
+    class Provider:
+        def list_fixtures(self, *_):
+            return [LiveFixture(**fixture)]
+
+    routes = app_routes(create_app(engine=MissingResultsEngine(), fixture_provider=Provider()))
+    result = routes["/scorecard/results"](journal_request([day]))[0]
+    assert result.check_status == "pending"
+    assert result.result is result.home_goals is result.away_goals is None
+
+
+def test_journal_goal_http_budget_is_shared_across_requests(monkeypatch):
+    import io
+
+    from football_predictor import live_fixtures
+
+    calls = []
+
+    def respond(request, timeout):
+        calls.append(request.full_url)
+        return io.BytesIO(b'{"success": true, "data": []}')
+
+    monkeypatch.setattr(live_fixtures, "urlopen", respond)
+    routes = app_routes(create_app(
+        engine=MissingResultsEngine(),
+        fixture_provider=live_fixtures.GoalApiFixtureProvider("test-only"),
+        journal_goal_daily_limit=10,
+    ))
+    days = [datetime.now(UTC).date() - timedelta(days=40 + index) for index in range(20)]
+    request = journal_request(days)
+    first = routes["/scorecard/results"](request)
+    assert len(calls) == 8
+    assert sum(item.check_status == "deferred" for item in first) == 12
+    second = routes["/scorecard/results"](request)
+    assert len(calls) == 10
+    assert sum(item.check_status == "deferred" for item in second) == 10
+    routes["/scorecard/results"](request)
+    assert len(calls) == 10
+
+
 @pytest.mark.parametrize("custom_path", [None, "custom/history.csv"])
 def test_api_loads_bundled_history_by_default_and_honors_override(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, custom_path: str | None
@@ -214,6 +356,7 @@ def test_scorecard_checks_live_provider_for_recent_results_missing_from_history(
                     home_team="Arsenal FC",
                     away_team="Chelsea FC",
                     result="H",
+                    status="FINISHED",
                     home_goals=2,
                     away_goals=1,
                 )

@@ -58,6 +58,10 @@ uv run pytest
 uv run ruff check .
 ```
 
+GitHub Actions runs backend tests/lint and frontend tests/lint/production build
+on pushes and pull requests to `main`. These checks use offline provider fixtures
+and do not consume your Goal API or Odds API allowance.
+
 ## Build model-ready features
 
 After generating `historical_matches.csv`, build leakage-safe feature rows:
@@ -156,7 +160,7 @@ model/market blend. Live quotes do not alter model probabilities. See
 
 The dashboard also keeps a prospective 2026-27 scorecard in the current
 browser. The journal shows the saved model probabilities and predicted score
-beside the confirmed result and regulation-time score. It checks recent results
+beside the confirmed result and regulation-time score. It checks unresolved results
 with the configured fixture provider and also uses the refreshed history. It
 compares model versus market probabilities when both were recorded; see
 [live fixture setup](docs/live-fixtures.md) for its limits.
