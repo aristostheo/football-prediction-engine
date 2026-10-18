@@ -61,7 +61,8 @@ test("loads rounded odds, forecasts with full precision and preserves comparison
   expect(after.forecasted_at).toBe(before.forecasted_at);
   expect(after.market_snapshot).toEqual(before.market_snapshot);
   await fields.nth(0).fill("5.50");
-  await page.getByRole("button", { name: "Compare odds", exact: true }).click();
+  await page.getByRole("tabpanel", { name: "Market comparison" })
+    .getByRole("button", { name: "Compare odds", exact: true }).click();
   const manual = (await saved(page))[0];
   expect(manual.market_source).toBe("manual");
   expect(manual.market_snapshot).toBeUndefined();
@@ -259,6 +260,19 @@ test("crowded fixtures, long names, odds, explorer and journal stay contained on
     await page.locator(".tl-fixture").nth(2).click();
     await expect(hero(page)).toContainText("Wolverhampton");
     await noPageOverflow(page);
+    const textBounds = await page.locator(".tl-match-team h2").evaluateAll(headings =>
+      headings.map(heading => {
+        const parent = heading.parentElement!.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(heading);
+        const text = range.getBoundingClientRect();
+        return { left: text.left - parent.left, right: parent.right - text.right };
+      }),
+    );
+    for (const bounds of textBounds) {
+      expect(bounds.left, `club name's left edge at ${width}px`).toBeGreaterThanOrEqual(-1);
+      expect(bounds.right, `club name's right edge at ${width}px`).toBeGreaterThanOrEqual(-1);
+    }
   }
   await page.getByRole("button", { name: "Generate forecast", exact: true }).click();
   await expect(page.locator(".tl-jumbo-probability")).toContainText("57.4");

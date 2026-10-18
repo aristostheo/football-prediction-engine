@@ -16,6 +16,10 @@
 .tl-live .tl-match-team h2 {
   font-size: clamp(25px, 2.7vw, 40px);
   text-wrap: balance;
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 .tl-live .tl-match-kickoff {
   max-width: 48%;
@@ -329,10 +333,10 @@
     padding-top: 30px;
   }
   .tl-live .tl-match-team h2 {
-    font-size: 26px;
+    font-size: clamp(18px, 5vw, 26px);
   }
   .tl-live .tl-match-teams {
-    gap: 40px;
+    gap: 24px;
   }
   .tl-live .tl-match-kickoff {
     font-size: 8px;
