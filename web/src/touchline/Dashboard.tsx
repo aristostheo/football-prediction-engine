@@ -39,6 +39,7 @@ import {
   mergeSettlements,
   modelProbabilities,
   normalizeOdds,
+  oddsForCalculation,
   pct,
   scoreMatrix,
   teamShort,
@@ -520,7 +521,8 @@ export default function Dashboard() {
     setPredictionError("");
     try {
       const hasOdds = prices.some((value) => value.trim() !== "");
-      if (hasOdds) normalizeOdds(prices);
+      const calculationPrices = oddsForCalculation(prices, marketSnapshot);
+      if (hasOdds) normalizeOdds(calculationPrices);
       const response = await predictMatch({
         competition,
         home_team: home,
@@ -531,9 +533,9 @@ export default function Dashboard() {
         ...(selected.hypothetical ? {} : { kickoff_at: selected.kickoff_at }),
         ...(hasOdds
           ? {
-              odds_home: Number(prices[0]),
-              odds_draw: Number(prices[1]),
-              odds_away: Number(prices[2]),
+              odds_home: Number(calculationPrices[0]),
+              odds_draw: Number(calculationPrices[1]),
+              odds_away: Number(calculationPrices[2]),
             }
           : {}),
       });
@@ -548,7 +550,7 @@ export default function Dashboard() {
         notify(
           "Hypothetical forecast ready. It is not recorded in the journal.",
         );
-      if (hasOdds) setMarket(normalizeOdds(prices));
+      if (hasOdds) setMarket(normalizeOdds(calculationPrices));
     } catch (error) {
       if (id === forecastRequest.current) setPredictionError(message(error));
     } finally {
@@ -569,7 +571,7 @@ export default function Dashboard() {
         String(quote.away_fair_odds),
       ];
       const comparison = normalizeOdds(values);
-      setPrices(values);
+      setPrices(values.map((value) => Number(value).toFixed(2)));
       setMarket(comparison);
       setMarketSnapshot(quote);
       setMarketNote(marketQuoteNote(quote));
@@ -589,14 +591,15 @@ export default function Dashboard() {
   function compareOdds(event: FormEvent) {
     event.preventDefault();
     try {
-      const comparison = normalizeOdds(prices);
+      const comparison = normalizeOdds(oddsForCalculation(prices, marketSnapshot));
       setMarket(comparison);
       setMarketError("");
-      setMarketNote("Manually entered decimal odds · margin removed");
-      setMarketSnapshot(undefined);
+      setMarketNote(marketSnapshot
+        ? marketQuoteNote(marketSnapshot)
+        : "Manually entered decimal odds · margin removed");
       if (prediction)
         setRecords(
-          attachMarketComparison(prediction, comparison, recordsRef.current),
+          attachMarketComparison(prediction, comparison, recordsRef.current, marketSnapshot),
         );
       notify("Market comparison updated.");
     } catch (error) {
@@ -1531,7 +1534,7 @@ export default function Dashboard() {
                   {label}
                   <input
                     type="number"
-                    min="1.000001"
+                    min={marketSnapshot ? "1" : "1.000001"}
                     step="any"
                     value={prices[i]}
                     onChange={(e) => {

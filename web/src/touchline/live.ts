@@ -1,5 +1,11 @@
 import type { Competition, LiveFixture, MarketOddsQuote, Prediction, Settlement } from "../api";
 
+export function oddsForCalculation(prices: string[], quote?: MarketOddsQuote): string[] {
+  return quote
+    ? [quote.home_fair_odds, quote.draw_fair_odds, quote.away_fair_odds].map(String)
+    : prices;
+}
+
 export function marketQuoteNote(quote: MarketOddsQuote): string {
   const stamp = (value: string) => new Date(value).toLocaleString([], {
     month: "short", day: "numeric", hour: "numeric", minute: "2-digit",

@@ -16,7 +16,7 @@ import {
 import { calculateMetrics, calculateTopPickCalibration, loadForecasts, saveForecast, StoredForecast } from "./scorecard";
 import { FavoriteTeams, loadFavoriteTeams, saveFavoriteTeams } from "./favorites";
 import "./styles.css";
-import { marketQuoteNote } from "./touchline/live";
+import { marketQuoteNote, oddsForCalculation } from "./touchline/live";
 
 const LEAGUES: Record<Competition, { name: string; short: string; code: string }> = {
   premier_league: { name: "Premier League", short: "England", code: "PL" },
@@ -441,9 +441,9 @@ function App() {
     try {
       const quote = await getMarketOdds(activeUpcomingFixture);
       if (requestId !== oddsRequest.current) return;
-      setOddsHome(String(quote.home_fair_odds));
-      setOddsDraw(String(quote.draw_fair_odds));
-      setOddsAway(String(quote.away_fair_odds));
+      setOddsHome(quote.home_fair_odds.toFixed(2));
+      setOddsDraw(quote.draw_fair_odds.toFixed(2));
+      setOddsAway(quote.away_fair_odds.toFixed(2));
       setMarketSnapshot(quote);
       setMarketOddsNote(
         marketQuoteNote(quote),
@@ -460,7 +460,7 @@ function App() {
     event?.preventDefault();
     setError(null);
     setTrackingNotice(null);
-    const odds = [oddsHome, oddsDraw, oddsAway];
+    const odds = oddsForCalculation([oddsHome, oddsDraw, oddsAway], marketSnapshot);
     const hasAnyOdds = odds.some((value) => value.trim() !== "");
     if (hasAnyOdds && odds.some((value) => value.trim() === "")) {
       setError("Enter all three decimal odds, or leave all three blank.");
@@ -488,9 +488,9 @@ function App() {
         away_team: selectedAway,
         ...(hasAnyOdds
           ? {
-              odds_home: Number(oddsHome),
-              odds_draw: Number(oddsDraw),
-              odds_away: Number(oddsAway),
+              odds_home: Number(odds[0]),
+              odds_draw: Number(odds[1]),
+              odds_away: Number(odds[2]),
             }
           : {}),
       });
@@ -681,9 +681,9 @@ function App() {
               )}
               {marketOddsNote && <div className={marketOddsNote.startsWith("Market consensus") ? "market-odds-note" : "message"}>{marketOddsNote}</div>}
               <div className="market-odds-fields">
-                <label><span>Home</span><input type="number" min="1.000001" step="any" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => { setOddsHome(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
-                <label><span>Draw</span><input type="number" min="1.000001" step="any" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => { setOddsDraw(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
-                <label><span>Away</span><input type="number" min="1.000001" step="any" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => { setOddsAway(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
+                <label><span>Home</span><input type="number" min={marketSnapshot ? "1" : "1.000001"} step="any" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => { setOddsHome(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
+                <label><span>Draw</span><input type="number" min={marketSnapshot ? "1" : "1.000001"} step="any" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => { setOddsDraw(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
+                <label><span>Away</span><input type="number" min={marketSnapshot ? "1" : "1.000001"} step="any" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => { setOddsAway(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
               </div>
               <small>Market odds are converted to fair probabilities by removing the bookmaker margin. They are shown separately and do not change the model forecast.</small>
             </details>

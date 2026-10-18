@@ -266,6 +266,23 @@ test("live odds loaded before forecasting keep their actual snapshot time", () =
   assert.equal(journal.loadForecasts()[0].market_snapshot.fetched_at, snapshot.fetched_at);
 });
 
+test("rounded live-odds fields leave comparison probabilities at original precision", () => {
+  const quote = {
+    ...snapshot, home_fair_odds: 6.08958031,
+    draw_fair_odds: 4.04658092, away_fair_odds: 1.69876452,
+  };
+  const displayed = ["6.09", "4.05", "1.70"];
+  const calculated = live.normalizeOdds(live.oddsForCalculation(displayed, quote));
+  const original = live.normalizeOdds([
+    String(quote.home_fair_odds), String(quote.draw_fair_odds), String(quote.away_fair_odds),
+  ]);
+  assert.deepEqual(calculated, original);
+  assert.notDeepEqual(calculated, live.normalizeOdds(displayed));
+  // Editing an input clears the snapshot; calculations then use the user's prices.
+  const manual = ["5.50", "4.00", "1.80"];
+  assert.deepEqual(live.normalizeOdds(live.oddsForCalculation(manual)), live.normalizeOdds(manual));
+});
+
 test("legacy comparison timestamps are exported without inventing quote timestamps", () => {
   const record = { market_fetched_at: "2026-10-15T10:00:00Z" };
   const fields = Object.fromEntries(journal.MARKET_AUDIT_HEADERS.map(
