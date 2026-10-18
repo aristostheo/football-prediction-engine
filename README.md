@@ -64,7 +64,7 @@ WebKit browser flows against mocked providers. These checks do not consume your
 Goal API or Odds API allowance. See [browser checks](docs/browser-tests.md) for
 local setup, coverage and device-testing limits.
 
-The proposed match Betting tab is being developed in checkpoints. The first
+The match Betting tab is being developed in checkpoints. The first
 checkpoint adds offline goal-market calculations and a 10,984-match chronological
 benchmark; it does not change production forecasts or the UI. Read the
 [betting-market findings and next steps](docs/betting-markets.md), including

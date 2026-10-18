@@ -90,7 +90,20 @@ Browser coverage includes the existing full-app flows plus all four Betting
 sections, calculation before forecasting, manual input validation, line/fixture
 resets, result-derived market comparisons, unavailable goal estimates and
 screenshots of desktop/mobile layouts. Providers are mocked; no real API quota
-is consumed by verification. Final CI results are recorded on publication.
+is consumed by verification.
+
+Verified application revision: `5ffdb43476f6d4bd4765cd6acd9af0741060674f`.
+[Successful CI run](https://github.com/aristostheo/football-prediction-engine/actions/runs/39163960971):
+360 backend tests, 18 frontend helper tests, 48 browser cases (12 each on desktop
+Chromium/WebKit and emulated mobile Chromium/WebKit), lint, production build and
+browser TypeScript checks passed. There were no browser retries. Final desktop
+goal/score and mobile goal/team/score screenshots were also visually inspected.
+Mobile emulation does not replace a physical iPhone/Mac Safari check.
+
+The first CI attempt exposed a JSON test-fixture import requirement before browser
+discovery; it was corrected with an explicit JSON import attribute and verified
+through local test discovery. The final suite also covers disabled Betting actions
+for postponed/finished fixtures, preserving the main forecast eligibility rule.
 
 ## Run locally
 
