@@ -71,6 +71,33 @@ export interface Prediction extends Omit<PredictionRequest, "kickoff_at"> {
     scoreline_home_goal_rate?: number | null;
     scoreline_away_goal_rate?: number | null;
   };
+  betting?: BettingForecast;
+}
+
+export interface BettingOutcome {
+  key: string;
+  label: string;
+  probability: number;
+  win_probability: number;
+  push_probability: number;
+  fair_odds: number | null;
+}
+export interface BettingMarket {
+  key: string;
+  title: string;
+  group: "result" | "goals" | "teams" | "scores";
+  source: "result_forecast" | "goal_model";
+  outcomes: BettingOutcome[];
+  line: number | null;
+  team: "home" | "away" | null;
+}
+export interface BettingForecast {
+  markets: BettingMarket[];
+  goal_status: "experimental" | "unavailable";
+  goal_note: string;
+  captured_mass: number | null;
+  goal_result_probabilities: [number, number, number] | null;
+  period: "regulation";
 }
 
 export interface MarketOddsQuote {

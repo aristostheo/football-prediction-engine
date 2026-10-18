@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field, model_validator
 
+from football_predictor.betting_views import BettingForecast, build_betting_forecast
 from football_predictor.domain import Competition
 from football_predictor.fixture_cache import FixtureCacheMiss, FixtureDateCache
 from football_predictor.history_paths import runtime_history_path
@@ -118,6 +119,7 @@ class PredictionResponse(BaseModel):
     market_away_win_probability: float | None
     context: PredictionContext
     components: PredictionComponents
+    betting: BettingForecast
 
 
 class LiveFixtureResponse(BaseModel):
@@ -538,6 +540,15 @@ def _prediction_response(prediction: MatchPrediction) -> PredictionResponse:
         ),
         context=prediction.context,
         components=prediction.components,
+        betting=build_betting_forecast(
+            prediction.model_probabilities,
+            prediction.components.scoreline_home_goal_rate
+            if prediction.components.scoreline_home_goal_rate is not None
+            else prediction.components.home_goal_rate,
+            prediction.components.scoreline_away_goal_rate
+            if prediction.components.scoreline_away_goal_rate is not None
+            else prediction.components.away_goal_rate,
+        ),
     )
 
 

@@ -27,6 +27,7 @@ import type { StoredForecast } from "../scorecard";
 import { Icon, Brand, StadiumCanvas } from "./Visuals";
 import type { IconName } from "./Visuals";
 import { Club, FormPills } from "./Club";
+import Betting from "./Betting";
 import {
   dateAfter,
   dateLabel,
@@ -1239,7 +1240,7 @@ export default function Dashboard() {
                       {(
                         [
                           { id: "overview", label: "The bigger picture" },
-                          { id: "market", label: "Market comparison" },
+                          { id: "market", label: "Betting" },
                           { id: "form", label: "Team performance" },
                           { id: "h2h", label: "Head to head" },
                         ] as { id: Tab; label: string }[]
@@ -1272,7 +1273,11 @@ export default function Dashboard() {
                     aria-labelledby={`live-tab-${tab}`}
                   >
                     {tab === "market" ? (
-                      renderMarket()
+                      <Betting
+                        key={`${competition}|${selected?.fixture_id}`}
+                        prediction={prediction} home={home} away={away} market={market}
+                        resultView={renderMarket()} generate={() => void generate()} generating={generating}
+                      />
                     ) : prediction ? (
                       renderAnalysis()
                     ) : (
@@ -1476,6 +1481,7 @@ export default function Dashboard() {
             <div className="tl-market-row" key={i}>
               <div className="tl-market-row-label">
                 <strong>{name}</strong>
+                <small className="tl-bet-result-fair">Model fair odds {p ? (1 / p[i]).toFixed(2) : "—"}</small>
                 <span>
                   {p && market
                     ? `${(p[i] - market[i]) * 100 >= 0 ? "+" : ""}${((p[i] - market[i]) * 100).toFixed(1)} pp`

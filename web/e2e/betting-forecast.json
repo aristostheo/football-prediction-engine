@@ -1,0 +1,501 @@
+{
+  "markets": [
+    {
+      "key": "result",
+      "title": "Match result",
+      "group": "result",
+      "source": "result_forecast",
+      "outcomes": [
+        {
+          "key": "home",
+          "label": "Home",
+          "probability": 0.196,
+          "win_probability": 0.196,
+          "push_probability": 0,
+          "fair_odds": 5.1020408163265305
+        },
+        {
+          "key": "draw",
+          "label": "Draw",
+          "probability": 0.23,
+          "win_probability": 0.23,
+          "push_probability": 0,
+          "fair_odds": 4.3478260869565215
+        },
+        {
+          "key": "away",
+          "label": "Away",
+          "probability": 0.574,
+          "win_probability": 0.574,
+          "push_probability": 0,
+          "fair_odds": 1.7421602787456447
+        }
+      ],
+      "line": null,
+      "team": null
+    },
+    {
+      "key": "double_chance",
+      "title": "Double chance",
+      "group": "result",
+      "source": "result_forecast",
+      "outcomes": [
+        {
+          "key": "home_draw",
+          "label": "Home or draw",
+          "probability": 0.42600000000000005,
+          "win_probability": 0.42600000000000005,
+          "push_probability": 0,
+          "fair_odds": 2.3474178403755865
+        },
+        {
+          "key": "away_draw",
+          "label": "Away or draw",
+          "probability": 0.8039999999999999,
+          "win_probability": 0.8039999999999999,
+          "push_probability": 0,
+          "fair_odds": 1.2437810945273633
+        },
+        {
+          "key": "home_away",
+          "label": "Home or away",
+          "probability": 0.77,
+          "win_probability": 0.77,
+          "push_probability": 0,
+          "fair_odds": 1.2987012987012987
+        }
+      ],
+      "line": null,
+      "team": null
+    },
+    {
+      "key": "draw_no_bet",
+      "title": "Draw no bet",
+      "group": "result",
+      "source": "result_forecast",
+      "outcomes": [
+        {
+          "key": "home",
+          "label": "Home",
+          "probability": 0.2545454545454546,
+          "win_probability": 0.196,
+          "push_probability": 0.23,
+          "fair_odds": 3.9285714285714284
+        },
+        {
+          "key": "away",
+          "label": "Away",
+          "probability": 0.7454545454545454,
+          "win_probability": 0.574,
+          "push_probability": 0.23,
+          "fair_odds": 1.3414634146341464
+        }
+      ],
+      "line": null,
+      "team": null
+    },
+    {
+      "key": "total_0.5",
+      "title": "Total match goals",
+      "group": "goals",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.9179149986642642,
+          "win_probability": 0.9179149986642642,
+          "push_probability": 0.0,
+          "fair_odds": 1.0894254930523901
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.08208500133573582,
+          "win_probability": 0.08208500133573582,
+          "push_probability": 0.0,
+          "fair_odds": 12.182493558231187
+        }
+      ],
+      "line": 0.5,
+      "team": null
+    },
+    {
+      "key": "total_1.5",
+      "title": "Total match goals",
+      "group": "goals",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.7127024953249247,
+          "win_probability": 0.7127024953249247,
+          "push_probability": 0.0,
+          "fair_odds": 1.403110002504053
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.28729750467507537,
+          "win_probability": 0.28729750467507537,
+          "push_probability": 0.0,
+          "fair_odds": 3.4807124452089107
+        }
+      ],
+      "line": 1.5,
+      "team": null
+    },
+    {
+      "key": "total_2.5",
+      "title": "Total match goals",
+      "group": "goals",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.4561868661507502,
+          "win_probability": 0.4561868661507502,
+          "push_probability": 0.0,
+          "fair_odds": 2.1920841527900166
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.5438131338492498,
+          "win_probability": 0.5438131338492498,
+          "push_probability": 0.0,
+          "fair_odds": 1.8388669521858396
+        }
+      ],
+      "line": 2.5,
+      "team": null
+    },
+    {
+      "key": "total_3.5",
+      "title": "Total match goals",
+      "group": "goals",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.24242384183893817,
+          "win_probability": 0.24242384183893817,
+          "push_probability": 0.0,
+          "fair_odds": 4.125006816220581
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.7575761581610619,
+          "win_probability": 0.7575761581610619,
+          "push_probability": 0.0,
+          "fair_odds": 1.3199993020205347
+        }
+      ],
+      "line": 3.5,
+      "team": null
+    },
+    {
+      "key": "total_4.5",
+      "title": "Total match goals",
+      "group": "goals",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.10882195164405563,
+          "win_probability": 0.10882195164405563,
+          "push_probability": 0.0,
+          "fair_odds": 9.189322419716268
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.8911780483559444,
+          "win_probability": 0.8911780483559444,
+          "push_probability": 0.0,
+          "fair_odds": 1.1221102246008097
+        }
+      ],
+      "line": 4.5,
+      "team": null
+    },
+    {
+      "key": "btts",
+      "title": "Both teams to score",
+      "group": "goals",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "yes",
+          "label": "Yes",
+          "probability": 0.4500725071293537,
+          "win_probability": 0.4500725071293537,
+          "push_probability": 0.0,
+          "fair_odds": 2.2218642200079857
+        },
+        {
+          "key": "no",
+          "label": "No",
+          "probability": 0.5499274928706464,
+          "win_probability": 0.5499274928706464,
+          "push_probability": 0.0,
+          "fair_odds": 1.8184215427745845
+        }
+      ],
+      "line": null,
+      "team": null
+    },
+    {
+      "key": "home_total_0.5",
+      "title": "Home team goals",
+      "group": "teams",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.5506710358808884,
+          "win_probability": 0.5506710358808884,
+          "push_probability": 0.0,
+          "fair_odds": 1.8159662209223268
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.44932896411911166,
+          "win_probability": 0.44932896411911166,
+          "push_probability": 0.0,
+          "fair_odds": 2.225540928483106
+        }
+      ],
+      "line": 0.5,
+      "team": "home"
+    },
+    {
+      "key": "home_total_1.5",
+      "title": "Home team goals",
+      "group": "teams",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.1912078645855991,
+          "win_probability": 0.1912078645855991,
+          "push_probability": 0.0,
+          "fair_odds": 5.229910402311535
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.808792135414401,
+          "win_probability": 0.808792135414401,
+          "push_probability": 0.0,
+          "fair_odds": 1.236411626935059
+        }
+      ],
+      "line": 1.5,
+      "team": "home"
+    },
+    {
+      "key": "home_total_2.5",
+      "title": "Home team goals",
+      "group": "teams",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.04742259606748338,
+          "win_probability": 0.04742259606748338,
+          "push_probability": 0.0,
+          "fair_odds": 21.086994026581305
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.9525774039325167,
+          "win_probability": 0.9525774039325167,
+          "push_probability": 0.0,
+          "fair_odds": 1.0497834568316537
+        }
+      ],
+      "line": 2.5,
+      "team": "home"
+    },
+    {
+      "key": "away_total_0.5",
+      "title": "Away team goals",
+      "group": "teams",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.8173164699127295,
+          "win_probability": 0.8173164699127295,
+          "push_probability": 0.0,
+          "fair_odds": 1.2235162716184795
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.1826835300872705,
+          "win_probability": 0.1826835300872705,
+          "push_probability": 0.0,
+          "fair_odds": 5.473947210907769
+        }
+      ],
+      "line": 0.5,
+      "team": "away"
+    },
+    {
+      "key": "away_total_1.5",
+      "title": "Away team goals",
+      "group": "teams",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.5067544687643697,
+          "win_probability": 0.5067544687643697,
+          "push_probability": 0.0,
+          "fair_odds": 1.9733422429176037
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.4932455312356304,
+          "win_probability": 0.4932455312356304,
+          "push_probability": 0.0,
+          "fair_odds": 2.0273878558917664
+        }
+      ],
+      "line": 1.5,
+      "team": "away"
+    },
+    {
+      "key": "away_total_2.5",
+      "title": "Away team goals",
+      "group": "teams",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "over",
+          "label": "Over",
+          "probability": 0.24277676778826374,
+          "win_probability": 0.24277676778826374,
+          "push_probability": 0.0,
+          "fair_odds": 4.119010270670313
+        },
+        {
+          "key": "under",
+          "label": "Under",
+          "probability": 0.7572232322117364,
+          "win_probability": 0.7572232322117364,
+          "push_probability": 0.0,
+          "fair_odds": 1.3206145261538647
+        }
+      ],
+      "line": 2.5,
+      "team": "away"
+    },
+    {
+      "key": "correct_score",
+      "title": "Correct score",
+      "group": "scores",
+      "source": "goal_model",
+      "outcomes": [
+        {
+          "key": "0-1",
+          "label": "0\u20131",
+          "probability": 0.1395445022707509,
+          "win_probability": 0.1395445022707509,
+          "push_probability": 0,
+          "fair_odds": 7.166172681312462
+        },
+        {
+          "key": "0-2",
+          "label": "0\u20132",
+          "probability": 0.11861282693013826,
+          "win_probability": 0.11861282693013826,
+          "push_probability": 0,
+          "fair_odds": 8.430791389779367
+        },
+        {
+          "key": "1-1",
+          "label": "1\u20131",
+          "probability": 0.11163560181660072,
+          "win_probability": 0.11163560181660072,
+          "push_probability": 0,
+          "fair_odds": 8.957715851640579
+        },
+        {
+          "key": "1-2",
+          "label": "1\u20132",
+          "probability": 0.09489026154411062,
+          "win_probability": 0.09489026154411062,
+          "push_probability": 0,
+          "fair_odds": 10.538489237224208
+        },
+        {
+          "key": "0-0",
+          "label": "0\u20130",
+          "probability": 0.08208500133573582,
+          "win_probability": 0.08208500133573582,
+          "push_probability": 0,
+          "fair_odds": 12.182493558231187
+        },
+        {
+          "key": "0-3",
+          "label": "0\u20133",
+          "probability": 0.0672139352604117,
+          "win_probability": 0.0672139352604117,
+          "push_probability": 0,
+          "fair_odds": 14.877867158434176
+        },
+        {
+          "key": "1-0",
+          "label": "1\u20130",
+          "probability": 0.06566800106858865,
+          "win_probability": 0.06566800106858865,
+          "push_probability": 0,
+          "fair_odds": 15.228116947788985
+        },
+        {
+          "key": "1-3",
+          "label": "1\u20133",
+          "probability": 0.05377114820832935,
+          "win_probability": 0.05377114820832935,
+          "push_probability": 0,
+          "fair_odds": 18.59733394804272
+        },
+        {
+          "key": "2-1",
+          "label": "2\u20131",
+          "probability": 0.04465424072664029,
+          "win_probability": 0.04465424072664029,
+          "push_probability": 0,
+          "fair_odds": 22.394289629101447
+        }
+      ],
+      "line": null,
+      "team": null
+    }
+  ],
+  "goal_status": "experimental",
+  "goal_note": "Goal markets and scores use the separate goal model. They are experimental and can imply different result probabilities from the headline forecast.",
+  "captured_mass": 0.9999999669630629,
+  "goal_result_probabilities": [
+    0.1739510040092112,
+    0.23792737368101538,
+    0.5881216223097735
+  ],
+  "period": "regulation"
+}

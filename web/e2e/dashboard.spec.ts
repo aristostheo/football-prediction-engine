@@ -1,11 +1,11 @@
-import { test, expect, quote, fixtures, teams, ready, navigate, openNavigation } from "./fixtures";
+import { test, expect, quote, fixtures, teams, ready, navigate, openNavigation, prediction } from "./fixtures";
 import type { Page } from "@playwright/test";
 import type { Competition } from "../src/api";
 
 const hero = (page: Page) => page.getByRole("region", { name: "Selected match forecast" });
 const saved = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem("match-forecast.prospective-scorecard.v1") ?? "[]"));
 async function marketTab(page: Page) {
-  await page.getByRole("tab", { name: "Market comparison", exact: true }).click();
+  await page.getByRole("tab", { name: "Betting", exact: true }).click();
 }
 async function noPageOverflow(page: Page) {
   const sizes = await page.evaluate(() => ({
@@ -61,7 +61,7 @@ test("loads rounded odds, forecasts with full precision and preserves comparison
   expect(after.forecasted_at).toBe(before.forecasted_at);
   expect(after.market_snapshot).toEqual(before.market_snapshot);
   await fields.nth(0).fill("5.50");
-  await page.getByRole("tabpanel", { name: "Market comparison" })
+  await page.getByRole("tabpanel", { name: "Betting" })
     .getByRole("button", { name: "Compare odds", exact: true }).click();
   const manual = (await saved(page))[0];
   expect(manual.market_source).toBe("manual");
@@ -281,6 +281,12 @@ test("crowded fixtures, long names, odds, explorer and journal stay contained on
   await expect(page.locator(".tl-odds-inputs input").first()).toHaveValue("6.09");
   await noPageOverflow(page);
   await testInfo.attach("market-layout", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+  const sections = page.getByRole("group", { name: "Betting sections" });
+  for (const name of ["Goals", "Team totals", "Scores"]) {
+    await sections.getByRole("button", { name, exact: true }).click();
+    await noPageOverflow(page);
+    await testInfo.attach(`betting-${name.toLowerCase().replaceAll(" ", "-")}`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+  }
   await page.getByRole("button", { name: "Explore a matchup" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   const box = await page.getByRole("dialog").boundingBox();
@@ -290,4 +296,67 @@ test("crowded fixtures, long names, odds, explorer and journal stay contained on
   await navigate(page, "Forecast journal");
   await noPageOverflow(page);
   await testInfo.attach("journal-layout", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+});
+
+test("Betting calculates goal lines, compares manual prices, resets lines and retains the independent forecast", async ({ page, api }) => {
+  await ready(page);
+  await marketTab(page);
+  const sections = page.getByRole("group", { name: "Betting sections" });
+  await sections.getByRole("button", { name: "Goals", exact: true }).click();
+  await page.getByRole("button", { name: "Calculate these markets" }).click();
+  await expect(page.getByLabel("Total goals line")).toHaveValue("2.5");
+  await expect(page.locator(".tl-bet-source-note")).toContainText("EXPERIMENTAL");
+  const original = (await saved(page))[0].model_probabilities;
+  const total = page.getByRole("article", { name: "Total match goals", exact: true });
+  await total.getByText("Enter bookmaker odds", { exact: true }).click();
+  await total.getByRole("button", { name: "Compare this line" }).click();
+  await expect(total.getByRole("alert")).toContainText("Enter both decimal prices");
+  await total.getByLabel("Over odds", { exact: true }).fill("1.8");
+  await total.getByLabel("Under odds", { exact: true }).fill("2.2");
+  await total.getByRole("button", { name: "Compare this line" }).click();
+  await expect(total.getByRole("status")).toContainText("Manual comparison");
+  await expect(total.locator(".tl-bet-comparison").first()).toContainText("55.0%");
+  await expect(total.getByLabel("Over odds", { exact: true })).toHaveValue("1.80");
+  await expect(total.getByLabel("Under odds", { exact: true })).toHaveValue("2.20");
+  await page.getByLabel("Total goals line").selectOption("3.5");
+  await expect(total.locator(".tl-bet-line")).toHaveText("3.5");
+  await expect(total.locator(".tl-bet-comparison")).toHaveCount(0);
+  await sections.getByRole("button", { name: "Team totals", exact: true }).click();
+  await expect(page.getByLabel("Team goals line")).toHaveValue("1.5");
+  await expect(page.getByRole("article", { name: "Nottingham Forest goals", exact: true })).toBeVisible();
+  await page.getByLabel("Team goals line").selectOption("0.5");
+  await expect(page.locator(".tl-bet-card .tl-bet-line").first()).toHaveText("0.5");
+  await sections.getByRole("button", { name: "Scores", exact: true }).click();
+  await expect(page.locator(".tl-bet-score-grid > div")).toHaveCount(9);
+  await expect(page.locator(".tl-bet-scores")).toContainText("All other scores");
+  expect(api.requests.filter(r => new URL(r.url()).pathname === "/odds")).toHaveLength(0);
+  expect((await saved(page))[0].model_probabilities).toEqual(original);
+  await sections.getByRole("button", { name: "Result", exact: true }).click();
+  await page.getByRole("button", { name: "Load live market odds" }).click();
+  await expect(page.getByRole("article", { name: "Double chance", exact: true })).toContainText("derived from your margin-free 1X2");
+  await expect(page.getByRole("article", { name: "Draw no bet", exact: true })).toContainText("Draw refund: 23.0%");
+  await page.locator(".tl-fixture").nth(1).click();
+  await marketTab(page);
+  await sections.getByRole("button", { name: "Goals", exact: true }).click();
+  await expect(page.getByText("Start with the forecast.", { exact: true })).toBeVisible();
+});
+
+test("Betting handles unavailable goal estimates while keeping result odds usable", async ({ page, api }) => {
+  api.override = async (url, request) => {
+    if (url.pathname !== "/predict") return;
+    const response = prediction(request.postDataJSON());
+    response.betting = { ...response.betting!, goal_status: "unavailable", goal_note: "Goal estimates are outside the supported score range.", markets: response.betting!.markets.filter(m => m.group === "result") };
+    return { json: response };
+  };
+  await ready(page);
+  await page.getByRole("button", { name: "Generate forecast", exact: true }).click();
+  await expect(page.locator(".tl-jumbo-probability")).toContainText("57.4");
+  await marketTab(page);
+  const sections = page.getByRole("group", { name: "Betting sections" });
+  await sections.getByRole("button", { name: "Goals", exact: true }).click();
+  await expect(page.getByText("Goal estimates unavailable.", { exact: true })).toBeVisible();
+  await expect(page.locator(".tl-bet-card")).toHaveCount(0);
+  await sections.getByRole("button", { name: "Result", exact: true }).click();
+  await page.getByRole("button", { name: "Load live market odds" }).click();
+  await expect(page.locator(".tl-odds-inputs input").first()).toHaveValue("6.09");
 });

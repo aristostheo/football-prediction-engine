@@ -1,5 +1,7 @@
 import { test as base, expect, type Page, type Request } from "@playwright/test";
 import type { Competition, LiveFixture, MarketOddsQuote, Prediction, PredictionRequest } from "../src/api";
+import bettingForecast from "./betting-forecast.json";
+import type { BettingForecast } from "../src/api";
 
 export const NOW = "2026-10-18T16:00:00Z";
 export const DAY = "2026-10-20";
@@ -29,7 +31,7 @@ export function fixtures(competition: Competition, day = DAY): LiveFixture[] {
   }));
 }
 
-function prediction(body: PredictionRequest): Prediction {
+export function prediction(body: PredictionRequest): Prediction {
   const raw = body.odds_home && body.odds_draw && body.odds_away
     ? [1 / body.odds_home, 1 / body.odds_draw, 1 / body.odds_away] : null;
   const market = raw?.map(value => value / raw.reduce((a, b) => a + b, 0));
@@ -41,6 +43,7 @@ function prediction(body: PredictionRequest): Prediction {
     market_away_win_probability: market?.[2] ?? null,
     model_policy: "elo_poisson_25_75", history_through: "2026-10-17", history_age_days: 3,
     forecasted_at: NOW,
+    betting: bettingForecast as BettingForecast,
     context: {
       home_elo: 1450, away_elo: 1700, home_form_matches: 5, away_form_matches: 5,
       home_form_points_per_match: 1.2, away_form_points_per_match: 2,
