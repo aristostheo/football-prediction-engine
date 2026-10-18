@@ -1,6 +1,6 @@
 import { test as base, expect, type Page, type Request } from "@playwright/test";
 import type { Competition, LiveFixture, MarketOddsQuote, Prediction, PredictionRequest } from "../src/api";
-import bettingForecast from "./betting-forecast.json";
+import bettingForecast from "./betting-forecast.json" with { type: "json" };
 import type { BettingForecast } from "../src/api";
 
 export const NOW = "2026-10-18T16:00:00Z";
