@@ -68,7 +68,9 @@ The proposed match Betting tab is being developed in checkpoints. The first
 checkpoint adds offline goal-market calculations and a 10,984-match chronological
 benchmark; it does not change production forecasts or the UI. Read the
 [betting-market findings and next steps](docs/betting-markets.md), including
-the historical-date limitation and markets that still need validation.
+markets that still need validation. The [historical date correction](docs/historical-date-correction.md)
+documents corrected July/August 2020 chronology, the repeated benchmark and an
+offline migration that preserves newer results in local synced snapshots.
 
 ## Build model-ready features
 

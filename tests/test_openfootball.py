@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
 
+import pytest
+
 from football_predictor.domain import Competition
 from football_predictor.sources.openfootball import parse_openfootball_results
 
@@ -100,7 +102,7 @@ Sat Aug 19
 
 def test_parser_strips_awarded_marker_after_away_team_in_legacy_format() -> None:
     text = """▪ Matchday 1
-Sat Aug 19
+Sat Sep 19
   20:45  Hellas Verona FC         3-0  AS Roma                  [awarded]
 """
     matches = parse_openfootball_results(
@@ -152,3 +154,59 @@ def test_parser_canonicalizes_historical_english_club_labels() -> None:
     assert [(match.home_team, match.away_team) for match in matches] == [
         ("Aston Villa FC", "Ipswich Town FC")
     ]
+
+
+@pytest.mark.parametrize(
+    "header,expected",
+    [
+        ("Fri Aug 9", "2019-08-09"),
+        ("Wed Jul 1", "2020-07-01"),
+        ("Sat Aug 1", "2020-08-01"),
+        ("Sat Feb 29", "2020-02-29"),
+        ("Mon Jul 1", "2019-07-01"),  # A real first-year July date still works.
+    ],
+)
+def test_omitted_year_uses_weekday_including_pandemic_finish(header, expected):
+    matches = parse_openfootball_results(
+        f"{header}\n  Arsenal v Fulham 2-1\n",
+        competition=Competition.PREMIER_LEAGUE,
+        season="2019-20",
+        source_url=ENGLAND_SOURCE_URL,
+    )
+    assert matches[0].match_date.isoformat() == expected
+
+
+def test_year_inference_does_not_assume_postponed_headers_are_chronological():
+    matches = parse_openfootball_results(
+        "Sun Aug 2\n  Arsenal v Fulham 1-0\n"
+        "Fri Aug 9\n  Fulham v Arsenal 0-0\n"
+        "Sat Feb 29\n  Liverpool v Chelsea 2-1\n",
+        competition=Competition.PREMIER_LEAGUE,
+        season="2019-20",
+        source_url=ENGLAND_SOURCE_URL,
+    )
+    assert [m.match_date.isoformat() for m in matches] == [
+        "2020-08-02",
+        "2019-08-09",
+        "2020-02-29",
+    ]
+
+
+def test_inconsistent_omitted_year_header_fails_closed():
+    with pytest.raises(ValueError, match="cannot infer year"):
+        parse_openfootball_results(
+            "Thu Jul 1\n  Arsenal v Fulham 1-0\n",
+            competition=Competition.PREMIER_LEAGUE,
+            season="2019-20",
+            source_url=ENGLAND_SOURCE_URL,
+        )
+
+
+def test_explicit_year_is_authoritative_even_with_a_weekday_typo():
+    matches = parse_openfootball_results(
+        "Thu Jul 1 2020\n  Arsenal v Fulham 1-0\n",
+        competition=Competition.PREMIER_LEAGUE,
+        season="2019-20",
+        source_url=ENGLAND_SOURCE_URL,
+    )
+    assert matches[0].match_date.isoformat() == "2020-07-01"

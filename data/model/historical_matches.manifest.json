@@ -1,6 +1,6 @@
 {
-  "dataset_sha256": "ed3b8b61194f5baa2f30da1dbc2142b79a94ed4abcd7e3b2842542164a5ffc82",
-  "generated_at": "2026-10-14T05:05:06.766396+00:00",
+  "dataset_sha256": "c651760f234e86beb50653cc99fd6c144c6778929443d5a73d1d17ece5d2925c",
+  "generated_at": "2026-10-18T20:08:53.758303+00:00",
   "matches_by_competition": {
     "bundesliga": 2484,
     "la_liga": 3109,
@@ -15,6 +15,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -25,6 +26,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -35,6 +37,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -45,6 +48,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -55,6 +59,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -65,6 +70,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -75,6 +81,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -85,6 +92,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -95,6 +103,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -105,6 +114,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -115,6 +125,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -125,6 +136,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -135,6 +147,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -145,6 +158,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -155,6 +169,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -165,6 +180,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -175,6 +191,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -185,6 +202,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -195,6 +213,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -205,6 +224,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -215,6 +235,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -225,6 +246,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -235,6 +257,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -245,6 +268,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -255,6 +279,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -265,6 +290,7 @@
     {
       "competition": "premier_league",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -275,6 +301,7 @@
     {
       "competition": "premier_league",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 50,
@@ -285,6 +312,7 @@
     {
       "competition": "super_league_greece",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 30,
       "expected_team_count": 16,
       "match_count": 240,
@@ -295,6 +323,7 @@
     {
       "competition": "super_league_greece",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 26,
       "expected_team_count": 14,
       "match_count": 182,
@@ -305,6 +334,7 @@
     {
       "competition": "super_league_greece",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 26,
       "expected_team_count": 14,
       "match_count": 182,
@@ -315,6 +345,7 @@
     {
       "competition": "super_league_greece",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 26,
       "expected_team_count": 14,
       "match_count": 182,
@@ -325,6 +356,7 @@
     {
       "competition": "super_league_greece",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 26,
       "expected_team_count": 14,
       "match_count": 182,
@@ -335,6 +367,7 @@
     {
       "competition": "super_league_greece",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 62,
@@ -345,6 +378,7 @@
     {
       "competition": "super_league_greece",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 35,
@@ -355,6 +389,7 @@
     {
       "competition": "la_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -365,6 +400,7 @@
     {
       "competition": "la_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -375,6 +411,7 @@
     {
       "competition": "la_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -385,6 +422,7 @@
     {
       "competition": "la_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -395,6 +433,7 @@
     {
       "competition": "la_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -405,6 +444,7 @@
     {
       "competition": "la_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -415,6 +455,7 @@
     {
       "competition": "la_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -425,6 +466,7 @@
     {
       "competition": "la_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -435,6 +477,7 @@
     {
       "competition": "la_liga",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 69,
@@ -445,6 +488,7 @@
     {
       "competition": "bundesliga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -455,6 +499,7 @@
     {
       "competition": "bundesliga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -465,6 +510,7 @@
     {
       "competition": "bundesliga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -475,6 +521,7 @@
     {
       "competition": "bundesliga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -485,6 +532,7 @@
     {
       "competition": "bundesliga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -495,6 +543,7 @@
     {
       "competition": "bundesliga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -505,6 +554,7 @@
     {
       "competition": "bundesliga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -515,6 +565,7 @@
     {
       "competition": "bundesliga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -525,6 +576,7 @@
     {
       "competition": "bundesliga",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 36,
@@ -535,6 +587,7 @@
     {
       "competition": "serie_a",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -545,6 +598,7 @@
     {
       "competition": "serie_a",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -555,6 +609,7 @@
     {
       "competition": "serie_a",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -565,6 +620,7 @@
     {
       "competition": "serie_a",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -575,6 +631,7 @@
     {
       "competition": "serie_a",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -585,6 +642,7 @@
     {
       "competition": "serie_a",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -595,6 +653,7 @@
     {
       "competition": "serie_a",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -605,6 +664,7 @@
     {
       "competition": "serie_a",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -615,6 +675,7 @@
     {
       "competition": "serie_a",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 50,
@@ -625,6 +686,7 @@
     {
       "competition": "ligue_1",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -635,6 +697,7 @@
     {
       "competition": "ligue_1",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 279,
@@ -645,6 +708,7 @@
     {
       "competition": "ligue_1",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -655,6 +719,7 @@
     {
       "competition": "ligue_1",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -665,6 +730,7 @@
     {
       "competition": "ligue_1",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 38,
       "expected_team_count": 20,
       "match_count": 380,
@@ -675,6 +741,7 @@
     {
       "competition": "ligue_1",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -685,6 +752,7 @@
     {
       "competition": "ligue_1",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -695,6 +763,7 @@
     {
       "competition": "ligue_1",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -705,6 +774,7 @@
     {
       "competition": "ligue_1",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 45,
@@ -715,6 +785,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -725,6 +796,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -735,6 +807,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -745,6 +818,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -755,6 +829,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -765,6 +840,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -775,6 +851,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -785,6 +862,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": true,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": 34,
       "expected_team_count": 18,
       "match_count": 306,
@@ -795,6 +873,7 @@
     {
       "competition": "primeira_liga",
       "complete_season": false,
+      "date_inference": "explicit year or weekday-matched season year",
       "expected_matches_per_team": null,
       "expected_team_count": null,
       "match_count": 62,

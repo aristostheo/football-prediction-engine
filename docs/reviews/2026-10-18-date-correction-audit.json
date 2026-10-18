@@ -1,0 +1,1466 @@
+{
+  "corrected_dates": 268,
+  "already_correct": 0,
+  "fixtures_absent": 0,
+  "before_dataset_sha256": "ed3b8b61194f5baa2f30da1dbc2142b79a94ed4abcd7e3b2842542164a5ffc82",
+  "after_dataset_sha256": "c651760f234e86beb50653cc99fd6c144c6778929443d5a73d1d17ece5d2925c",
+  "matches": 24950,
+  "corrections_by_league": {
+    "la_liga": 57,
+    "premier_league": 66,
+    "primeira_liga": 47,
+    "serie_a": 98
+  },
+  "sources_audited": [
+    {
+      "competition": "premier_league",
+      "season": "2000-01",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2000-01/1-premierleague.txt",
+      "source_sha256": "1dd213e35461ed12218c0023da15470fe03851ebb498a830923312c6f6130ba0",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2001-02",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2001-02/1-premierleague.txt",
+      "source_sha256": "ea746447b3ff93b3b5944a07bcdac75aa468c631028acb951183a0f096f2aa7e",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2002-03",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2002-03/1-premierleague.txt",
+      "source_sha256": "73540a221f8bb249b5d2b1b1e623e72ff92de74e573d17891697002cbaefa6e8",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2003-04",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2003-04/1-premierleague.txt",
+      "source_sha256": "3810a2adac834fa8ce9f6fa70e49978450c6723b1c8cb320cf90ff77350859ec",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2004-05",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2004-05/1-premierleague.txt",
+      "source_sha256": "b95037eea4414b03fd6caa83671e6431d778d3900ebc771ce0d0939710da6001",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2005-06",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2005-06/1-premierleague.txt",
+      "source_sha256": "fd1838288f00f5e1521ae84fac229dd1e5c77231371690e0b9c2365d0088500c",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2006-07",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2006-07/1-premierleague.txt",
+      "source_sha256": "2b8c43a8642cd059039c86647178ba41758b542ee78598590335e80dce8541d7",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2007-08",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2007-08/1-premierleague.txt",
+      "source_sha256": "8181d274e1836c348e62ef336d1ecc4dea0fa62b64b495e0c919ba3ff35c5a9a",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2008-09",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2008-09/1-premierleague.txt",
+      "source_sha256": "967f8e785eb24365b6a3d5664db5ce1cda15242cfd52cf18e2e165b05c2d81f9",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2009-10",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2009-10/1-premierleague.txt",
+      "source_sha256": "7a24f841ff6d3e6fd9cd88577dcbb4fe39923463c19533054874e436abfc60b2",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2010-11",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2010-11/1-premierleague.txt",
+      "source_sha256": "3c46a3dee46ec938ee4242e8b9c27937b0dad5784f86651f81d26dea1ed7be33",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2011-12",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2011-12/1-premierleague.txt",
+      "source_sha256": "29baffcfade54caeea9bc62a7b78fe05267500b6fe24153a52a01c2fa46768d2",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2012-13",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2012-13/1-premierleague.txt",
+      "source_sha256": "266a2037ae717d1187453c52b8b12499dcdb3bebeb179c857a3cf87115387503",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2013-14",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2013-14/1-premierleague.txt",
+      "source_sha256": "96043e4e6343fcc008070e85349212c2563292e68b22e221890a9f903638adf4",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2014-15",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2014-15/1-premierleague.txt",
+      "source_sha256": "dd933efc1d5391f24846cc3390a6d9c76cdd1fe7514454d0f769d77572f53c8e",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2015-16",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2015-16/1-premierleague.txt",
+      "source_sha256": "65cf56216d8d97d2bcb71f96bd18bc7eccf68303929fecab0e60e21a269f5ad4",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2016-17",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2016-17/1-premierleague.txt",
+      "source_sha256": "c59d6fe6613ed72a16036b5ee7a2e1bb7495d05a6a91a07e1df9687b5438ba4f",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2017-18",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2017-18/1-premierleague.txt",
+      "source_sha256": "da4eb92aba943ef35998c35e0ded30a4559ed49acff27758c00aa07aae335dfa",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2018-19",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2018-19/1-premierleague.txt",
+      "source_sha256": "60de267b8f8ddf375686b16690f41e968584f3b90f1075f72e7e23ce87cbfed1",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2019-20",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2019-20/1-premierleague.txt",
+      "source_sha256": "449235ae433c8697d80a68b3cec602891becd72f1a39d99cd9337e5cdce5b521",
+      "changed_headers": [
+        {
+          "header": "Wed Jul 1",
+          "old": "2019-07-01",
+          "new": "2020-07-01"
+        },
+        {
+          "header": "Thu Jul 2",
+          "old": "2019-07-02",
+          "new": "2020-07-02"
+        },
+        {
+          "header": "Sat Jul 4",
+          "old": "2019-07-04",
+          "new": "2020-07-04"
+        },
+        {
+          "header": "Sun Jul 5",
+          "old": "2019-07-05",
+          "new": "2020-07-05"
+        },
+        {
+          "header": "Mon Jul 6",
+          "old": "2019-07-06",
+          "new": "2020-07-06"
+        },
+        {
+          "header": "Tue Jul 7",
+          "old": "2019-07-07",
+          "new": "2020-07-07"
+        },
+        {
+          "header": "Wed Jul 8",
+          "old": "2019-07-08",
+          "new": "2020-07-08"
+        },
+        {
+          "header": "Thu Jul 9",
+          "old": "2019-07-09",
+          "new": "2020-07-09"
+        },
+        {
+          "header": "Sat Jul 11",
+          "old": "2019-07-11",
+          "new": "2020-07-11"
+        },
+        {
+          "header": "Sun Jul 12",
+          "old": "2019-07-12",
+          "new": "2020-07-12"
+        },
+        {
+          "header": "Mon Jul 13",
+          "old": "2019-07-13",
+          "new": "2020-07-13"
+        },
+        {
+          "header": "Tue Jul 14",
+          "old": "2019-07-14",
+          "new": "2020-07-14"
+        },
+        {
+          "header": "Wed Jul 15",
+          "old": "2019-07-15",
+          "new": "2020-07-15"
+        },
+        {
+          "header": "Thu Jul 16",
+          "old": "2019-07-16",
+          "new": "2020-07-16"
+        },
+        {
+          "header": "Fri Jul 17",
+          "old": "2019-07-17",
+          "new": "2020-07-17"
+        },
+        {
+          "header": "Sat Jul 18",
+          "old": "2019-07-18",
+          "new": "2020-07-18"
+        },
+        {
+          "header": "Sun Jul 19",
+          "old": "2019-07-19",
+          "new": "2020-07-19"
+        },
+        {
+          "header": "Mon Jul 20",
+          "old": "2019-07-20",
+          "new": "2020-07-20"
+        },
+        {
+          "header": "Tue Jul 21",
+          "old": "2019-07-21",
+          "new": "2020-07-21"
+        },
+        {
+          "header": "Wed Jul 22",
+          "old": "2019-07-22",
+          "new": "2020-07-22"
+        },
+        {
+          "header": "Sun Jul 26",
+          "old": "2019-07-26",
+          "new": "2020-07-26"
+        }
+      ],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2020-21",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2020-21/1-premierleague.txt",
+      "source_sha256": "5a3bc3cbe407df02fb826c8786c8ec196a57ae5e07f27392b601eb4ed42eb5f7",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2021-22",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2021-22/1-premierleague.txt",
+      "source_sha256": "d040c1a4f66932c213a7709cf699667f18d5825f38fd9eafe183a645bcd7500d",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2022-23",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2022-23/1-premierleague.txt",
+      "source_sha256": "96e3587b76682de55248197c7eb8671cbe9a007ae61d13f8d7dbd16b7f59f0a8",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2023-24",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2023-24/1-premierleague.txt",
+      "source_sha256": "16f7b1f44c4c97e112ec3673ed559b6b3c5505704d47a4cf539a78931cfce431",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2024-25",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2024-25/1-premierleague.txt",
+      "source_sha256": "6c80314d195a688bbd49517c490541c4ee2d7bc08bcc228aa10729743e309d94",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2025-26",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2025-26/1-premierleague.txt",
+      "source_sha256": "38c1de56c9e9b6662c7efc1420b7e1fe00dddbb502fe72d8f759e773ba3c093b",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "premier_league",
+      "season": "2026-27",
+      "source_url": "https://raw.githubusercontent.com/openfootball/england/master/2026-27/1-premierleague.txt",
+      "source_sha256": "a2366ea9f7f55b8afd666e455666ba9019f9c62da8864f6bcf3adff65300b445",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "super_league_greece",
+      "season": "2018-19",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2018-19_gr1.txt",
+      "source_sha256": "b23d6de5bb7b84c95e6abd7b2b4198b07bc6534b878b3d36a002af36f8b560a8",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "super_league_greece",
+      "season": "2019-20",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2019-20_gr1.txt",
+      "source_sha256": "8d9fff8d2d7c333de633a4656af1622f4579bcffc370a422562edc1a4c75a4c5",
+      "changed_headers": [
+        {
+          "header": "Sat Jul 4",
+          "old": "2019-07-04",
+          "new": "2020-07-04"
+        },
+        {
+          "header": "Mon Jul 6",
+          "old": "2019-07-06",
+          "new": "2020-07-06"
+        },
+        {
+          "header": "Sat Jul 11",
+          "old": "2019-07-11",
+          "new": "2020-07-11"
+        },
+        {
+          "header": "Sat Jul 18",
+          "old": "2019-07-18",
+          "new": "2020-07-18"
+        },
+        {
+          "header": "Wed Jul 1",
+          "old": "2019-07-01",
+          "new": "2020-07-01"
+        },
+        {
+          "header": "Sat Jul 4",
+          "old": "2019-07-04",
+          "new": "2020-07-04"
+        },
+        {
+          "header": "Sun Jul 5",
+          "old": "2019-07-05",
+          "new": "2020-07-05"
+        },
+        {
+          "header": "Wed Jul 8",
+          "old": "2019-07-08",
+          "new": "2020-07-08"
+        },
+        {
+          "header": "Sat Jul 11",
+          "old": "2019-07-11",
+          "new": "2020-07-11"
+        },
+        {
+          "header": "Sun Jul 12",
+          "old": "2019-07-12",
+          "new": "2020-07-12"
+        },
+        {
+          "header": "Wed Jul 15",
+          "old": "2019-07-15",
+          "new": "2020-07-15"
+        },
+        {
+          "header": "Sun Jul 19",
+          "old": "2019-07-19",
+          "new": "2020-07-19"
+        }
+      ],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "super_league_greece",
+      "season": "2020-21",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2020-21_gr1.txt",
+      "source_sha256": "be33ff460bf4208d74acb3aba5048880b5551acf3e1006257345327393be17aa",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "super_league_greece",
+      "season": "2023-24",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2023-24_gr1.txt",
+      "source_sha256": "01c651d2b8c99744fbc0f1948f0ace62667b15265a16d818393fb79dc5c6b315",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "super_league_greece",
+      "season": "2024-25",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2024-25_gr1.txt",
+      "source_sha256": "63d55393ae653baa663fb227b396ec3012641a5b8bca8ffc2b0e3106ed64d20b",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "super_league_greece",
+      "season": "2025-26",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2025-26_gr1.txt",
+      "source_sha256": "10ee20ddd4f2f89821570819f437e9309458d5e4fde19e7e62677f5c811232ed",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "super_league_greece",
+      "season": "2026-27",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/greece/2026-27_gr1.txt",
+      "source_sha256": "672b39e513df59ae9699d0a5f590b23931fc1bdbc122c43d540a4c6ab7dd4883",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2018-19",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2018-19/1-liga.txt",
+      "source_sha256": "4866c2fc27773743f8550cf8458935c72afcebf9888f3036dc9317796d59c7f1",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2019-20",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2019-20/1-liga.txt",
+      "source_sha256": "6515a7b7a263bd4db2933998c22b67a5672a16bd81af341002892176088e4f92",
+      "changed_headers": [
+        {
+          "header": "Wed Jul 1",
+          "old": "2019-07-01",
+          "new": "2020-07-01"
+        },
+        {
+          "header": "Thu Jul 2",
+          "old": "2019-07-02",
+          "new": "2020-07-02"
+        },
+        {
+          "header": "Fri Jul 3",
+          "old": "2019-07-03",
+          "new": "2020-07-03"
+        },
+        {
+          "header": "Sat Jul 4",
+          "old": "2019-07-04",
+          "new": "2020-07-04"
+        },
+        {
+          "header": "Sun Jul 5",
+          "old": "2019-07-05",
+          "new": "2020-07-05"
+        },
+        {
+          "header": "Mon Jul 6",
+          "old": "2019-07-06",
+          "new": "2020-07-06"
+        },
+        {
+          "header": "Tue Jul 7",
+          "old": "2019-07-07",
+          "new": "2020-07-07"
+        },
+        {
+          "header": "Wed Jul 8",
+          "old": "2019-07-08",
+          "new": "2020-07-08"
+        },
+        {
+          "header": "Thu Jul 9",
+          "old": "2019-07-09",
+          "new": "2020-07-09"
+        },
+        {
+          "header": "Fri Jul 10",
+          "old": "2019-07-10",
+          "new": "2020-07-10"
+        },
+        {
+          "header": "Sat Jul 11",
+          "old": "2019-07-11",
+          "new": "2020-07-11"
+        },
+        {
+          "header": "Sun Jul 12",
+          "old": "2019-07-12",
+          "new": "2020-07-12"
+        },
+        {
+          "header": "Mon Jul 13",
+          "old": "2019-07-13",
+          "new": "2020-07-13"
+        },
+        {
+          "header": "Thu Jul 16",
+          "old": "2019-07-16",
+          "new": "2020-07-16"
+        },
+        {
+          "header": "Sun Jul 19",
+          "old": "2019-07-19",
+          "new": "2020-07-19"
+        }
+      ],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2020-21",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2020-21/1-liga.txt",
+      "source_sha256": "461cc9432f8b53cd6e13b5e066bba11d3a4534939da351906b8b669cacce3434",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2021-22",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2021-22/1-liga.txt",
+      "source_sha256": "802b1d8228d4d3cb91747971dd1689105619e14d8952074374dc37e1f04f4220",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2022-23",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2022-23/1-liga.txt",
+      "source_sha256": "fd925ba5acf06fd3a33d50b81322eb20ad530caeed8e4331d1afeb88e86d0351",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2023-24",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2023-24/1-liga.txt",
+      "source_sha256": "5bb1a830ad007604b9ce33976dafb9abbe75419ac7a0de88a05d6a992f62d761",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2024-25",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2024-25/1-liga.txt",
+      "source_sha256": "d549a9523041d31879034e666164d684a3c66e7b1e8b40fa1a82a3419b0f2d06",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2025-26",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2025-26/1-liga.txt",
+      "source_sha256": "baf2a9ae42c4c6a919eb39aa2476f1d44b9d3b18050adfc6386d36ef2a98e956",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "la_liga",
+      "season": "2026-27",
+      "source_url": "https://raw.githubusercontent.com/openfootball/espana/master/2026-27/1-liga.txt",
+      "source_sha256": "1ab49c2553bc7919916495160a49af226ce55e44bf81f93161d60632242374ce",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2018-19",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2018-19/1-bundesliga.txt",
+      "source_sha256": "4b127949a5ea31e52270b01a5df2e4e7024c3fcf1106efab38737c8db46a92a1",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2019-20",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2019-20/1-bundesliga.txt",
+      "source_sha256": "bd9b60094e486866ce2cb361854ce24cff777b335c1581974d4cbccc7039652d",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2020-21",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2020-21/1-bundesliga.txt",
+      "source_sha256": "65ba2bb18e4106b78ba7122bc357cb9bc6567f265d8a286f1a4170ee180d68a7",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2021-22",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2021-22/1-bundesliga.txt",
+      "source_sha256": "740b81247a524c87f0ed22be6e2c2215084185d85c81e3a06da34dbb3a643d3b",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2022-23",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2022-23/1-bundesliga.txt",
+      "source_sha256": "032858c6f950bff535686be620d69e4a388bf905ee7330a26003aec9b38b49f8",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2023-24",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2023-24/1-bundesliga.txt",
+      "source_sha256": "f277abdd1d2e0fff042dc0a299f81dd7aaf2b2b75433673e8e1f3004abd11bba",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2024-25",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2024-25/1-bundesliga.txt",
+      "source_sha256": "f70ef355bc540d84e93eb98b900e007368c27e61fa114d45045e414a91fc7faa",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2025-26",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2025-26/1-bundesliga.txt",
+      "source_sha256": "c1858a191c8dddf7cc04014c29c63f401b400af0be4d20329d85af893a6b7e56",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "bundesliga",
+      "season": "2026-27",
+      "source_url": "https://raw.githubusercontent.com/openfootball/deutschland/master/2026-27/1-bundesliga.txt",
+      "source_sha256": "5e4293123c962b1255dfa09a9ed2ad26a6a09e52e224f91558991c6b4a0dfa5e",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2018-19",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2018-19/1-seriea.txt",
+      "source_sha256": "7e24da2f9d4455d2d73518d0f5e3ba9c2bee61b97dc2d9853fec1c07a62ccc1c",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2019-20",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2019-20/1-seriea.txt",
+      "source_sha256": "7b4ef7f0139927a01cd6a376fbaae0354b9c7e3816ada5af5985adfaa11a916a",
+      "changed_headers": [
+        {
+          "header": "Wed Jul 1",
+          "old": "2019-07-01",
+          "new": "2020-07-01"
+        },
+        {
+          "header": "Thu Jul 2",
+          "old": "2019-07-02",
+          "new": "2020-07-02"
+        },
+        {
+          "header": "Sat Jul 4",
+          "old": "2019-07-04",
+          "new": "2020-07-04"
+        },
+        {
+          "header": "Sun Jul 5",
+          "old": "2019-07-05",
+          "new": "2020-07-05"
+        },
+        {
+          "header": "Tue Jul 7",
+          "old": "2019-07-07",
+          "new": "2020-07-07"
+        },
+        {
+          "header": "Wed Jul 8",
+          "old": "2019-07-08",
+          "new": "2020-07-08"
+        },
+        {
+          "header": "Thu Jul 9",
+          "old": "2019-07-09",
+          "new": "2020-07-09"
+        },
+        {
+          "header": "Sat Jul 11",
+          "old": "2019-07-11",
+          "new": "2020-07-11"
+        },
+        {
+          "header": "Sun Jul 12",
+          "old": "2019-07-12",
+          "new": "2020-07-12"
+        },
+        {
+          "header": "Mon Jul 13",
+          "old": "2019-07-13",
+          "new": "2020-07-13"
+        },
+        {
+          "header": "Tue Jul 14",
+          "old": "2019-07-14",
+          "new": "2020-07-14"
+        },
+        {
+          "header": "Wed Jul 15",
+          "old": "2019-07-15",
+          "new": "2020-07-15"
+        },
+        {
+          "header": "Thu Jul 16",
+          "old": "2019-07-16",
+          "new": "2020-07-16"
+        },
+        {
+          "header": "Sat Jul 18",
+          "old": "2019-07-18",
+          "new": "2020-07-18"
+        },
+        {
+          "header": "Sun Jul 19",
+          "old": "2019-07-19",
+          "new": "2020-07-19"
+        },
+        {
+          "header": "Mon Jul 20",
+          "old": "2019-07-20",
+          "new": "2020-07-20"
+        },
+        {
+          "header": "Tue Jul 21",
+          "old": "2019-07-21",
+          "new": "2020-07-21"
+        },
+        {
+          "header": "Wed Jul 22",
+          "old": "2019-07-22",
+          "new": "2020-07-22"
+        },
+        {
+          "header": "Thu Jul 23",
+          "old": "2019-07-23",
+          "new": "2020-07-23"
+        },
+        {
+          "header": "Fri Jul 24",
+          "old": "2019-07-24",
+          "new": "2020-07-24"
+        },
+        {
+          "header": "Sat Jul 25",
+          "old": "2019-07-25",
+          "new": "2020-07-25"
+        },
+        {
+          "header": "Sun Jul 26",
+          "old": "2019-07-26",
+          "new": "2020-07-26"
+        },
+        {
+          "header": "Tue Jul 28",
+          "old": "2019-07-28",
+          "new": "2020-07-28"
+        },
+        {
+          "header": "Wed Jul 29",
+          "old": "2019-07-29",
+          "new": "2020-07-29"
+        },
+        {
+          "header": "Sat Aug 1",
+          "old": "2019-08-01",
+          "new": "2020-08-01"
+        },
+        {
+          "header": "Sun Aug 2",
+          "old": "2019-08-02",
+          "new": "2020-08-02"
+        }
+      ],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2020-21",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2020-21/1-seriea.txt",
+      "source_sha256": "503c95bb9559c502ee44eb1faec9b2a7f37d90b481ef04745c952c26f1aea0bc",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2021-22",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2021-22/1-seriea.txt",
+      "source_sha256": "20864f456794e6ad316c1170f6e0f2cc4e949c5732fe3670bc9e996e1714b008",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2022-23",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2022-23/1-seriea.txt",
+      "source_sha256": "4d2ffe551301afdad3eb2497d6d7d8d1efdac9caefc372fbff02418216d3b720",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2023-24",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2023-24/1-seriea.txt",
+      "source_sha256": "70934d48abab4c52c009776bb77d526ac8c7439377e86a1101f434a3958f45a5",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2024-25",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2024-25/1-seriea.txt",
+      "source_sha256": "8182dcac220ac0a013729aede42d8dbbdf9807d490242e3228905c7ca972662b",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2025-26",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2025-26/1-seriea.txt",
+      "source_sha256": "a746c3bb7c1c3a90fa54c50d52b7dd3b5ad5f5c440ebcadb044bbc8554c93a82",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "serie_a",
+      "season": "2026-27",
+      "source_url": "https://raw.githubusercontent.com/openfootball/italy/master/2026-27/1-seriea.txt",
+      "source_sha256": "a4e67afdee7bbda2b1b920d3f8cead73ed792f024b1bcc50141acae551202710",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2018-19",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2018-19_fr1.txt",
+      "source_sha256": "4b4d12872abbdf050f35fae0399f9a5831471e07e76da249396fe980e7fbbfea",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2019-20",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2019-20_fr1.txt",
+      "source_sha256": "671c6793122ab29b88b203f13c9201c85c02b1bb45ab617c5aee625e5658f55e",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2020-21",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2020-21_fr1.txt",
+      "source_sha256": "526fad085e8d51eb302a4fe66b083c3fed1740e126a3dc948e53343655600927",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2021-22",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2021-22_fr1.txt",
+      "source_sha256": "2ff8d0e479ce267a4c677523568365acb635769d4b2c1dc3c76e853836b6de9b",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2022-23",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2022-23_fr1.txt",
+      "source_sha256": "79ef7edcde1e412835c7dde94df2a12d44e2edaed78bbeffe6e817b6b5ae6491",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2023-24",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2023-24_fr1.txt",
+      "source_sha256": "0976d046432ad9a503fbccb7e935c8cdf19789639db49c9dd59098d3e663ac24",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2024-25",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2024-25_fr1.txt",
+      "source_sha256": "c53565c8664d2ae14cfa226dc9cc0b8f4393acc1e21d8095e26e0fc23b37b3f1",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2025-26",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2025-26_fr1.txt",
+      "source_sha256": "d173d6d5e41ca1f42c1b6b0b4b65fd7eabdd49130867c47dfd3ad2007869d347",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "ligue_1",
+      "season": "2026-27",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/france/2026-27_fr1.txt",
+      "source_sha256": "f223f2239669717fb3331bdfa04d181e9596ca1f967dd49e13dc4587ae19df0e",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2018-19",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2018-19_pt1.txt",
+      "source_sha256": "7a99339e670a9ea0b01d34d1ac3542c5f2c1f6ad0da84da429894b82f114729c",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2019-20",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2019-20_pt1.txt",
+      "source_sha256": "4945550bfc3d4e91ba4ea1d3a229a07ff72b6255a9cf485819bb75780c3808bf",
+      "changed_headers": [
+        {
+          "header": "Wed Jul 1",
+          "old": "2019-07-01",
+          "new": "2020-07-01"
+        },
+        {
+          "header": "Fri Jul 3",
+          "old": "2019-07-03",
+          "new": "2020-07-03"
+        },
+        {
+          "header": "Sat Jul 4",
+          "old": "2019-07-04",
+          "new": "2020-07-04"
+        },
+        {
+          "header": "Sun Jul 5",
+          "old": "2019-07-05",
+          "new": "2020-07-05"
+        },
+        {
+          "header": "Mon Jul 6",
+          "old": "2019-07-06",
+          "new": "2020-07-06"
+        },
+        {
+          "header": "Wed Jul 8",
+          "old": "2019-07-08",
+          "new": "2020-07-08"
+        },
+        {
+          "header": "Thu Jul 9",
+          "old": "2019-07-09",
+          "new": "2020-07-09"
+        },
+        {
+          "header": "Fri Jul 10",
+          "old": "2019-07-10",
+          "new": "2020-07-10"
+        },
+        {
+          "header": "Sat Jul 11",
+          "old": "2019-07-11",
+          "new": "2020-07-11"
+        },
+        {
+          "header": "Mon Jul 13",
+          "old": "2019-07-13",
+          "new": "2020-07-13"
+        },
+        {
+          "header": "Tue Jul 14",
+          "old": "2019-07-14",
+          "new": "2020-07-14"
+        },
+        {
+          "header": "Wed Jul 15",
+          "old": "2019-07-15",
+          "new": "2020-07-15"
+        },
+        {
+          "header": "Sat Jul 18",
+          "old": "2019-07-18",
+          "new": "2020-07-18"
+        },
+        {
+          "header": "Sun Jul 19",
+          "old": "2019-07-19",
+          "new": "2020-07-19"
+        },
+        {
+          "header": "Mon Jul 20",
+          "old": "2019-07-20",
+          "new": "2020-07-20"
+        },
+        {
+          "header": "Tue Jul 21",
+          "old": "2019-07-21",
+          "new": "2020-07-21"
+        },
+        {
+          "header": "Fri Jul 24",
+          "old": "2019-07-24",
+          "new": "2020-07-24"
+        },
+        {
+          "header": "Sat Jul 25",
+          "old": "2019-07-25",
+          "new": "2020-07-25"
+        },
+        {
+          "header": "Sun Jul 26",
+          "old": "2019-07-26",
+          "new": "2020-07-26"
+        }
+      ],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2020-21",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2020-21_pt1.txt",
+      "source_sha256": "9a151b372db4b926ed431e44dc0baba99154fe4cf0624eb5dda12530c15f7fb2",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2021-22",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2021-22_pt1.txt",
+      "source_sha256": "cb135ee5bcfe9b6b6d1dd1aa561188afd4794266e4eb92c43201337fdc7235ed",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2022-23",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2022-23_pt1.txt",
+      "source_sha256": "4eb1e987494f4ee26b9ee2991bd0e21e0e95df61d027f34bfcb321be5260928a",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2023-24",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2023-24_pt1.txt",
+      "source_sha256": "d71bb8a56120238770b04d01e6301f5b3a6bbe0559fdbc137728cdd0a20141ae",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2024-25",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2024-25_pt1.txt",
+      "source_sha256": "d36e194694ab7ecfa4db912b26ce08c9971304a12f47b0e36c26e0360bf08c9e",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2025-26",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2025-26_pt1.txt",
+      "source_sha256": "1fc5ddc8c76c3b41228a5b487555af1020664b2750587035a44d9551efa55eb8",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    },
+    {
+      "competition": "primeira_liga",
+      "season": "2026-27",
+      "source_url": "https://raw.githubusercontent.com/openfootball/europe/master/portugal/2026-27_pt1.txt",
+      "source_sha256": "2674da5ac659796117342f216a20508152df491523dcc65634696ae066183e84",
+      "changed_headers": [],
+      "unresolved": [],
+      "explicit_weekday_mismatches": []
+    }
+  ],
+  "source_text_policy": "LF-normalized content hashes match all 79 original manifest hashes; downloaded files differ only in CRLF transport for 67 sources.",
+  "paired_corrected_minus_original": {
+    "bundesliga": {
+      "production_1x2": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "goal_raw_score_nll": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "over_2.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "btts_yes": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "home_over_1.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "away_over_1.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      }
+    },
+    "la_liga": {
+      "production_1x2": {
+        "delta": -3.327833780346526e-05,
+        "lower_95": -0.00015673139621509883,
+        "upper_95": 7.278734528686595e-05,
+        "season_blocks": 5
+      },
+      "goal_raw_score_nll": {
+        "delta": 0.005538056886288808,
+        "lower_95": 0.0007390044577594344,
+        "upper_95": 0.0143161954778974,
+        "season_blocks": 5
+      },
+      "over_2.5": {
+        "delta": 0.001402400549469335,
+        "lower_95": -0.00012809155640429071,
+        "upper_95": 0.003935260816984086,
+        "season_blocks": 5
+      },
+      "btts_yes": {
+        "delta": 0.0010633539400656117,
+        "lower_95": 2.8148708691865956e-05,
+        "upper_95": 0.0022690016700060503,
+        "season_blocks": 5
+      },
+      "home_over_1.5": {
+        "delta": 4.9301240055351575e-05,
+        "lower_95": -0.0005762532961488152,
+        "upper_95": 0.0005107993420901231,
+        "season_blocks": 5
+      },
+      "away_over_1.5": {
+        "delta": 0.0038543443110462877,
+        "lower_95": -6.720711738835271e-05,
+        "upper_95": 0.011438125583170798,
+        "season_blocks": 5
+      }
+    },
+    "ligue_1": {
+      "production_1x2": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "goal_raw_score_nll": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "over_2.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "btts_yes": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "home_over_1.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      },
+      "away_over_1.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 5
+      }
+    },
+    "premier_league": {
+      "production_1x2": {
+        "delta": -7.047090520459717e-05,
+        "lower_95": -0.00024148117065602256,
+        "upper_95": 0.00010864622562738773,
+        "season_blocks": 5
+      },
+      "goal_raw_score_nll": {
+        "delta": 0.0005788907069226829,
+        "lower_95": 2.9094748324533253e-05,
+        "upper_95": 0.001320097623361803,
+        "season_blocks": 5
+      },
+      "over_2.5": {
+        "delta": 0.00042569669894134196,
+        "lower_95": -9.628974462506363e-06,
+        "upper_95": 0.0009466861635351855,
+        "season_blocks": 5
+      },
+      "btts_yes": {
+        "delta": 3.6920811185873524e-05,
+        "lower_95": -0.00012417163788572914,
+        "upper_95": 0.0001980132602574762,
+        "season_blocks": 5
+      },
+      "home_over_1.5": {
+        "delta": 0.00011158976579694493,
+        "lower_95": -0.00010376529164309802,
+        "upper_95": 0.0004015081635155727,
+        "season_blocks": 5
+      },
+      "away_over_1.5": {
+        "delta": 0.0007426646438213172,
+        "lower_95": 0.0002776413611696061,
+        "upper_95": 0.0015211534840287014,
+        "season_blocks": 5
+      }
+    },
+    "primeira_liga": {
+      "production_1x2": {
+        "delta": 2.2444095375538028e-05,
+        "lower_95": -2.1806207916992858e-05,
+        "upper_95": 8.500762663399382e-05,
+        "season_blocks": 5
+      },
+      "goal_raw_score_nll": {
+        "delta": -0.0017786315596954197,
+        "lower_95": -0.003998000448256401,
+        "upper_95": 0.0002732238553842877,
+        "season_blocks": 5
+      },
+      "over_2.5": {
+        "delta": -0.0009753144186179718,
+        "lower_95": -0.0020734690024614335,
+        "upper_95": 0.00013907621097446074,
+        "season_blocks": 5
+      },
+      "btts_yes": {
+        "delta": -6.281967972111819e-05,
+        "lower_95": -0.0014175269984452552,
+        "upper_95": 0.0017264180359732304,
+        "season_blocks": 5
+      },
+      "home_over_1.5": {
+        "delta": -0.0017871178164519735,
+        "lower_95": -0.005057444851422776,
+        "upper_95": 0.000139768353443608,
+        "season_blocks": 5
+      },
+      "away_over_1.5": {
+        "delta": -0.00013383408754134867,
+        "lower_95": -0.000621771528682833,
+        "upper_95": 0.00025333755302478294,
+        "season_blocks": 5
+      }
+    },
+    "serie_a": {
+      "production_1x2": {
+        "delta": -0.0001676383751437997,
+        "lower_95": -0.0004735400712435976,
+        "upper_95": 1.5260954373126005e-05,
+        "season_blocks": 5
+      },
+      "goal_raw_score_nll": {
+        "delta": -0.00498240688768141,
+        "lower_95": -0.009622094058282396,
+        "upper_95": -0.0020962845203761245,
+        "season_blocks": 5
+      },
+      "over_2.5": {
+        "delta": -0.001348513416926862,
+        "lower_95": -0.004443499510476724,
+        "upper_95": 0.0014528656384504815,
+        "season_blocks": 5
+      },
+      "btts_yes": {
+        "delta": -0.0001636024458078511,
+        "lower_95": -0.002441426667904548,
+        "upper_95": 0.0019540540285843495,
+        "season_blocks": 5
+      },
+      "home_over_1.5": {
+        "delta": -0.0009011825240353102,
+        "lower_95": -0.0012395509067892416,
+        "upper_95": -0.000527975154686701,
+        "season_blocks": 5
+      },
+      "away_over_1.5": {
+        "delta": -0.0032257452617635808,
+        "lower_95": -0.006716507616509347,
+        "upper_95": -0.001023700635572537,
+        "season_blocks": 5
+      }
+    },
+    "super_league_greece": {
+      "production_1x2": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 3
+      },
+      "goal_raw_score_nll": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 3
+      },
+      "over_2.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 3
+      },
+      "btts_yes": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 3
+      },
+      "home_over_1.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 3
+      },
+      "away_over_1.5": {
+        "delta": 0.0,
+        "lower_95": 0.0,
+        "upper_95": 0.0,
+        "season_blocks": 3
+      }
+    }
+  }
+}

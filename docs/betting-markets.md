@@ -1,5 +1,9 @@
 # Betting markets — checkpoint 1
 
+Update: the date issue below has been corrected and the same evaluation repeated.
+See the [date correction and updated results](historical-date-correction.md).
+The tables on this page preserve the original snapshot for comparison.
+
 Measured on 2026-10-18. Offline research and arithmetic only: no production predictor, API, frontend, historical bundle or provider integration was changed. The Betting tab is checkpoint 2.
 
 ## Decision

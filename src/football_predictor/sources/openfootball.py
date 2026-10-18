@@ -9,7 +9,7 @@ from football_predictor.normalization import normalize_season, normalize_team_na
 from football_predictor.team_names import canonical_team_name
 
 _DATE_LINE: Final = re.compile(
-    r"^\s*(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+"
+    r"^\s*(?P<weekday>Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+"
     r"(?P<month>[A-Z][a-z]{2})\s+(?P<day>\d{1,2})(?:\s+(?P<year>\d{4}))?\s*$"
 )
 _MATCH_LINE: Final = re.compile(
@@ -39,7 +39,8 @@ def parse_openfootball_results(
     """Parse one OpenFootball results file into completed regular-season matches.
 
     OpenFootball files use date headers followed by compact fixture lines. A date
-    may omit its year, so the season boundary supplies it. Later-stage fixtures
+    may omit its year; the weekday identifies which season year it belongs to,
+    including seasons extended into July/August. Later-stage fixtures
     are deliberately excluded until the project adopts an explicit stage policy.
     """
     normalized_season = normalize_season(season)
@@ -61,8 +62,13 @@ def parse_openfootball_results(
         date_match = _DATE_LINE.match(line)
         if date_match:
             month = datetime.strptime(date_match.group("month"), "%b").month
-            year = int(date_match.group("year") or _infer_year(month, start_year))
-            current_date = date(year, month, int(date_match.group("day")))
+            day = int(date_match.group("day"))
+            year = date_match.group("year")
+            current_date = (
+                date(int(year), month, day)
+                if year
+                else _infer_date(month, day, date_match.group("weekday"), start_year)
+            )
             continue
 
         result_match = _MATCH_LINE.match(line) or _MATCH_LINE_HOME_SCORE_AWAY.match(line)
@@ -92,6 +98,26 @@ def parse_openfootball_results(
     return matches
 
 
-def _infer_year(month: int, season_start_year: int) -> int:
-    """European domestic seasons normally turn over between June and July."""
-    return season_start_year if month >= 7 else season_start_year + 1
+def _infer_date(month: int, day: int, weekday: str, season_start_year: int) -> date:
+    """Use calendar evidence, not a July boundary or assumed header ordering.
+
+    Consecutive years cannot have the same weekday for a given month/day.
+    Explicit years remain authoritative. An inconsistent omitted-year header
+    fails closed rather than inventing a date or depending on fixture order.
+    """
+    weekdays = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    candidates = []
+    for year in (season_start_year, season_start_year + 1):
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            continue  # February 29 may exist in only one of the season years.
+        if weekdays[candidate.weekday()] == weekday:
+            candidates.append(candidate)
+    if len(candidates) != 1:
+        raise ValueError(
+            f"cannot infer year for {weekday} {month:02d}-{day:02d} "
+            f"in season {season_start_year}-{season_start_year + 1}; "
+            "check the source header or provide an explicit year"
+        )
+    return candidates[0]

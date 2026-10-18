@@ -322,7 +322,7 @@ def run(data: Path, *, count: int = 5) -> tuple[dict, pd.DataFrame]:
     report = {
         "dataset_sha256": hashlib.sha256(data.read_bytes()).hexdigest(),
         "source_sha256": {
-            name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+            name: hashlib.sha256((Path(__file__).parent / name).read_bytes()).hexdigest()
             for name in (
                 "betting.py",
                 "betting_benchmark.py",
@@ -331,6 +331,7 @@ def run(data: Path, *, count: int = 5) -> tuple[dict, pd.DataFrame]:
                 "models.py",
                 "policy.py",
                 "evaluation.py",
+                "sources/openfootball.py",
             )
         },
         "package_versions": {
@@ -354,6 +355,11 @@ def run(data: Path, *, count: int = 5) -> tuple[dict, pd.DataFrame]:
             "policy": (
                 "Retained for serving-input parity; training chronology needs a separate "
                 "source/parser audit. These rows are never final test rows."
+            )
+            if len(suspicious)
+            else (
+                "No rows triggered this pre-August 2019 check. "
+                "This check alone is not a general audit of all match dates."
             ),
         },
     }
