@@ -59,8 +59,10 @@ uv run ruff check .
 ```
 
 GitHub Actions runs backend tests/lint and frontend tests/lint/production build
-on pushes and pull requests to `main`. These checks use offline provider fixtures
-and do not consume your Goal API or Odds API allowance.
+on pushes and pull requests to `main`. It also runs desktop/mobile Chromium and
+WebKit browser flows against mocked providers. These checks do not consume your
+Goal API or Odds API allowance. See [browser checks](docs/browser-tests.md) for
+local setup, coverage and device-testing limits.
 
 ## Build model-ready features
 

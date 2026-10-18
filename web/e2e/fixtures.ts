@@ -137,12 +137,14 @@ export const test = base.extend<{ api: MockApi }>({
 export { expect };
 
 export async function openNavigation(page: Page) {
+  await expect(page.locator(".tl-topbar")).toBeVisible();
   const menu = page.getByRole("button", { name: "Open navigation", exact: true });
   if (await menu.isVisible()) await menu.click();
 }
 export async function navigate(page: Page, name: string) {
   await openNavigation(page);
-  await page.getByRole("navigation", { name: "Main navigation" }).getByRole("button", { name, exact: true }).click();
+  await page.getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: new RegExp(`^${name}(?:\\s+\\d+)?$`) }).click();
 }
 export async function ready(page: Page) {
   await page.goto("/");

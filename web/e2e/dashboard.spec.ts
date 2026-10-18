@@ -61,7 +61,7 @@ test("loads rounded odds, forecasts with full precision and preserves comparison
   expect(after.forecasted_at).toBe(before.forecasted_at);
   expect(after.market_snapshot).toEqual(before.market_snapshot);
   await fields.nth(0).fill("5.50");
-  await page.getByRole("button", { name: "Update comparison" }).click();
+  await page.getByRole("button", { name: "Compare odds", exact: true }).click();
   const manual = (await saved(page))[0];
   expect(manual.market_source).toBe("manual");
   expect(manual.market_snapshot).toBeUndefined();
@@ -109,6 +109,10 @@ test("a late league response cannot replace the selected league", async ({ page,
     await received;
     await expect(hero(page)).toContainText("Real Madrid");
     await expect(hero(page)).not.toContainText("Nottingham Forest");
+    expect(api.requests.filter(request => {
+      const url = new URL(request.url());
+      return url.pathname === "/fixtures" && url.searchParams.get("competition") === "premier_league";
+    }), "discard stale discovery before spending additional fixture lookups").toHaveLength(0);
   } finally { pending.release(); }
 });
 
@@ -209,6 +213,27 @@ test("explorer validates registered clubs and keeps hypothetical forecasts out o
   const request = api.requests.find(r => new URL(r.url()).pathname === "/predict")!.postDataJSON();
   expect(request.kickoff_at).toBeUndefined();
   expect(await saved(page)).toHaveLength(0);
+});
+
+test("empty searches stay navigable and postponed or finished games cannot be forecast", async ({ page, api }) => {
+  api.override = async url => {
+    if (url.pathname === "/fixtures/next") return { json: null };
+    if (url.pathname === "/fixtures") return { json: fixtures("premier_league", "2026-10-20").map(
+      (fixture, index) => ({ ...fixture, status: index ? "POSTPONED" : "FINISHED" }),
+    ) };
+  };
+  await page.goto("/");
+  await expect(page.getByText("No fixtures found in this view.", { exact: true })).toBeVisible();
+  expect(api.requests.filter(r => new URL(r.url()).pathname === "/fixtures/next")).toHaveLength(1);
+  await page.getByRole("button", { name: "Find next matches", exact: true }).click();
+  await expect.poll(() => api.requests.filter(r => new URL(r.url()).pathname === "/fixtures/next").length).toBe(2);
+  await page.locator(".tl-date-button").click();
+  await page.getByLabel("Choose a matchday").fill("2026-10-20");
+  await expect(page.locator(".tl-fixture")).toHaveCount(10);
+  await expect(page.getByRole("button", { name: "Generate forecast", exact: true })).toBeDisabled();
+  await page.locator(".tl-fixture").nth(1).click();
+  await expect(page.getByRole("button", { name: "Generate forecast", exact: true })).toBeDisabled();
+  expect(api.requests.filter(r => new URL(r.url()).pathname === "/predict")).toHaveLength(0);
 });
 
 test("favourites and theme survive reload and filter the loaded matchday", async ({ page }) => {

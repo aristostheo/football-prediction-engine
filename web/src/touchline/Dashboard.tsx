@@ -231,6 +231,7 @@ export default function Dashboard() {
       new Date(`${nextFrom}T00:00:00`).toISOString().slice(0, 10),
     )
       .then(async (next) => {
+        if (!active || id !== fixtureRequest.current) return;
         const day = next ? localDate(next.kickoff_at) : nextFrom;
         const values = next ? await localFixtures(competition, day) : [];
         if (!active || id !== fixtureRequest.current) return;
