@@ -72,6 +72,12 @@ markets that still need validation. The [historical date correction](docs/histor
 documents corrected July/August 2020 chronology, the repeated benchmark and an
 offline migration that preserves newer results in local synced snapshots.
 
+The match **Betting** tab now presents Result, Goals, Team totals and Scores,
+with two-decimal model fair prices and manual paired-price comparisons for goal
+lines. Live loading still covers 1X2; additional live markets and extra-market
+journal settlement are later checkpoints. See the [Betting tab guide](docs/betting-tab.md)
+for forecast provenance, experimental goal estimates, refund rules and setup.
+
 ## Build model-ready features
 
 After generating `historical_matches.csv`, build leakage-safe feature rows:

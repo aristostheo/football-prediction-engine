@@ -170,6 +170,7 @@ export default function Betting({
   resultView,
   generate,
   generating,
+  canGenerate,
 }: {
   prediction: Prediction | null;
   home: string;
@@ -178,6 +179,7 @@ export default function Betting({
   resultView: ReactNode;
   generate: () => void;
   generating: boolean;
+  canGenerate: boolean;
 }) {
   const [section, setSection] = useState<Section>("result");
   const [totalLine, setTotalLine] = useState(2.5);
@@ -232,15 +234,20 @@ export default function Betting({
         <div className="tl-panel tl-bet-empty">
           <h3>Start with the forecast.</h3>
           <p>
-            Calculate this matchup to explore its goal lines, team totals and
-            possible scores.
+            {canGenerate
+              ? "Calculate this matchup to explore its goal lines, team totals and possible scores."
+              : "Only upcoming fixtures and hypothetical matchups can be forecast."}
           </p>
           <button
             className="tl-orange-button"
             onClick={generate}
-            disabled={generating}
+            disabled={generating || !canGenerate}
           >
-            {generating ? "Calculating…" : "Calculate these markets"}
+            {!canGenerate
+              ? "Forecast unavailable"
+              : generating
+                ? "Calculating…"
+                : "Calculate these markets"}
             <Icon name="arrow" size={16} />
           </button>
         </div>

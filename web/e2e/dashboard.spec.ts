@@ -234,6 +234,10 @@ test("empty searches stay navigable and postponed or finished games cannot be fo
   await expect(page.getByRole("button", { name: "Generate forecast", exact: true })).toBeDisabled();
   await page.locator(".tl-fixture").nth(1).click();
   await expect(page.getByRole("button", { name: "Generate forecast", exact: true })).toBeDisabled();
+  await marketTab(page);
+  await expect(page.getByRole("button", { name: "Load live market odds" })).toBeDisabled();
+  await page.getByRole("group", { name: "Betting sections" }).getByRole("button", { name: "Goals", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Forecast unavailable", exact: true })).toBeDisabled();
   expect(api.requests.filter(r => new URL(r.url()).pathname === "/predict")).toHaveLength(0);
 });
 

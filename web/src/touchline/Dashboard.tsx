@@ -1277,6 +1277,7 @@ export default function Dashboard() {
                         key={`${competition}|${selected?.fixture_id}`}
                         prediction={prediction} home={home} away={away} market={market}
                         resultView={renderMarket()} generate={() => void generate()} generating={generating}
+                        canGenerate={Boolean(selected?.hypothetical || (selected && isUpcoming(selected)))}
                       />
                     ) : prediction ? (
                       renderAnalysis()

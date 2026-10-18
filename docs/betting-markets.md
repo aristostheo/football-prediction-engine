@@ -3,6 +3,9 @@
 Update: the date issue below has been corrected and the same evaluation repeated.
 See the [date correction and updated results](historical-date-correction.md).
 The tables on this page preserve the original snapshot for comparison.
+The [Betting tab](betting-tab.md) now exposes the initial markets, with separate
+experimental goal estimates and manual goal-line comparisons. Broader live odds
+and extra-market journal settlement remain later checkpoints.
 
 Measured on 2026-10-18. Offline research and arithmetic only: no production predictor, API, frontend, historical bundle or provider integration was changed. The Betting tab is checkpoint 2.
 
