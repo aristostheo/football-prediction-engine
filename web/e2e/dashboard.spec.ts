@@ -164,7 +164,7 @@ test("journal settles a model disagreement, retains it through failures and expo
   const row = page.getByRole("row").filter({ hasText: "Nottingham Forest" });
   await expect(row).toContainText("2–0");
   await expect(row).toContainText("57.4%");
-  await expect(row).toContainText("Top pick differed");
+  await expect(row).toContainText("Top pick missed");
   api.settlementFailures = 1;
   await page.getByRole("button", { name: "Check results", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Previously checked results remain visible");
@@ -222,7 +222,7 @@ test("favourites and theme survive reload and filter the loaded matchday", async
   await expect(page.getByRole("button", { name: "Unfollow Nottingham Forest FC", exact: true })).toBeVisible();
   await expect(page.locator(".tl-app")).toHaveClass(/tl-night/);
   await navigate(page, "My teams");
-  await page.getByRole("searchbox", { name: "Search clubs" }).fill("Nottingham");
+  await page.getByRole("textbox", { name: "Search clubs" }).fill("Nottingham");
   await expect(page.getByRole("button", { name: "Unfollow Nottingham Forest FC", exact: true })).toBeVisible();
 });
 
