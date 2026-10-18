@@ -81,6 +81,20 @@ def test_prepare_market_odds_rejects_ambiguous_duplicate_fixtures() -> None:
         prepare_market_odds(pd.DataFrame([row, {**row, "home_team": "Nottingham Forest"}]))
 
 
+@pytest.mark.parametrize("price", [float("inf"), float("-inf"), float("nan")])
+def test_historical_market_omits_nonfinite_prices(price):
+    row = {
+        "competition": "premier_league", "match_date": "2024-10-05",
+        "home_team": "Arsenal", "away_team": "Chelsea",
+        "odds_home": 2.0, "odds_draw": 3.0, "odds_away": 4.0,
+    }
+    prepared = prepare_market_odds(pd.DataFrame([
+        row, {**row, "match_date": "2024-10-06", "odds_home": price},
+    ]))
+    assert len(prepared) == 1
+    assert prepared["p_home_win"].iloc[0] > 0
+
+
 def test_load_footiqo_export_maps_both_competitions(tmp_path) -> None:
     source = tmp_path / "odds.csv"
     pd.DataFrame(

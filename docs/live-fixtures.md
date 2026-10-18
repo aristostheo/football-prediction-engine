@@ -9,6 +9,14 @@ uv run uvicorn football_predictor.api:app --reload
 ```
 
 - `GET /health` confirms that the service is running.
+- `GET /ready` loads the local prediction engine if needed and reports model
+  availability and actual results cutoffs for all seven leagues. Missing/unusable
+  history or a missing league model returns HTTP 503. A usable engine with dated
+  history returns HTTP 200 with `status: degraded`; the 21-day age threshold is
+  a coverage warning, not a match-schedule check. The first request can take as
+  long as model initialization. This runs in a worker thread so `/health` stays
+  responsive. Provider flags report configuration only; readiness makes no live
+  provider calls and does not test key validity or plan coverage.
 - `GET /fixtures?competition=premier_league&date=YYYY-MM-DD` reads scheduled
   fixtures from Goal API when `GOAL_API_KEY` is configured.
 - `POST /predict` accepts canonical names or registered club aliases and a fixture date after
@@ -16,6 +24,13 @@ uv run uvicorn football_predictor.api:app --reload
 - `GET /odds` retrieves upcoming 1X2 market odds for a scheduled fixture when
   `THE_ODDS_API_KEY` is configured. Results are a bookmaker consensus with each
   book's margin removed and are cached for 10 minutes.
+  Concurrent reads for a league share one upstream fetch. `fetched_at` remains
+  the original snapshot retrieval time on cache hits. `oldest_quote_at` and
+  `newest_quote_at` preserve reported bookmaker/1X2-market update times, with
+  market-level times preferred; absent, malformed, timezone-less or future times
+  remain unknown. `timestamped_bookmaker_count` reports how many usable books
+  supplied valid times, and `bookmakers` lists available source identifiers.
+  These inverse fair-consensus prices are not necessarily offered betting prices.
 
 - `GET /fixtures/next?competition=...&from=YYYY-MM-DD` checks upcoming dates in order and returns the earliest future fixture in its three-week search window.
 - `GET /teams?competition=...` returns teams from that league's most recent recorded season for searchable hypothetical matchups.
@@ -119,6 +134,21 @@ cached locally for subsequent journal visits. This is browser-local storage,
 not an account or cross-device sync. An odds comparison added after generating
 a forecast retains the original model probabilities and forecast timestamp;
 the market snapshot has its own timestamp.
+
+New journal comparisons store the live snapshot's retrieval time, reported quote
+range and source identities separately from `market_compared_at`, the time the
+comparison was attached. Manual comparisons carry no invented provider times.
+The journal CSV includes those fields plus the model's history cutoff. Old
+`market_fetched_at` values represented comparison time; exports retain them only
+under **Legacy comparison timestamp**, without inventing historical quote times.
+These additions do not make the editable browser-local journal an immutable
+research log or add a dataset/model hash to older records.
+
+The built dashboard still supports SPA navigation. Missing assets and unknown
+API paths return JSON HTTP 404 instead of HTML; a missing dashboard index returns
+HTTP 503. API-Football malformed JSON/shapes are surfaced as controlled provider
+errors so fallback/error UI can work. Non-finite historical or live market prices
+are excluded rather than creating invalid probability comparisons.
 
 Journal backfills are bounded to eight uncached league/date loads per API request
 and eight actual Goal API HTTP attempts, including league catalogue resolution,

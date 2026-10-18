@@ -80,6 +80,10 @@ export interface MarketOddsQuote {
   bookmaker_count: number;
   source: string;
   fetched_at: string;
+  oldest_quote_at?: string | null;
+  newest_quote_at?: string | null;
+  timestamped_bookmaker_count?: number;
+  bookmakers?: string[];
 }
 
 export interface LiveFixture {

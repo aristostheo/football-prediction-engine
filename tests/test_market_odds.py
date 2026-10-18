@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import io
 import json
-from datetime import UTC, datetime
+from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime, timedelta
+from threading import Event
 
 import pytest
 
@@ -106,3 +108,91 @@ def test_odds_provider_requires_configuration(monkeypatch) -> None:
     monkeypatch.delenv("THE_ODDS_API_KEY", raising=False)
     with pytest.raises(MarketOddsError, match="THE_ODDS_API_KEY"):
         TheOddsApiProvider.from_environment()
+
+
+def test_cached_quotes_keep_fetch_and_source_times(monkeypatch):
+    payload = json.loads(_payload())
+    books = payload[0]["bookmakers"]
+    books[0]["last_update"] = "2026-10-13T10:00:00Z"
+    books[0]["markets"][0]["last_update"] = "2026-10-13T11:00:00Z"
+    books[1]["last_update"] = "2026-10-14T10:00:00Z"
+    calls = []
+    clock = [datetime(2026, 10, 17, 12, tzinfo=UTC)]
+
+    def respond(request, timeout):
+        calls.append(request)
+        return io.BytesIO(json.dumps(payload).encode())
+
+    monkeypatch.setattr(market_odds, "urlopen", respond)
+    provider = TheOddsApiProvider("test-only", now=lambda: clock[0])
+    args = (Competition.PREMIER_LEAGUE, "Nottingham Forest", "Arsenal",
+            datetime(2026, 10, 18, 14, tzinfo=UTC))
+    first = provider.get_match_odds(*args)
+    clock[0] += timedelta(minutes=3)
+    second = provider.get_match_odds(*args)
+    assert first == second
+    assert first.fetched_at == datetime(2026, 10, 17, 12, tzinfo=UTC)
+    assert first.oldest_quote_at == datetime(2026, 10, 13, 11, tzinfo=UTC)
+    assert first.newest_quote_at == datetime(2026, 10, 14, 10, tzinfo=UTC)
+    assert first.timestamped_bookmaker_count == 2
+    assert first.bookmakers == ("book-a", "book-b")
+    assert len(calls) == 1
+    provider._cache_seconds = 0
+    third = provider.get_match_odds(*args)
+    assert third.fetched_at == clock[0]
+    assert third.oldest_quote_at == first.oldest_quote_at
+    assert len(calls) == 2
+
+
+@pytest.mark.parametrize("timestamp", [None, "invalid", "2026-10-17T12:00:00",
+                                       "2099-01-01T00:00:00Z"])
+def test_missing_invalid_or_future_quote_times_are_not_fabricated(monkeypatch, timestamp):
+    payload = json.loads(_payload())
+    for book in payload[0]["bookmakers"]:
+        book["last_update"] = timestamp
+    monkeypatch.setattr(market_odds, "urlopen",
+                        lambda request, timeout: io.BytesIO(json.dumps(payload).encode()))
+    quote = TheOddsApiProvider("test-only").get_match_odds(
+        Competition.PREMIER_LEAGUE, "Nottingham Forest", "Arsenal",
+        datetime(2026, 10, 18, 14, tzinfo=UTC),
+    )
+    assert quote.oldest_quote_at is quote.newest_quote_at is None
+    assert quote.timestamped_bookmaker_count == 0
+
+
+@pytest.mark.parametrize("price", [float("inf"), float("nan"), -3, 1])
+def test_odds_consensus_excludes_books_with_invalid_prices(monkeypatch, price):
+    payload = json.loads(_payload())
+    payload[0]["bookmakers"][0]["markets"][0]["outcomes"][0]["price"] = price
+    monkeypatch.setattr(market_odds, "urlopen",
+                        lambda request, timeout: io.BytesIO(json.dumps(payload).encode()))
+    quote = TheOddsApiProvider("test-only").get_match_odds(
+        Competition.PREMIER_LEAGUE, "Nottingham Forest", "Arsenal",
+        datetime(2026, 10, 18, 14, tzinfo=UTC),
+    )
+    assert quote.bookmaker_count == 1
+    assert quote.bookmakers == ("book-b",)
+
+
+def test_concurrent_odds_calls_share_one_snapshot_fetch(monkeypatch):
+    started, release = Event(), Event()
+    calls = []
+
+    def respond(request, timeout):
+        calls.append(request)
+        started.set()
+        assert release.wait(3)
+        return io.BytesIO(_payload())
+
+    monkeypatch.setattr(market_odds, "urlopen", respond)
+    provider = TheOddsApiProvider("test-only")
+    args = (Competition.PREMIER_LEAGUE, "Nottingham Forest", "Arsenal",
+            datetime(2026, 10, 18, 14, tzinfo=UTC))
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        first = pool.submit(provider.get_match_odds, *args)
+        assert started.wait(3)
+        others = [pool.submit(provider.get_match_odds, *args) for _ in range(7)]
+        release.set()
+        quote = first.result(timeout=3)
+        assert all(f.result(timeout=3) == quote for f in others)
+    assert len(calls) == 1

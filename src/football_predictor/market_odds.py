@@ -6,8 +6,11 @@ import json
 import os
 import re
 import time
+from collections.abc import Callable
+from concurrent.futures import Future
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from math import isfinite
 from threading import Lock
 from urllib.error import HTTPError
 from urllib.parse import urlencode
@@ -35,6 +38,24 @@ class MarketOdds:
     away_fair_odds: float
     bookmaker_count: int
     fetched_at: datetime
+    oldest_quote_at: datetime | None = None
+    newest_quote_at: datetime | None = None
+    timestamped_bookmaker_count: int = 0
+    bookmakers: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class _MarketSnapshot:
+    fetched_at: datetime
+    events: list[dict[str, object]]
+
+
+@dataclass(frozen=True)
+class _Consensus:
+    probabilities: tuple[float, float, float]
+    count: int
+    bookmakers: tuple[str, ...]
+    timestamps: tuple[datetime, ...]
 
 
 class MarketOddsError(RuntimeError):
@@ -50,13 +71,16 @@ class TheOddsApiProvider:
         *,
         base_url: str = ODDS_API_BASE_URL,
         cache_seconds: int = 600,
+        now: Callable[[], datetime] | None = None,
     ) -> None:
         if not api_key:
             raise ValueError("The Odds API key is required")
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
         self._cache_seconds = cache_seconds
-        self._cache: dict[Competition, tuple[float, list[dict[str, object]]]] = {}
+        self._now = now or (lambda: datetime.now(UTC))
+        self._cache: dict[Competition, tuple[float, _MarketSnapshot]] = {}
+        self._loading: dict[Competition, Future[_MarketSnapshot]] = {}
         self._lock = Lock()
 
     @classmethod
@@ -73,9 +97,9 @@ class TheOddsApiProvider:
         away_team: str,
         kickoff_at: datetime,
     ) -> MarketOdds:
-        events = self._events(competition)
+        snapshot = self._events(competition)
         target_kickoff = _as_utc(kickoff_at)
-        for event in events:
+        for event in snapshot.events:
             if not isinstance(event, dict):
                 continue
             if not _same_team(event.get("home_team"), home_team, competition):
@@ -90,26 +114,54 @@ class TheOddsApiProvider:
                 continue
             if abs((_as_utc(event_kickoff) - target_kickoff).total_seconds()) > 12 * 3600:
                 continue
-            probabilities = _bookmaker_consensus(event, competition)
-            if probabilities is None:
+            consensus = _bookmaker_consensus(event, competition, snapshot.fetched_at)
+            if consensus is None:
+                continue
+            prices = tuple(1 / probability for probability in consensus.probabilities)
+            if not all(isfinite(price) for price in prices):
                 continue
             return MarketOdds(
-                home_fair_odds=1 / probabilities[0],
-                draw_fair_odds=1 / probabilities[1],
-                away_fair_odds=1 / probabilities[2],
-                bookmaker_count=probabilities[3],
-                fetched_at=datetime.now(UTC),
+                home_fair_odds=prices[0],
+                draw_fair_odds=prices[1],
+                away_fair_odds=prices[2],
+                bookmaker_count=consensus.count,
+                fetched_at=snapshot.fetched_at,
+                oldest_quote_at=min(consensus.timestamps, default=None),
+                newest_quote_at=max(consensus.timestamps, default=None),
+                timestamped_bookmaker_count=len(consensus.timestamps),
+                bookmakers=consensus.bookmakers,
             )
         raise MarketOddsError(
             "No matching 1X2 market was available for this fixture yet."
         )
 
-    def _events(self, competition: Competition) -> list[dict[str, object]]:
+    def _events(self, competition: Competition) -> _MarketSnapshot:
         now = time.monotonic()
         with self._lock:
             cached = self._cache.get(competition)
             if cached and now - cached[0] < self._cache_seconds:
                 return cached[1]
+            future = self._loading.get(competition)
+            owner = future is None
+            if owner:
+                future = Future()
+                self._loading[competition] = future
+        if not owner:
+            return future.result()
+        try:
+            snapshot = self._fetch_events(competition)
+            with self._lock:
+                self._cache[competition] = (time.monotonic(), snapshot)
+            future.set_result(snapshot)
+            return snapshot
+        except BaseException as error:
+            future.set_exception(error)
+            raise
+        finally:
+            with self._lock:
+                self._loading.pop(competition, None)
+
+    def _fetch_events(self, competition: Competition) -> _MarketSnapshot:
         query = urlencode(
             {
                 "apiKey": self._api_key,
@@ -131,23 +183,24 @@ class TheOddsApiProvider:
                     "The Odds API rejected the key or this league is not available on its plan."
                 ) from error
             raise MarketOddsError(f"The Odds API returned HTTP {error.code}.") from error
-        except (OSError, json.JSONDecodeError) as error:
+        except (OSError, ValueError) as error:
             raise MarketOddsError("The Odds API request failed.") from error
         if not isinstance(payload, list):
             raise MarketOddsError("The Odds API returned an unexpected response.")
-        events = [item for item in payload if isinstance(item, dict)]
-        with self._lock:
-            self._cache[competition] = (time.monotonic(), events)
-        return events
+        return _MarketSnapshot(
+            fetched_at=self._now(), events=[item for item in payload if isinstance(item, dict)]
+        )
 
 
 def _bookmaker_consensus(
-    event: dict[str, object], competition: Competition
-) -> tuple[float, float, float, int] | None:
+    event: dict[str, object], competition: Competition, fetched_at: datetime
+) -> _Consensus | None:
     bookmakers = event.get("bookmakers")
     if not isinstance(bookmakers, list):
         return None
     fair_books: list[tuple[float, float, float]] = []
+    sources: list[str] = []
+    timestamps: list[datetime] = []
     home = str(event.get("home_team", ""))
     away = str(event.get("away_team", ""))
     for bookmaker in bookmakers:
@@ -172,7 +225,7 @@ def _bookmaker_consensus(
                 price = float(outcome.get("price"))
             except (TypeError, ValueError):
                 continue
-            if price > 1 and isinstance(name, str):
+            if isfinite(price) and price > 1 and isinstance(name, str):
                 prices[name] = price
         home_price = next((v for k, v in prices.items() if _same_team(k, home, competition)), None)
         away_price = next((v for k, v in prices.items() if _same_team(k, away, competition)), None)
@@ -181,12 +234,36 @@ def _bookmaker_consensus(
             raw = (1 / home_price, 1 / draw_price, 1 / away_price)
             margin = sum(raw)
             fair_books.append(tuple(value / margin for value in raw))
+            source = bookmaker.get("key") or bookmaker.get("title")
+            if isinstance(source, str):
+                sources.append(source)
+            timestamp = _quote_time(market.get("last_update"), fetched_at) or _quote_time(
+                bookmaker.get("last_update"), fetched_at
+            )
+            if timestamp:
+                timestamps.append(timestamp)
     if not fair_books:
         return None
     mean = tuple(sum(row[index] for row in fair_books) / len(fair_books) for index in range(3))
     total = sum(mean)
     normalized = tuple(value / total for value in mean)
-    return normalized[0], normalized[1], normalized[2], len(fair_books)
+    return _Consensus(
+        (normalized[0], normalized[1], normalized[2]),
+        len(fair_books), tuple(sources), tuple(timestamps),
+    )
+
+
+def _quote_time(value: object, fetched_at: datetime) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+        return None
+    timestamp = timestamp.astimezone(UTC)
+    return timestamp if timestamp <= fetched_at else None
 
 
 def _team_key(value: object) -> str:

@@ -216,3 +216,62 @@ test("invalid cached market data is discarded without losing the model forecast"
   assert.deepEqual(saved.model_probabilities, [0.5, 0.3, 0.2]);
   assert.equal(saved.market_probabilities, null);
 });
+
+const snapshot = {
+  home_fair_odds: 2, draw_fair_odds: 3.3333333333, away_fair_odds: 5,
+  bookmaker_count: 2, source: "The Odds API", fetched_at: "2026-10-17T12:00:00Z",
+  oldest_quote_at: "2026-10-16T11:00:00Z", newest_quote_at: "2026-10-17T10:00:00Z",
+  timestamped_bookmaker_count: 2, bookmakers: ["book-a", "book-b"],
+};
+
+test("market notes distinguish fetch time from reported quote ages", () => {
+  const note = live.marketQuoteNote(snapshot);
+  assert.ok(note.includes("fetched"));
+  assert.ok(note.includes("oldest reported quote"));
+  assert.ok(note.includes("2/2 timestamps"));
+  assert.ok(!note.includes("updated"));
+  assert.ok(live.marketQuoteNote({ ...snapshot, oldest_quote_at: null })
+    .includes("quote update times unavailable"));
+});
+
+test("journal keeps live quote provenance separate from comparison and forecast time", () => {
+  storage.clear();
+  const [original] = journal.saveForecast(base);
+  const [compared] = journal.attachMarketComparison(base, [0.5, 0.3, 0.2], [original], snapshot);
+  assert.equal(compared.forecasted_at, original.forecasted_at);
+  assert.deepEqual(compared.model_probabilities, original.model_probabilities);
+  assert.equal(compared.market_source, "live");
+  assert.equal(compared.market_snapshot.fetched_at, snapshot.fetched_at);
+  assert.ok(Date.parse(compared.market_compared_at) > Date.parse(snapshot.fetched_at));
+  const exported = Object.fromEntries(journal.MARKET_AUDIT_HEADERS.map(
+    (key, index) => [key, journal.marketAuditValues(compared)[index]],
+  ));
+  assert.equal(exported["Market snapshot fetched at"], snapshot.fetched_at);
+  assert.equal(exported["Oldest bookmaker quote"], snapshot.oldest_quote_at);
+  assert.equal(exported["Bookmaker sources"], "book-a; book-b");
+  const [manual] = journal.attachMarketComparison(base, [0.4, 0.3, 0.3], [compared]);
+  assert.equal(manual.market_source, "manual");
+  assert.equal(manual.market_snapshot, undefined);
+  assert.equal(manual.forecasted_at, original.forecasted_at);
+});
+
+test("live odds loaded before forecasting keep their actual snapshot time", () => {
+  storage.clear();
+  const [saved] = journal.saveForecast({
+    ...base, market_home_win_probability: 0.5,
+    market_draw_probability: 0.3, market_away_win_probability: 0.2,
+  }, [], snapshot);
+  assert.deepEqual(saved.market_snapshot, snapshot);
+  assert.equal(saved.market_source, "live");
+  assert.equal(journal.loadForecasts()[0].market_snapshot.fetched_at, snapshot.fetched_at);
+});
+
+test("legacy comparison timestamps are exported without inventing quote timestamps", () => {
+  const record = { market_fetched_at: "2026-10-15T10:00:00Z" };
+  const fields = Object.fromEntries(journal.MARKET_AUDIT_HEADERS.map(
+    (key, index) => [key, journal.marketAuditValues(record)[index]],
+  ));
+  assert.equal(fields["Legacy comparison timestamp"], record.market_fetched_at);
+  assert.equal(fields["Market snapshot fetched at"], "");
+  assert.equal(fields["Oldest bookmaker quote"], "");
+});

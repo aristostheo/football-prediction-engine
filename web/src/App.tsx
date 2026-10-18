@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useId, useMemo, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Competition,
   getFixtures,
@@ -9,12 +9,14 @@ import {
   getTeams,
   LiveFixture,
   MatchOutcome,
+  MarketOddsQuote,
   predictMatch,
   Prediction,
 } from "./api";
 import { calculateMetrics, calculateTopPickCalibration, loadForecasts, saveForecast, StoredForecast } from "./scorecard";
 import { FavoriteTeams, loadFavoriteTeams, saveFavoriteTeams } from "./favorites";
 import "./styles.css";
+import { marketQuoteNote } from "./touchline/live";
 
 const LEAGUES: Record<Competition, { name: string; short: string; code: string }> = {
   premier_league: { name: "Premier League", short: "England", code: "PL" },
@@ -195,6 +197,8 @@ function App() {
   const [oddsAway, setOddsAway] = useState("");
   const [marketOddsNote, setMarketOddsNote] = useState<string | null>(null);
   const [marketOddsLoading, setMarketOddsLoading] = useState(false);
+  const [marketSnapshot, setMarketSnapshot] = useState<MarketOddsQuote>();
+  const oddsRequest = useRef(0);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [trackingNotice, setTrackingNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -374,6 +378,9 @@ function App() {
     setPrediction(null);
     setError(null);
     setTrackingNotice(null);
+    oddsRequest.current++;
+    setMarketSnapshot(undefined);
+    setMarketOddsLoading(false);
     setOddsHome("");
     setOddsDraw("");
     setOddsAway("");
@@ -385,6 +392,9 @@ function App() {
     setPrediction(null);
     setError(null);
     setTrackingNotice(null);
+    oddsRequest.current++;
+    setMarketSnapshot(undefined);
+    setMarketOddsLoading(false);
     setOddsHome("");
     setOddsDraw("");
     setOddsAway("");
@@ -414,6 +424,9 @@ function App() {
     setPrediction(null);
     setError(null);
     setMarketOddsNote(null);
+    oddsRequest.current++;
+    setMarketSnapshot(undefined);
+    setMarketOddsLoading(false);
     setOddsHome("");
     setOddsDraw("");
     setOddsAway("");
@@ -421,21 +434,25 @@ function App() {
 
   async function loadOddsForSelectedFixture() {
     if (!activeUpcomingFixture) return;
+    const requestId = ++oddsRequest.current;
     setMarketOddsLoading(true);
     setMarketOddsNote(null);
     setError(null);
     try {
       const quote = await getMarketOdds(activeUpcomingFixture);
-      setOddsHome(quote.home_fair_odds.toFixed(2));
-      setOddsDraw(quote.draw_fair_odds.toFixed(2));
-      setOddsAway(quote.away_fair_odds.toFixed(2));
+      if (requestId !== oddsRequest.current) return;
+      setOddsHome(String(quote.home_fair_odds));
+      setOddsDraw(String(quote.draw_fair_odds));
+      setOddsAway(String(quote.away_fair_odds));
+      setMarketSnapshot(quote);
       setMarketOddsNote(
-        `Market consensus from ${quote.bookmaker_count} bookmakers · margin removed · updated ${new Date(quote.fetched_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`,
+        marketQuoteNote(quote),
       );
     } catch (caught) {
+      if (requestId !== oddsRequest.current) return;
       setMarketOddsNote(caught instanceof Error ? caught.message : "Live market odds are unavailable.");
     } finally {
-      setMarketOddsLoading(false);
+      if (requestId === oddsRequest.current) setMarketOddsLoading(false);
     }
   }
 
@@ -479,7 +496,7 @@ function App() {
       });
       setPrediction(nextPrediction);
       if (nextPrediction.kickoff_at && Date.parse(nextPrediction.kickoff_at) > Date.now()) {
-        setForecastLog(saveForecast(nextPrediction));
+        setForecastLog(saveForecast(nextPrediction, loadForecasts(), marketSnapshot));
         setTrackingNotice("Forecast saved and will be scored after this scheduled match.");
       } else {
         setTrackingNotice("Hypothetical matchup · based on the latest available results. It is not tracked in the live scorecard.");
@@ -664,9 +681,9 @@ function App() {
               )}
               {marketOddsNote && <div className={marketOddsNote.startsWith("Market consensus") ? "market-odds-note" : "message"}>{marketOddsNote}</div>}
               <div className="market-odds-fields">
-                <label><span>Home</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => { setOddsHome(event.target.value); setMarketOddsNote(null); }} /></label>
-                <label><span>Draw</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => { setOddsDraw(event.target.value); setMarketOddsNote(null); }} /></label>
-                <label><span>Away</span><input type="number" min="1.01" step="0.01" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => { setOddsAway(event.target.value); setMarketOddsNote(null); }} /></label>
+                <label><span>Home</span><input type="number" min="1.000001" step="any" inputMode="decimal" placeholder="2.10" value={oddsHome} onChange={(event) => { setOddsHome(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
+                <label><span>Draw</span><input type="number" min="1.000001" step="any" inputMode="decimal" placeholder="3.40" value={oddsDraw} onChange={(event) => { setOddsDraw(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
+                <label><span>Away</span><input type="number" min="1.000001" step="any" inputMode="decimal" placeholder="3.60" value={oddsAway} onChange={(event) => { setOddsAway(event.target.value); setMarketOddsNote(null); setMarketSnapshot(undefined); oddsRequest.current++; setMarketOddsLoading(false); }} /></label>
               </div>
               <small>Market odds are converted to fair probabilities by removing the bookmaker margin. They are shown separately and do not change the model forecast.</small>
             </details>

@@ -20,6 +20,30 @@ def prediction_engine() -> PredictionEngine:
     return PredictionEngine.from_csv(data_path)
 
 
+def test_readiness_reports_loaded_model_coverage(prediction_engine):
+    report = prediction_engine.readiness()
+    assert report["ready"] is True
+    assert report["engine"] == "loaded"
+    assert len(report["leagues"]) == len(Competition)
+    for league in report["leagues"]:
+        assert league["model_ready"] is True
+        assert league["matches"] > 0
+        assert league["history_through"] == prediction_engine.latest_result_date(
+            Competition(league["competition"])
+        ).isoformat()
+
+
+def test_readiness_is_false_when_a_league_model_is_unavailable(prediction_engine, monkeypatch):
+    models = dict(prediction_engine._poisson_models)
+    models.pop(Competition.PREMIER_LEAGUE.value)
+    monkeypatch.setattr(prediction_engine, "_poisson_models", models)
+    report = prediction_engine.readiness()
+    assert report["ready"] is False
+    assert report["status"] == "not_ready"
+    pl = next(row for row in report["leagues"] if row["competition"] == "premier_league")
+    assert pl["model_ready"] is False
+
+
 def test_available_teams_uses_the_latest_recorded_season(
     prediction_engine: PredictionEngine,
 ) -> None:

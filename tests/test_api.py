@@ -458,6 +458,10 @@ def test_live_odds_endpoint_returns_quote_metadata() -> None:
                 away_fair_odds=4.5,
                 bookmaker_count=6,
                 fetched_at=datetime.now(UTC),
+                oldest_quote_at=datetime(2026, 10, 13, tzinfo=UTC),
+                newest_quote_at=datetime(2026, 10, 14, tzinfo=UTC),
+                timestamped_bookmaker_count=2,
+                bookmakers=("book-a", "book-b"),
             )
 
     app = create_app(engine=StubEngine(), market_odds_provider=StubOddsProvider())  # type: ignore[arg-type]
@@ -474,6 +478,9 @@ def test_live_odds_endpoint_returns_quote_metadata() -> None:
 
     assert response.home_fair_odds == 1.85
     assert response.bookmaker_count == 6
+    assert response.oldest_quote_at == datetime(2026, 10, 13, tzinfo=UTC)
+    assert response.timestamped_bookmaker_count == 2
+    assert response.bookmakers == ("book-a", "book-b")
     assert response.source.startswith("The Odds API")
 
 
@@ -491,6 +498,85 @@ def test_api_serves_built_dashboard(tmp_path: Path) -> None:
             assert "Match Forecast" in (await client.get("/performance")).text
 
     asyncio.run(exercise_dashboard())
+
+
+def test_dashboard_returns_real_missing_asset_and_api_errors(tmp_path):
+    (tmp_path / "index.html").write_text("<main>Dashboard</main>")
+
+    async def exercise():
+        app = create_app(engine=StubEngine(), web_dist_path=tmp_path)
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            for path in ["/assets/missing.js", "/logos/missing.svg", "/api/unknown",
+                         "/fixtures/unknown", "/ready/unknown"]:
+                response = await client.get(path)
+                assert response.status_code == 404
+                assert response.json() == {"detail": "Not found"}
+            for path in ["/", "/classic", "/updated-mockup", "/performance"]:
+                assert (await client.get(path)).status_code == 200
+            (tmp_path / "index.html").unlink()
+            assert (await client.get("/")).status_code == 503
+
+    asyncio.run(exercise())
+
+
+def test_liveness_survives_missing_history_but_readiness_fails(monkeypatch, tmp_path):
+    monkeypatch.setenv("HISTORICAL_MATCHES_PATH", str(tmp_path / "missing.csv"))
+
+    async def exercise():
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=create_app()), base_url="http://test"
+        ) as client:
+            assert (await client.get("/health")).json() == {"status": "ok"}
+            response = await client.get("/ready")
+            assert response.status_code == 503
+            assert response.json()["ready"] is False
+
+    asyncio.run(exercise())
+
+
+def test_readiness_initialization_does_not_block_liveness_or_call_providers(monkeypatch):
+    from threading import Event
+
+    started, release = Event(), Event()
+
+    class ReadyEngine(StubEngine):
+        def readiness(self):
+            return {"ready": True, "status": "degraded", "engine": "loaded", "leagues": []}
+
+    def load(_):
+        started.set()
+        assert release.wait(3)
+        return ReadyEngine()
+
+    monkeypatch.setattr(PredictionEngine, "from_csv", load)
+    loads = []
+
+    class NeverProvider:
+        def list_fixtures(self, *_):
+            loads.append(True)
+            pytest.fail("readiness must not spend provider requests")
+
+    async def exercise():
+        app = create_app(fixture_provider=NeverProvider())
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            task = asyncio.create_task(client.get("/ready"))
+            try:
+                assert await asyncio.to_thread(started.wait, 3)
+                health = await asyncio.wait_for(client.get("/health"), timeout=1)
+                assert health.status_code == 200
+            finally:
+                release.set()
+            response = await task
+            assert response.status_code == 200
+            assert response.json()["status"] == "degraded"
+            assert response.json()["providers"]["fixtures"] is True
+            assert not loads
+
+    asyncio.run(exercise())
 
 
 def test_journal_returns_final_score_and_source_without_changing_prediction() -> None:

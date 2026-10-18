@@ -349,6 +349,20 @@ def test_api_football_provider_parses_fixture_payload(monkeypatch) -> None:  # t
     assert "date=2026-10-04" in requested_urls[0]
 
 
+@pytest.mark.parametrize("payload", [[], None, "bad", {}, {"response": {}},
+                                      {"response": [{"fixture": []}]}])
+@pytest.mark.parametrize("method", ["list_fixtures", "list_team_badges"])
+def test_api_football_malformed_shapes_raise_provider_errors(monkeypatch, payload, method):
+    monkeypatch.setattr(live_fixtures, "urlopen",
+                        lambda request, timeout: io.BytesIO(json.dumps(payload).encode()))
+    provider = ApiFootballFixtureProvider("test-only")
+    args = (Competition.PREMIER_LEAGUE,)
+    if method == "list_fixtures":
+        args += (date(2026, 10, 18),)
+    with pytest.raises(FixtureProviderError):
+        getattr(provider, method)(*args)
+
+
 def test_api_football_season_uses_previous_year_before_july() -> None:
     assert live_fixtures._season_start_year(date(2026, 5, 1)) == 2025
 

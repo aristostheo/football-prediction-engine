@@ -153,7 +153,9 @@ def prepare_market_odds(odds: pd.DataFrame) -> pd.DataFrame:
     ]
     for column in ODDS_COLUMNS:
         prepared[column] = pd.to_numeric(prepared[column], errors="coerce")
-    valid = prepared["match_date"].notna() & prepared[list(ODDS_COLUMNS)].gt(1.0).all(axis=1)
+    prices = prepared[list(ODDS_COLUMNS)]
+    finite = prices.apply(lambda column: column.map(isfinite)).all(axis=1)
+    valid = prepared["match_date"].notna() & prices.gt(1.0).all(axis=1) & finite
     prepared = prepared.loc[valid].copy()
     if prepared.empty:
         raise ValueError("no odds rows have a date and three valid decimal prices")

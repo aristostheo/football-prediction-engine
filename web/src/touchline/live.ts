@@ -1,4 +1,14 @@
-import type { Competition, LiveFixture, Prediction, Settlement } from "../api";
+import type { Competition, LiveFixture, MarketOddsQuote, Prediction, Settlement } from "../api";
+
+export function marketQuoteNote(quote: MarketOddsQuote): string {
+  const stamp = (value: string) => new Date(value).toLocaleString([], {
+    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+  });
+  const age = quote.oldest_quote_at
+    ? `oldest reported quote ${stamp(quote.oldest_quote_at)} (${quote.timestamped_bookmaker_count ?? 0}/${quote.bookmaker_count} timestamps)`
+    : "quote update times unavailable";
+  return `Market consensus from ${quote.bookmaker_count} bookmakers · margin removed · fetched ${stamp(quote.fetched_at)} · ${age}`;
+}
 
 export function mergeSettlements(
   previous: Record<string, Settlement>,

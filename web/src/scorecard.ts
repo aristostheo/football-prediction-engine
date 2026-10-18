@@ -1,4 +1,4 @@
-import type { MatchOutcome, Prediction } from "./api";
+import type { MarketOddsQuote, MatchOutcome, Prediction } from "./api";
 
 const STORAGE_KEY = "match-forecast.prospective-scorecard.v1";
 const MAX_FORECASTS = 1000;
@@ -21,6 +21,27 @@ export interface StoredForecast {
     probability: number;
   } | null;
   market_fetched_at?: string;
+  market_compared_at?: string;
+  market_source?: "live" | "manual";
+  market_snapshot?: MarketOddsQuote;
+}
+
+export const MARKET_AUDIT_HEADERS = [
+  "Market source", "Market compared at", "Market snapshot fetched at",
+  "Oldest bookmaker quote", "Newest bookmaker quote", "Timestamped bookmakers",
+  "Bookmaker sources", "Legacy comparison timestamp",
+];
+
+export function marketAuditValues(record: StoredForecast): (string | number)[] {
+  return [
+    record.market_source ?? "", record.market_compared_at ?? "",
+    record.market_snapshot?.fetched_at ?? "",
+    record.market_snapshot?.oldest_quote_at ?? "",
+    record.market_snapshot?.newest_quote_at ?? "",
+    record.market_snapshot?.timestamped_bookmaker_count ?? "",
+    record.market_snapshot?.bookmakers?.join("; ") ?? "",
+    record.market_fetched_at ?? "",
+  ];
 }
 
 export interface ScoreMetrics {
@@ -73,6 +94,7 @@ export function loadForecasts(): StoredForecast[] {
 export function saveForecast(
   prediction: Prediction,
   currentForecasts: StoredForecast[] = loadForecasts(),
+  marketSnapshot?: MarketOddsQuote,
 ): StoredForecast[] {
   if (
     !prediction.kickoff_at ||
@@ -106,6 +128,9 @@ export function saveForecast(
       prediction.model_away_win_probability,
     ],
     market_probabilities: marketProbabilities,
+    market_compared_at: marketProbabilities ? new Date().toISOString() : undefined,
+    market_source: marketProbabilities ? marketSnapshot ? "live" : "manual" : undefined,
+    market_snapshot: marketProbabilities ? marketSnapshot : undefined,
     predicted_scoreline: prediction.components.top_scorelines[0] ?? null,
   };
   const existing = [...currentForecasts];
@@ -137,6 +162,7 @@ export function attachMarketComparison(
   prediction: Prediction,
   probabilities: [number, number, number],
   currentForecasts = loadForecasts(),
+  marketSnapshot?: MarketOddsQuote,
 ): StoredForecast[] {
   if (!prediction.kickoff_at || Date.parse(prediction.kickoff_at) <= Date.now())
     return currentForecasts;
@@ -146,7 +172,10 @@ export function attachMarketComparison(
         ? {
             ...item,
             market_probabilities: probabilities,
-            market_fetched_at: new Date().toISOString(),
+            market_compared_at: new Date().toISOString(),
+            market_source: marketSnapshot ? "live" : "manual",
+            market_snapshot: marketSnapshot,
+            market_fetched_at: undefined,
           }
         : item,
     ),

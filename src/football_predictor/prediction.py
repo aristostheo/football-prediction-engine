@@ -11,6 +11,7 @@ from threading import Lock
 import pandas as pd
 from threadpoolctl import threadpool_limits
 
+from football_predictor.data_status import history_coverage
 from football_predictor.dataset import canonicalize_match_labels
 from football_predictor.domain import Competition
 from football_predictor.evaluation import add_elo_probabilities
@@ -163,6 +164,24 @@ class PredictionEngine:
     @classmethod
     def from_csv(cls, path: Path) -> PredictionEngine:
         return cls(pd.read_csv(path))
+
+    def readiness(self) -> dict[str, object]:
+        """Report loaded model availability and actual per-league data cutoffs."""
+        leagues = history_coverage(self._history)
+        for row in leagues:
+            row["model_ready"] = row["competition"] in self._poisson_models
+        ready = all(row["model_ready"] for row in leagues)
+        status = "ready"
+        if not ready:
+            status = "not_ready"
+        elif any(row["status"] != "recent" for row in leagues):
+            status = "degraded"
+        return {
+            "ready": ready,
+            "status": status,
+            "engine": "loaded",
+            "leagues": leagues,
+        }
 
     def predict(self, fixture: FixtureToPredict) -> MatchPrediction:
         competition = fixture.competition.value

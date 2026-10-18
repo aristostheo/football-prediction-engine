@@ -268,7 +268,7 @@ class GoalApiFixtureProvider:
         except HTTPError as error:
             detail = _goal_api_http_error_detail(error)
             raise FixtureProviderError(f"Goal API returned HTTP {error.code}: {detail}") from error
-        except (OSError, json.JSONDecodeError) as error:
+        except (OSError, ValueError) as error:
             raise FixtureProviderError("Goal API request failed") from error
 
         if not isinstance(payload, dict):
@@ -310,10 +310,14 @@ class ApiFootballFixtureProvider:
         try:
             with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
                 payload = json.load(response)
-        except OSError as error:
+        except (OSError, ValueError) as error:
             raise FixtureProviderError("API-Football request failed") from error
+        if not isinstance(payload, dict):
+            raise FixtureProviderError("API-Football returned an unexpected fixture payload")
         if payload.get("errors"):
             raise FixtureProviderError(f"API-Football returned errors: {payload['errors']}")
+        if not isinstance(payload.get("response"), list):
+            raise FixtureProviderError("API-Football returned an unexpected fixture payload")
         try:
             return [
                 LiveFixture(
@@ -332,7 +336,7 @@ class ApiFootballFixtureProvider:
                 )
                 for item in payload["response"]
             ]
-        except (KeyError, TypeError, ValueError) as error:
+        except (KeyError, TypeError, ValueError, AttributeError) as error:
             raise FixtureProviderError(
                 "API-Football returned an unexpected fixture payload"
             ) from error
@@ -351,10 +355,14 @@ class ApiFootballFixtureProvider:
         try:
             with urlopen(request, timeout=15) as response:  # noqa: S310 - fixed provider URL
                 payload = json.load(response)
-        except OSError as error:
+        except (OSError, ValueError) as error:
             raise FixtureProviderError("API-Football team request failed") from error
+        if not isinstance(payload, dict):
+            raise FixtureProviderError("API-Football returned an unexpected team payload")
         if payload.get("errors"):
             raise FixtureProviderError(f"API-Football returned errors: {payload['errors']}")
+        if not isinstance(payload.get("response"), list):
+            raise FixtureProviderError("API-Football returned an unexpected team payload")
         try:
             return {
                 team["name"]: badge_url
@@ -363,7 +371,7 @@ class ApiFootballFixtureProvider:
                 and isinstance(team.get("name"), str)
                 and (badge_url := _safe_badge_url(team.get("logo")))
             }
-        except (KeyError, TypeError, ValueError) as error:
+        except (KeyError, TypeError, ValueError, AttributeError) as error:
             raise FixtureProviderError(
                 "API-Football returned an unexpected team payload"
             ) from error

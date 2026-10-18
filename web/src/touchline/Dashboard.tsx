@@ -9,7 +9,7 @@ import {
   getTeams,
   predictMatch,
 } from "../api";
-import type { Competition, LiveFixture, Prediction, Settlement } from "../api";
+import type { Competition, LiveFixture, MarketOddsQuote, Prediction, Settlement } from "../api";
 import { loadFavoriteTeams, saveFavoriteTeams } from "../favorites";
 import type { FavoriteTeams } from "../favorites";
 import {
@@ -18,6 +18,8 @@ import {
   calculateTopPickCalibration,
   forecastKey,
   loadForecasts,
+  marketAuditValues,
+  MARKET_AUDIT_HEADERS,
   removeForecast,
   saveForecast,
 } from "../scorecard";
@@ -33,6 +35,7 @@ import {
   leagues,
   localDate,
   message,
+  marketQuoteNote,
   mergeSettlements,
   modelProbabilities,
   normalizeOdds,
@@ -141,6 +144,7 @@ export default function Dashboard() {
   const [prices, setPrices] = useState(["", "", ""]);
   const [market, setMarket] = useState<[number, number, number] | null>(null);
   const [marketNote, setMarketNote] = useState("");
+  const [marketSnapshot, setMarketSnapshot] = useState<MarketOddsQuote>();
   const [marketError, setMarketError] = useState("");
   const [oddsLoading, setOddsLoading] = useState(false);
   const [records, setRecords] = useState<StoredForecast[]>(loadForecasts);
@@ -415,6 +419,7 @@ export default function Dashboard() {
     setMarket(null);
     setMarketError("");
     setMarketNote("");
+    setMarketSnapshot(undefined);
     setOddsLoading(false);
     setTab("overview");
   }
@@ -535,7 +540,7 @@ export default function Dashboard() {
       if (id !== forecastRequest.current) return;
       setPrediction(response);
       if (response.kickoff_at) {
-        setRecords(saveForecast(response, recordsRef.current));
+        setRecords(saveForecast(response, recordsRef.current, marketSnapshot));
         notify(
           "Forecast saved before kickoff. The journal will check the final result.",
         );
@@ -566,12 +571,11 @@ export default function Dashboard() {
       const comparison = normalizeOdds(values);
       setPrices(values);
       setMarket(comparison);
-      setMarketNote(
-        `${quote.bookmaker_count} bookmakers · margin removed · updated ${timeLabel(quote.fetched_at)}`,
-      );
+      setMarketSnapshot(quote);
+      setMarketNote(marketQuoteNote(quote));
       if (prediction)
         setRecords(
-          attachMarketComparison(prediction, comparison, recordsRef.current),
+          attachMarketComparison(prediction, comparison, recordsRef.current, quote),
         );
       notify(
         "Market odds loaded. The independent model forecast is unchanged.",
@@ -589,6 +593,7 @@ export default function Dashboard() {
       setMarket(comparison);
       setMarketError("");
       setMarketNote("Manually entered decimal odds · margin removed");
+      setMarketSnapshot(undefined);
       if (prediction)
         setRecords(
           attachMarketComparison(prediction, comparison, recordsRef.current),
@@ -657,6 +662,8 @@ export default function Dashboard() {
         s?.away_goals,
         ...(r.market_probabilities ?? ["", "", ""]),
         r.model_policy,
+        r.history_through,
+        ...marketAuditValues(r),
       ];
     });
     const csv = [
@@ -678,6 +685,8 @@ export default function Dashboard() {
         "Market draw",
         "Market away",
         "Policy",
+        "History through",
+        ...MARKET_AUDIT_HEADERS,
       ],
       ...rows,
     ]
@@ -1533,6 +1542,7 @@ export default function Dashboard() {
                       );
                       setMarket(null);
                       setMarketNote("");
+                      setMarketSnapshot(undefined);
                     }}
                     required
                   />

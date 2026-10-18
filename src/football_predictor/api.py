@@ -11,7 +11,7 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field, model_validator
 
 from football_predictor.domain import Competition
@@ -70,6 +70,10 @@ class MarketOddsResponse(BaseModel):
     bookmaker_count: int
     source: str
     fetched_at: datetime
+    oldest_quote_at: datetime | None = None
+    newest_quote_at: datetime | None = None
+    timestamped_bookmaker_count: int = 0
+    bookmakers: tuple[str, ...] = ()
 
 
 class ScorecardFixtureRequest(BaseModel):
@@ -197,6 +201,23 @@ def create_app(
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    @app.get("/ready")
+    def ready() -> JSONResponse:
+        try:
+            status = get_engine().readiness()
+        except (OSError, ValueError, RuntimeError, EOFError):
+            return JSONResponse(
+                {"ready": False, "status": "not_ready", "engine": "unavailable",
+                 "detail": "Historical data could not be loaded or fitted."},
+                status_code=503,
+            )
+        status["providers"] = {
+            "fixtures": bool(configured_provider or os.environ.get("GOAL_API_KEY")
+                             or os.environ.get("API_FOOTBALL_KEY")),
+            "odds": bool(configured_market_odds_provider or os.environ.get("THE_ODDS_API_KEY")),
+        }
+        return JSONResponse(status, status_code=200 if status["ready"] else 503)
+
     @app.get("/teams", response_model=list[str])
     def teams(competition: Competition) -> list[str]:
         try:
@@ -302,6 +323,10 @@ def create_app(
             bookmaker_count=quote.bookmaker_count,
             source="The Odds API · bookmaker consensus, margin removed",
             fetched_at=quote.fetched_at,
+            oldest_quote_at=getattr(quote, "oldest_quote_at", None),
+            newest_quote_at=getattr(quote, "newest_quote_at", None),
+            timestamped_bookmaker_count=getattr(quote, "timestamped_bookmaker_count", 0),
+            bookmakers=getattr(quote, "bookmakers", ()),
         )
 
     @app.post("/predict", response_model=PredictionResponse)
@@ -448,7 +473,18 @@ def create_app(
             ):
                 media_type = mimetypes.guess_type(requested_file)[0]
                 return Response(requested_file.read_bytes(), media_type=media_type)
+            if (
+                not requested_file.is_relative_to(resolved_web_root)
+                or requested_path.split("/", 1)[0] in {
+                    "api", "assets", "health", "ready", "predict", "teams", "team-badges",
+                    "fixtures", "odds", "scorecard",
+                }
+                or Path(requested_path).suffix
+            ):
+                raise HTTPException(status_code=404, detail="Not found")
             index_file = resolved_web_root / "index.html"
+            if not index_file.is_file():
+                raise HTTPException(status_code=503, detail="Dashboard build is unavailable")
             return Response(index_file.read_bytes(), media_type="text/html")
 
     return app
