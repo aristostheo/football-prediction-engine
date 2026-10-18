@@ -2,7 +2,6 @@ name: Application checks
 
 on:
   push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -35,9 +34,9 @@ jobs:
       - run: git diff --exit-code
 
   frontend:
-    name: Frontend tests, lint and build
+    name: Frontend tests, lint, build and browser flows
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: web
@@ -52,4 +51,17 @@ jobs:
       - run: npm test
       - run: npm run lint
       - run: npm run build
+      - run: npm run test:e2e:typecheck
+      - run: npx playwright install --with-deps --no-shell chromium webkit
+      - run: npm run test:e2e
+      - name: Save browser report and screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-test-report
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
       - run: git diff --exit-code
