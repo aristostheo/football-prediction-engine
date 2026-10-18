@@ -29,7 +29,7 @@ npx playwright show-report
 
 ## Coverage and isolation
 
-The same flow tests run against desktop Chromium, desktop WebKit, emulated Pixel
+Ten flow tests (40 browser cases) run against desktop Chromium, desktop WebKit, emulated Pixel
 7 Chromium and emulated iPhone 13 WebKit. Narrow-layout checks include 320, 390
 and 768 CSS pixels; desktop checks include 1280 and 1440 pixels. The suite covers:
 
