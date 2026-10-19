@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ReactNode, FormEvent } from "react";
 import type { BettingMarket, Prediction } from "../api";
 import { pct, teamShort } from "./live";
-import { comparePair, derivedMarket, difference, price } from "./betting";
+import { comparePair, derivedMarket, difference, price } from "./bettingMath";
 import { Icon } from "./Visuals";
 
 type Section = "result" | "goals" | "teams" | "scores";

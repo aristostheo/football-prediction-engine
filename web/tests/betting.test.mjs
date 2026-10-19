@@ -4,7 +4,7 @@ import { test } from "node:test";
 import ts from "typescript";
 
 const code = ts.transpileModule(
-  readFileSync(new URL("../src/touchline/betting.ts", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/touchline/bettingMath.ts", import.meta.url), "utf8"),
   {
     compilerOptions: {
       target: ts.ScriptTarget.ES2022,
