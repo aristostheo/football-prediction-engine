@@ -69,3 +69,20 @@ not enforce the provider account's complete daily allowance.
 Favourites and journals remain in the same browser/device. No account or
 cross-device sync is implied. This cleanup does not change prediction methods,
 ensemble weights, calibration, historical results, or live provider endpoints.
+
+## Verified checkpoint — October 28, 2026
+
+- Backend: 360 tests passed; Ruff passed.
+- Frontend: 19 helper tests, ESLint, production build, and browser-test
+  TypeScript checks passed.
+- Browser: 56 checks passed across desktop Chromium/WebKit and emulated
+  Android/iPhone layouts. Desktop and mobile captures were visually reviewed.
+- [Verified application-check run](https://github.com/aristostheo/football-prediction-engine/actions/runs/40638809947).
+- The built app has no classic or simulator chunks. Retired URLs preserve
+  saved favourites and open Touchline. No provider quota was used in these checks.
+- Offline data audit: this checkout's bundled history ends September 20, 2026
+  for all seven leagues. A user's ignored local synced snapshot may be newer.
+  Check the actual local coverage before presenting current-match forecasts.
+
+Native-device testing and authenticated provider checks were not performed in
+this workspace. Browser emulation does not establish native Safari behavior.
