@@ -20,6 +20,52 @@ function gate() {
   return { wait, release };
 }
 
+test("retired page links open Touchline without losing saved favourites or showing demo data", async ({ page }) => {
+  await ready(page);
+  await page.getByRole("button", { name: "Follow Nottingham Forest FC", exact: true }).click();
+  for (const path of ["/classic", "/updated-mockup/"]) {
+    await page.goto(`${path}?from=saved-link`);
+    await expect(page).toHaveURL(/\/\?from=saved-link$/);
+    await expect(page.getByRole("button", { name: "Unfollow Nottingham Forest FC", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Classic dashboard|UPDATED MOCKUP/ })).toHaveCount(0);
+    await expect(page).toHaveTitle("Match Forecast — Touchline");
+    await expect(hero(page)).toContainText("Nottingham Forest");
+  }
+});
+
+test("analysis tabs support keyboard navigation and mobile navigation traps focus and closes cleanly", async ({ page }) => {
+  await ready(page);
+  const overview = page.getByRole("tab", { name: "The bigger picture", exact: true });
+  await overview.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("tab", { name: "Betting", exact: true })).toBeFocused();
+  await expect(page.getByRole("tabpanel", { name: "Betting" })).toBeVisible();
+  await page.keyboard.press("End");
+  await expect(page.getByRole("tab", { name: "Head to head", exact: true })).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(overview).toBeFocused();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const menu = page.getByRole("button", { name: "Open navigation", exact: true });
+  await menu.click();
+  const drawer = page.getByRole("dialog", { name: "Navigation", exact: true });
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByRole("button", { name: "Close navigation", exact: true })).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(drawer.locator(".tl-league-list button").last()).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(drawer.getByRole("button", { name: "Close navigation", exact: true })).toBeFocused();
+  await expect(page.locator(".tl-workspace")).toHaveAttribute("inert", "");
+  await page.keyboard.press("Escape");
+  await expect(drawer).toHaveCount(0);
+  await expect(menu).toBeFocused();
+  await expect(page.locator(".tl-workspace")).not.toHaveAttribute("inert");
+  await menu.click();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(drawer).toHaveCount(0);
+  await expect(page.locator(".tl-workspace")).not.toHaveAttribute("inert");
+  await noPageOverflow(page);
+});
+
 test("discovers a crowded matchday, switches all seven leagues and browses a date", async ({ page, api }) => {
   await ready(page);
   await expect(page.locator(".tl-fixture")).toHaveCount(10);

@@ -117,19 +117,19 @@ body {
   font-weight: 750;
 }
 .tl-brand strong > span {
-  font: 9px var(--tl-mono);
+  font: 11px var(--tl-mono);
   vertical-align: top;
   margin-left: 2px;
 }
 .tl-brand small {
   display: block;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   letter-spacing: 0.12em;
   margin-top: 7px;
 }
 .tl-sidebar-label {
-  font: 9px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.13em;
   color: var(--tl-muted);
   padding: 0 14px;
@@ -171,7 +171,7 @@ body {
 }
 .tl-sidebar nav button small {
   margin-left: auto;
-  font: 10px var(--tl-mono);
+  font: 11px var(--tl-mono);
   background: var(--tl-soft);
   padding: 2px 6px;
   border-radius: 3px;
@@ -219,7 +219,7 @@ body {
   display: grid;
   place-items: center;
   color: var(--league-color);
-  font: 10px var(--tl-mono);
+  font: 11px var(--tl-mono);
   border-radius: 50% 50% 45% 45%;
   flex: none;
 }
@@ -231,7 +231,7 @@ body {
 }
 .tl-league-list button small {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
   opacity: 0.8;
   margin-top: 2px;
@@ -292,7 +292,7 @@ body {
   gap: 16px;
 }
 .tl-breadcrumb {
-  font: 9px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.1em;
 }
 .tl-breadcrumb > span {
@@ -307,7 +307,7 @@ body {
   border: 1px solid var(--tl-line);
   border-radius: 4px;
   color: var(--tl-muted);
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.08em;
 }
 .tl-preview-pill i {
@@ -338,7 +338,7 @@ body {
   border: 3px solid var(--tl-card);
   border-radius: 50%;
   outline: 1px solid var(--tl-line);
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
 }
 .tl-mobile-menu {
@@ -353,11 +353,11 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--tl-muted);
 }
 .tl-preview-notice > span {
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.08em;
   color: var(--tl-orange);
   white-space: nowrap;
@@ -388,7 +388,7 @@ body {
   display: flex;
   align-items: center;
   gap: 9px;
-  font: 9px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.09em;
   color: var(--tl-orange);
 }
@@ -436,7 +436,7 @@ body {
   margin-left: 5px;
 }
 .tl-mini-label {
-  font: 10px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.085em;
   color: var(--tl-muted);
 }
@@ -494,7 +494,7 @@ body {
   border: 0;
   border-radius: 3px;
   background: none;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--tl-muted);
   text-transform: capitalize;
 }
@@ -532,7 +532,7 @@ body {
   display: block;
   margin: 12px 0;
   color: var(--tl-muted);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.6;
 }
 .tl-calendar button {
@@ -588,7 +588,7 @@ body {
 .tl-fixture-time small {
   margin-left: 5px;
   color: var(--tl-muted);
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.05em;
 }
 .tl-fixture-time > svg {
@@ -609,7 +609,7 @@ body {
   font-size: 13px;
 }
 .tl-fixture-clubs > .tl-fixture-vs {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--tl-muted);
   font-weight: 400;
 }
@@ -640,7 +640,7 @@ body {
   justify-content: space-between;
   border-top: 1px solid var(--tl-line);
   padding-top: 9px;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.07em;
   color: var(--tl-muted);
 }
@@ -714,7 +714,7 @@ body {
   display: flex;
   gap: 8px;
   align-items: center;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.055em;
 }
 .tl-match-league > span {
@@ -722,13 +722,13 @@ body {
   place-items: center;
   padding: 5px;
   border-radius: 3px;
-  font-size: 8px;
+  font-size: 11px;
 }
 .tl-match-kickoff {
   display: flex;
   align-items: center;
   gap: 6px;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.03em;
   color: #b2b9ab;
 }
@@ -760,7 +760,7 @@ body {
   min-height: 44px;
 }
 .tl-team-role {
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.18em;
   color: #98a394;
   margin-top: 18px;
@@ -817,7 +817,7 @@ body {
 }
 .tl-match-hero-bottom .tl-mini-label {
   color: #929e8b;
-  font-size: 7px;
+  font-size: 11px;
 }
 .tl-form-pills {
   display: flex;
@@ -833,7 +833,7 @@ body {
   display: grid;
   place-items: center;
   border-radius: 3px;
-  font: 9px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: #284f34;
   background: #dce9d3;
 }
@@ -864,7 +864,7 @@ body {
   max-width: 175px;
   text-align: center;
   justify-content: center;
-  font-size: 8px;
+  font-size: 11px;
   line-height: 1.6;
   color: #a5af9d;
   padding-bottom: 5px;
@@ -974,7 +974,7 @@ body {
   align-items: center;
   gap: 5px;
   color: var(--tl-muted);
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
 }
 .tl-outcome-values i,
 .tl-market-legend i {
@@ -1034,7 +1034,7 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   letter-spacing: 0.04em;
 }
@@ -1052,7 +1052,7 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 11px;
 }
 .tl-forecast-foot button:hover {
   color: var(--tl-orange);
@@ -1117,7 +1117,7 @@ body {
   display: flex;
   gap: 6px;
   align-items: center;
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   letter-spacing: 0.07em;
   padding-bottom: 12px;
@@ -1156,7 +1156,7 @@ body {
   margin-top: 6px !important;
 }
 .tl-number-tag {
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   letter-spacing: 0.09em;
 }
@@ -1197,7 +1197,7 @@ body {
 .tl-story-stat small {
   display: block;
   margin-top: 4px;
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   letter-spacing: 0.03em;
 }
@@ -1209,7 +1209,7 @@ body {
   margin-top: 16px;
 }
 .tl-chip {
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   border: 1px solid var(--tl-line);
   padding: 5px 6px;
@@ -1231,7 +1231,7 @@ body {
   border: 0;
   border-bottom: 1px solid transparent;
   padding: 0 0 10px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--tl-muted);
 }
 .tl-scoreline-tabs button.tl-score-view-active {
@@ -1254,7 +1254,7 @@ body {
 }
 .tl-scoreline-order {
   color: #a5a89c;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
 }
 .tl-scoreline-row strong {
   font-size: 22px;
@@ -1287,7 +1287,7 @@ body {
 }
 .tl-scoreline-row > span:last-child {
   text-align: right;
-  font: 10px var(--tl-mono);
+  font: 11px var(--tl-mono);
 }
 .tl-goal-rates {
   display: flex;
@@ -1308,7 +1308,7 @@ body {
   text-align: right;
 }
 .tl-goal-rates small {
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   letter-spacing: 0.03em;
 }
@@ -1327,7 +1327,7 @@ body {
 }
 .tl-map-direction {
   display: block;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   margin-bottom: 8px;
 }
@@ -1342,7 +1342,7 @@ body {
 .tl-map-axis {
   display: grid;
   place-items: center;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
 }
 .tl-map-cell {
@@ -1355,7 +1355,7 @@ body {
     var(--tl-card)
   );
   border-radius: 2px;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
 }
 .tl-map-cell small {
   display: none;
@@ -1408,10 +1408,10 @@ body {
   padding: 19px 42px;
   border-top: 1px solid var(--tl-line);
   color: var(--tl-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 .tl-footer > span:first-child {
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.1em;
 }
 .tl-footer > span:first-child i {
@@ -1437,7 +1437,7 @@ body {
   display: flex;
   gap: 7px;
   align-items: center;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--tl-muted);
 }
 .tl-market-color {
@@ -1457,7 +1457,7 @@ body {
   font-weight: 550;
 }
 .tl-market-row-label span {
-  font: 9px var(--tl-mono);
+  font: 11px var(--tl-mono);
 }
 .tl-positive {
   color: #54824c;
@@ -1488,7 +1488,7 @@ body {
 .tl-market-bars span {
   position: absolute;
   left: calc(100% + 9px);
-  font: 9px var(--tl-mono);
+  font: 11px var(--tl-mono);
 }
 .tl-market-bars .tl-market-bar-secondary i {
   background: #899fae;
@@ -1519,7 +1519,7 @@ body {
   width: 100%;
   min-width: 0;
   color: var(--tl-muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 .tl-odds-inputs input {
   width: 100%;
@@ -1533,14 +1533,14 @@ body {
 }
 .tl-odds-panel > small {
   color: var(--tl-muted);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.7;
   margin-top: 14px;
 }
 .tl-demo-stamp {
   display: block;
   color: var(--tl-orange);
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.08em;
   margin-top: 25px;
 }
@@ -1603,7 +1603,7 @@ body {
   align-items: center;
   gap: 4px;
   color: var(--tl-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 .tl-h2h-summary span + span {
   border-left: 1px solid var(--tl-line);
@@ -1623,10 +1623,10 @@ body {
   text-align: center;
 }
 .tl-h2h-row span {
-  font: 10px var(--tl-mono);
+  font: 11px var(--tl-mono);
 }
 .tl-h2h-row span:first-child {
-  font-size: 8px;
+  font-size: 11px;
   text-align: left;
   color: var(--tl-muted);
 }
@@ -1657,7 +1657,7 @@ body {
   letter-spacing: -0.04em;
 }
 .tl-section-title > span {
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
 }
 .tl-follow-fixtures {
@@ -1728,7 +1728,7 @@ body {
 .tl-team-card small {
   display: block;
   color: var(--tl-muted);
-  font-size: 10px;
+  font-size: 11px;
   margin-top: 4px;
 }
 .tl-team-card .tl-icon-button {
@@ -1765,7 +1765,7 @@ body {
 }
 .tl-scorecard-metrics article > span {
   display: block;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   color: var(--tl-muted);
   letter-spacing: 0.05em;
 }
@@ -1783,7 +1783,7 @@ body {
   margin-left: 3px;
 }
 .tl-scorecard-metrics small {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--tl-muted);
   display: block;
   margin-top: 11px;
@@ -1806,7 +1806,7 @@ body {
 }
 .tl-scorecard-table th {
   color: var(--tl-muted);
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
   letter-spacing: 0.07em;
   padding: 13px 10px;
   border-top: 1px solid var(--tl-line);
@@ -1844,7 +1844,7 @@ body {
 .tl-table-date {
   display: block;
   color: var(--tl-muted);
-  font: 7px var(--tl-mono);
+  font: 11px var(--tl-mono);
   margin: 8px 0 0 30px;
 }
 .tl-table-pick {
@@ -1855,7 +1855,7 @@ body {
   color: #637858;
   border-radius: 4px;
   padding: 5px 8px;
-  font: 8px var(--tl-mono);
+  font: 11px var(--tl-mono);
 }
 .tl-status.tl-pending {
   color: #a57c3b;
@@ -1866,7 +1866,7 @@ body {
   align-items: center;
   gap: 5px;
   color: var(--tl-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 .tl-scorecard-bottom {
   display: grid;
@@ -2103,7 +2103,7 @@ body {
   margin-bottom: 7px;
 }
 .tl-explore-dialog form > small {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.8;
   color: var(--tl-muted);
   display: block;
@@ -2200,12 +2200,12 @@ body {
     padding: 22px 20px 17px;
   }
   .tl-match-kickoff {
-    font-size: 7px;
+    font-size: 11px;
     max-width: 125px;
     line-height: 1.7;
   }
   .tl-match-league {
-    font-size: 7px;
+    font-size: 11px;
   }
   .tl-match-team h2 {
     font-size: 30px;
@@ -2227,7 +2227,7 @@ body {
     padding: 22px;
   }
   .tl-chip {
-    font-size: 6px;
+    font-size: 11px;
   }
   .tl-club-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2260,7 +2260,7 @@ body {
     font-size: 14px;
   }
   .tl-brand small {
-    font-size: 6px;
+    font-size: 11px;
   }
   .tl-logo {
     width: 28px;
@@ -2290,7 +2290,7 @@ body {
   }
   .tl-page-heading .tl-outline-button {
     padding: 11px;
-    font-size: 10px !important;
+    font-size: 11px !important;
   }
   .tl-focus-grid {
     grid-template-columns: minmax(0, 1fr) minmax(260px, 0.9fr);
@@ -2329,7 +2329,7 @@ body {
   .tl-form-pills > span {
     width: 19px;
     height: 20px;
-    font-size: 8px;
+    font-size: 11px;
   }
   .tl-jumbo-probability {
     font-size: 76px;
@@ -2338,7 +2338,7 @@ body {
     padding: 20px;
   }
   .tl-forecast-foot > span {
-    font-size: 6px;
+    font-size: 11px;
   }
   .tl-detail-grid,
   .tl-market-layout {
@@ -2354,7 +2354,7 @@ body {
     display: none;
   }
   .tl-story-row p {
-    font-size: 10px;
+    font-size: 11px;
   }
   .tl-story-stat {
     font-size: 20px;
@@ -2368,7 +2368,7 @@ body {
     display: none;
   }
   .tl-date-button {
-    font-size: 10px !important;
+    font-size: 11px !important;
   }
   .tl-fixture {
     min-width: 175px;
@@ -2385,7 +2385,7 @@ body {
     line-height: 1.6;
   }
   .tl-closing-note > button {
-    font-size: 9px !important;
+    font-size: 11px !important;
   }
   .tl-scorecard-metrics article {
     padding: 2px 18px;
@@ -2437,7 +2437,7 @@ body {
     font-size: 17px;
   }
   .tl-sidebar-open .tl-brand small {
-    font-size: 8px;
+    font-size: 11px;
   }
   .tl-sidebar-open .tl-logo {
     width: 33px;
@@ -2466,7 +2466,7 @@ body {
     gap: 10px;
   }
   .tl-breadcrumb {
-    font-size: 8px;
+    font-size: 11px;
     letter-spacing: 0.05em;
   }
   .tl-breadcrumb > span {
@@ -2492,7 +2492,7 @@ body {
     font-size: 11px !important;
   }
   .tl-preview-notice > p {
-    font-size: 9px;
+    font-size: 11px;
   }
   .tl-follow-fixtures {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2513,11 +2513,11 @@ body {
   }
   .tl-preview-pill {
     padding: 6px 7px;
-    font-size: 6px;
+    font-size: 11px;
     letter-spacing: 0.04em;
   }
   .tl-breadcrumb {
-    font-size: 7px;
+    font-size: 11px;
   }
   .tl-breadcrumb > span {
     margin: 0 4px;
@@ -2533,11 +2533,11 @@ body {
     gap: 10px;
   }
   .tl-preview-notice > span {
-    font-size: 7px;
+    font-size: 11px;
     padding-top: 3px;
   }
   .tl-preview-notice > p {
-    font-size: 9px;
+    font-size: 11px;
     padding-left: 10px;
   }
   .tl-page-heading {
@@ -2545,7 +2545,7 @@ body {
     padding: 32px 0 25px;
   }
   .tl-kicker {
-    font-size: 8px;
+    font-size: 11px;
     letter-spacing: 0.06em;
   }
   .tl-page-heading h1 {
@@ -2589,7 +2589,7 @@ body {
   }
   .tl-matchday-toolbar .tl-segmented button {
     padding: 6px 8px;
-    font-size: 9px;
+    font-size: 11px;
   }
   .tl-matchday {
     margin-bottom: 17px;
@@ -2633,7 +2633,7 @@ body {
   }
   .tl-match-kickoff {
     max-width: 160px;
-    font-size: 7px;
+    font-size: 11px;
   }
   .tl-match-teams {
     min-height: 237px;
@@ -2653,12 +2653,12 @@ body {
   }
   .tl-match-hero-bottom .tl-mini-label {
     display: block;
-    font-size: 6px;
+    font-size: 11px;
   }
   .tl-form-pills > span {
     width: 23px;
     height: 22px;
-    font-size: 9px;
+    font-size: 11px;
   }
   .tl-follow-hero {
     right: 0;
@@ -2688,7 +2688,7 @@ body {
     font-size: 23px;
   }
   .tl-outcome-values > div > span {
-    font-size: 9px;
+    font-size: 11px;
   }
   .tl-forecast .tl-orange-button {
     margin-top: 25px;
@@ -2696,10 +2696,10 @@ body {
     font-size: 13px !important;
   }
   .tl-forecast-foot > span {
-    font-size: 7px;
+    font-size: 11px;
   }
   .tl-forecast-foot button {
-    font-size: 10px;
+    font-size: 11px;
   }
   .tl-insights-nav {
     margin-top: 27px;
@@ -2746,14 +2746,14 @@ body {
     min-width: 50px;
   }
   .tl-context-note {
-    font-size: 10px;
+    font-size: 11px;
     line-height: 1.8;
   }
   .tl-scorelines .tl-chip {
     display: inline-block;
   }
   .tl-chip {
-    font-size: 6px;
+    font-size: 11px;
   }
   .tl-scoreline-row {
     grid-template-columns: 20px 75px 1fr 53px;
@@ -2773,7 +2773,7 @@ body {
     font-size: 12px;
   }
   .tl-scoreline-order {
-    font-size: 10px;
+    font-size: 11px;
   }
   .tl-goal-rates {
     margin-top: 13px;
@@ -2783,7 +2783,7 @@ body {
     font-size: 25px;
   }
   .tl-goal-rates small {
-    font-size: 8px;
+    font-size: 11px;
   }
   .tl-map-grid {
     grid-template-columns: 24px repeat(5, 1fr);
@@ -2791,13 +2791,13 @@ body {
   }
   .tl-map-cell {
     min-height: 33px;
-    font-size: 10px;
+    font-size: 11px;
   }
   .tl-map-axis {
-    font-size: 10px;
+    font-size: 11px;
   }
   .tl-map-direction {
-    font-size: 9px;
+    font-size: 11px;
   }
   .tl-closing-note {
     gap: 12px;
@@ -2823,7 +2823,7 @@ body {
     display: none;
   }
   .tl-footer > span:first-child {
-    font-size: 6px;
+    font-size: 11px;
   }
   .tl-market-row-label strong {
     font-size: 12px;
@@ -2899,13 +2899,13 @@ body {
     border-top: 1px solid var(--tl-line);
   }
   .tl-scorecard-metrics article > span {
-    font-size: 8px;
+    font-size: 11px;
   }
   .tl-scorecard-metrics strong {
     font-size: 40px;
   }
   .tl-scorecard-metrics small {
-    font-size: 10px;
+    font-size: 11px;
   }
   .tl-scorecard-table {
     padding: 20px 17px 0;

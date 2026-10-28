@@ -141,10 +141,10 @@ and forecast journal. For a single local server, run `npm run build` in `web`,
 then `uv run uvicorn football_predictor.api:app --reload` from the repository
 root and open `http://localhost:8000`.
 
-The previous dashboard remains at `/classic`. The isolated design demo remains
-at `/updated-mockup` and makes no backend/API calls. See the
-[live Touchline integration](docs/design/touchline-live.md) and
-[concept preview gallery](docs/design/touchline.md).
+Touchline is the only active interface. Old `/classic` and `/updated-mockup`
+links open the current dashboard; saved favourites and journal data are preserved.
+See the [live Touchline integration](docs/design/touchline-live.md),
+[demo guide](docs/demo-guide.md), and [archived design gallery](docs/design/touchline.md).
 
 ## Project status
 

@@ -81,7 +81,7 @@ export function Brand() {
       </span>
       <div>
         <strong>
-          match forecast<span>®</span>
+          match forecast
         </strong>
         <small>THE TOUCHLINE EDITION</small>
       </div>

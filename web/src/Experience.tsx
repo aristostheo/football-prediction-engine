@@ -1,18 +1,18 @@
 import { lazy, Suspense } from "react";
 
-// The mockup never mounts the live dashboard's data-fetching effects. CSS is
-// imported with each experience, so the two visual directions stay isolated.
-const App = lazy(() => import("./App"));
 const Dashboard = lazy(() => import("./touchline/Dashboard"));
-const UpdatedMockup = lazy(() => import("./mockup/UpdatedMockup"));
+
+// Retired URLs open the current app. Keep saved browser data and query/hash state.
+if (["/classic", "/updated-mockup"].includes(window.location.pathname.replace(/\/+$/, ""))) {
+  window.history.replaceState(null, "", `/${window.location.search}${window.location.hash}`);
+}
 
 export default function Experience() {
-  const preview =
-    window.location.pathname.replace(/\/+$/, "") === "/updated-mockup";
   return (
     <Suspense
       fallback={
         <div
+          role="status"
           style={{
             padding: 32,
             fontFamily: "sans-serif",
@@ -25,13 +25,7 @@ export default function Experience() {
         </div>
       }
     >
-      {preview ? (
-        <UpdatedMockup />
-      ) : window.location.pathname.replace(/\/+$/, "") === "/classic" ? (
-        <App />
-      ) : (
-        <Dashboard />
-      )}
+      <Dashboard />
     </Suspense>
   );
 }

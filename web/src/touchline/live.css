@@ -1,4 +1,48 @@
 /* Live data states extend the approved Touchline visual language. */
+.tl-skip-link {
+  position: fixed;
+  left: 16px;
+  top: -100px;
+  z-index: 100;
+  padding: 14px 20px;
+  border-radius: 6px;
+  background: var(--tl-ink);
+  color: var(--tl-card) !important;
+}
+.tl-skip-link:focus { top: 16px; }
+.tl-sidebar-brand { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tl-drawer-close { display: none; }
+.tl-live .tl-brand small { letter-spacing: 1px; }
+.tl-live .tl-panel > p,
+.tl-live .tl-studio-grid p,
+.tl-live .tl-page-footnote,
+.tl-live .tl-context-note,
+.tl-live .tl-market-note,
+.tl-live .tl-live-components p,
+.tl-live .tl-story-row p { font-size: 14px !important; line-height: 1.75; }
+.tl-live .tl-sidebar-bottom p { font-size: 12px; line-height: 1.7; }
+.tl-live .tl-research summary {
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1.6;
+  min-height: 44px;
+}
+.tl-live .tl-research summary span { display: block; font-size: 13px; color: var(--tl-muted); margin-left: 18px; }
+.tl-live .tl-research[open] summary { margin-bottom: 24px; }
+.tl-live summary:focus-visible { outline: 2px solid var(--tl-orange); outline-offset: 4px; }
+@media (max-width: 800px) {
+  .tl-drawer-close { display: inline-grid; flex-shrink: 0; }
+  .tl-live .tl-sidebar-brand .tl-brand { min-width: 0; padding: 0; }
+  .tl-live .tl-sidebar-brand .tl-brand strong { font-size: 16px; }
+  .tl-live .tl-sidebar-brand .tl-brand small { font-size: 11px; letter-spacing: .6px; }
+  .tl-live .tl-icon-button { min-width: 44px; min-height: 44px; }
+  .tl-live .tl-fixture-time { flex-wrap: wrap; }
+  .tl-live .tl-calendar input,
+  .tl-live .tl-explore-dialog input,
+  .tl-live .tl-explore-dialog select,
+  .tl-live .tl-journal-filters select,
+  .tl-live .tl-team-search input { font-size: 16px; }
+}
 .tl-betting {
   min-width: 0;
 }
@@ -314,7 +358,7 @@
 .tl-bet-score-grid > div > span {
   color: var(--tl-muted);
   font:
-    10px "DM Mono",
+    11px "DM Mono",
     monospace;
   letter-spacing: 1px;
   line-height: 1.6;
@@ -534,7 +578,7 @@
 .tl-freshness small {
   margin-left: auto;
   font:
-    10px "DM Mono",
+    11px "DM Mono",
     monospace;
 }
 .tl-freshness-warning {
@@ -651,7 +695,7 @@
 .tl-journal-score small {
   display: block;
   font:
-    8px "DM Mono",
+    11px "DM Mono",
     monospace;
   color: var(--tl-muted);
   margin-top: 5px;
@@ -671,7 +715,7 @@
 }
 .tl-live .tl-table-date {
   white-space: normal;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.8;
 }
 .tl-live .tl-scorecard-bottom {
@@ -748,7 +792,7 @@
   margin: 14px auto 0;
 }
 .tl-live .tl-form-pills small {
-  font-size: 9px;
+  font-size: 11px;
   opacity: 0.7;
 }
 @media (max-width: 700px) {
@@ -762,7 +806,7 @@
     gap: 24px;
   }
   .tl-live .tl-match-kickoff {
-    font-size: 8px;
+    font-size: 11px;
   }
   .tl-freshness {
     flex-wrap: wrap;
@@ -786,7 +830,7 @@
     font-size: 42px;
   }
   .tl-component-row {
-    font-size: 9px;
+    font-size: 11px;
     gap: 4px;
   }
   .tl-live .tl-panel p {
@@ -839,7 +883,7 @@
   .tl-live .tl-scorecard-table td:nth-child(3)::before {
     display: block;
     font:
-      9px "DM Mono",
+      11px "DM Mono",
       monospace;
     color: var(--tl-muted);
     margin-bottom: 8px;
@@ -863,7 +907,7 @@
   }
   .tl-live .tl-journal-prediction small,
   .tl-live .tl-journal-prediction > span {
-    font-size: 10px;
+    font-size: 11px;
   }
   .tl-live .tl-scorecard-table .tl-status {
     white-space: normal;

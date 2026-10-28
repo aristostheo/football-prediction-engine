@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CSSProperties, FormEvent } from "react";
+import type { CSSProperties, FormEvent, KeyboardEvent } from "react";
 import {
   getFixtures,
   getMarketOdds,
@@ -28,6 +28,7 @@ import { Icon, Brand, StadiumCanvas } from "./Visuals";
 import type { IconName } from "./Visuals";
 import { Club, FormPills } from "./Club";
 import Betting from "./Betting";
+import { useNavigationDrawer } from "./useNavigationDrawer";
 import {
   dateAfter,
   dateLabel,
@@ -46,7 +47,7 @@ import {
   teamShort,
   timeLabel,
 } from "./live";
-import "../mockup/mockup.css";
+import "./theme.css";
 import "./live.css";
 
 type Page = "center" | "teams" | "scorecard" | "studio";
@@ -167,6 +168,8 @@ export default function Dashboard() {
   const [exploreAway, setExploreAway] = useState("");
   const [exploreError, setExploreError] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
+  const sidebar = useRef<HTMLElement>(null);
+  useNavigationDrawer(sidebar, sidebarOpen, () => setSidebarOpen(false));
   const fixtureRequest = useRef(0),
     forecastRequest = useRef(0),
     oddsRequest = useRef(0),
@@ -405,6 +408,16 @@ export default function Dashboard() {
     setToast(value);
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(""), 4500);
+  }
+  function handleAnalysisKeys(event: KeyboardEvent<HTMLDivElement>) {
+    const order: Tab[] = ["overview", "market", "form", "h2h"];
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const index = order.indexOf(tab);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? order.length - 1
+      : (index + (event.key === "ArrowRight" ? 1 : -1) + order.length) % order.length;
+    setTab(order[next]);
+    document.getElementById(`live-tab-${order[next]}`)?.focus();
   }
   function navigate(next: Page) {
     setPage(next);
@@ -709,15 +722,29 @@ export default function Dashboard() {
 
   return (
     <div className={`tl-app tl-live ${night ? "tl-night" : ""}`}>
+      <a className="tl-skip-link" href="#main-content">Skip to content</a>
       {sidebarOpen && (
         <button
           className="tl-sidebar-overlay"
-          aria-label="Close navigation"
+          aria-label="Dismiss navigation backdrop"
+          tabIndex={-1}
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      <aside className={`tl-sidebar ${sidebarOpen ? "tl-sidebar-open" : ""}`}>
-        <Brand />
+      <aside
+        ref={sidebar}
+        id="main-navigation"
+        className={`tl-sidebar ${sidebarOpen ? "tl-sidebar-open" : ""}`}
+        role={sidebarOpen ? "dialog" : undefined}
+        aria-modal={sidebarOpen || undefined}
+        aria-label="Navigation"
+      >
+        <div className="tl-sidebar-brand">
+          <Brand />
+          <button className="tl-icon-button tl-drawer-close" aria-label="Close navigation" onClick={() => setSidebarOpen(false)}>
+            <Icon name="close" />
+          </button>
+        </div>
         <div className="tl-sidebar-label">YOUR WORKSPACE</div>
         <nav aria-label="Main navigation">
           {pages.map((item) => (
@@ -764,9 +791,6 @@ export default function Dashboard() {
             <br />
             <span>The same love for football.</span>
           </div>
-          <a href="/classic">
-            <Icon name="back" size={16} /> Classic dashboard
-          </a>
           <p>
             Forecasts & favourites stay in this browser.
             <br />
@@ -774,12 +798,14 @@ export default function Dashboard() {
           </p>
         </div>
       </aside>
-      <div className="tl-workspace">
+      <div className="tl-workspace" inert={sidebarOpen}>
         <header className="tl-topbar">
           <div className="tl-topbar-left">
             <button
               className="tl-icon-button tl-mobile-menu"
               aria-label="Open navigation"
+              aria-expanded={sidebarOpen}
+              aria-controls="main-navigation"
               onClick={() => setSidebarOpen(true)}
             >
               <Icon name="menu" />
@@ -811,7 +837,7 @@ export default function Dashboard() {
             </button>
           </div>
         </header>
-        <main className="tl-main">
+        <main className="tl-main" id="main-content" tabIndex={-1}>
           {page === "center" && (
             <>
               <section className="tl-page-heading">
@@ -1223,20 +1249,20 @@ export default function Dashboard() {
                     >
                       <Icon name="clock" size={17} />
                       <span>
-                        Results through{" "}
+                        Training results through{" "}
                         <strong>{prediction.history_through}</strong> ·{" "}
                         {prediction.history_age_days} days before this matchup.{" "}
                         {prediction.history_age_days > 21
                           ? "History is dated; treat the forecast with extra caution."
-                          : "Based on the latest results in your local dataset."}
+                          : "Uses the results available to this model."}
                       </span>
                       <small>
-                        {prediction.model_policy.replaceAll("_", " ")}
+                        {prediction.components.elo_weight === 1 ? "Elo forecast" : "Elo + goal model"}
                       </small>
                     </div>
                   )}
                   <div className="tl-insights-nav">
-                    <div role="tablist" aria-label="Match analysis">
+                    <div role="tablist" aria-label="Match analysis" onKeyDown={handleAnalysisKeys}>
                       {(
                         [
                           { id: "overview", label: "The bigger picture" },
@@ -1250,6 +1276,7 @@ export default function Dashboard() {
                           id={`live-tab-${item.id}`}
                           aria-controls={`live-panel-${item.id}`}
                           aria-selected={tab === item.id}
+                          tabIndex={tab === item.id ? 0 : -1}
                           key={item.id}
                           className={tab === item.id ? "tl-insight-active" : ""}
                           onClick={() => setTab(item.id)}
@@ -1271,6 +1298,7 @@ export default function Dashboard() {
                     role="tabpanel"
                     id={`live-panel-${tab}`}
                     aria-labelledby={`live-tab-${tab}`}
+                    tabIndex={0}
                   >
                     {tab === "market" ? (
                       <Betting
@@ -2519,11 +2547,13 @@ export default function Dashboard() {
             </p>
           </div>
         </article>
-        <article className="tl-panel tl-research">
+        <details className="tl-panel tl-research">
+          <summary>Historical benchmarks <span>Methods, results & limitations</span></summary>
           <h3>The evidence so far</h3>
           <p>
-            Chronological research benchmarks; these figures describe historical
-            samples, not guarantees for upcoming games.
+            Archived research snapshot from October 2, 2026, before later dataset
+            corrections. These historical figures are not current live scores
+            or guarantees for upcoming games.
           </p>
           <div className="tl-table-scroll">
             <table>
@@ -2572,7 +2602,7 @@ export default function Dashboard() {
               Evaluation & league coverage <Icon name="external" size={14} />
             </a>
           </div>
-        </article>
+        </details>
         <p className="tl-page-footnote">
           The production predictor has no separate calibration transform.
           Injuries, lineups, weather, shots, and xG are not available inputs in

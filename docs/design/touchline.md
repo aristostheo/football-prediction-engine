@@ -1,3 +1,7 @@
+> **Archived design reference.** The concept became the live Touchline app.
+> The standalone simulator and classic page have been removed; their old URLs
+> now open Touchline. Instructions below describe the historical prototype.
+
 # Touchline: alternate dashboard concept
 
 The approved Touchline design is now the live dashboard at `/`; see

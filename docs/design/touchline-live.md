@@ -1,8 +1,9 @@
 # Touchline live dashboard
 
-Touchline is the main app at `/`. `/classic` retains the previous dashboard,
-and `/updated-mockup` retains the separate illustrative design demo. The live
-dashboard does not import the demo data or its simulator.
+Touchline is the only app at `/`. Retired `/classic` and `/updated-mockup`
+links replace their URL with `/` and open the current dashboard, preserving query
+parameters, hash, and browser storage. The previous interfaces and simulator
+have been removed; their design history remains in Git and the archived gallery.
 
 ## Real data flows
 
