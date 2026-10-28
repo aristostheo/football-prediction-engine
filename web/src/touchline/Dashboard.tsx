@@ -28,6 +28,7 @@ import { Icon, Brand, StadiumCanvas } from "./Visuals";
 import type { IconName } from "./Visuals";
 import { Club, FormPills } from "./Club";
 import Betting from "./Betting";
+import BettingInsights from "./BettingInsights";
 import { useNavigationDrawer } from "./useNavigationDrawer";
 import {
   dateAfter,
@@ -50,13 +51,14 @@ import {
 import "./theme.css";
 import "./live.css";
 
-type Page = "center" | "teams" | "scorecard" | "studio";
+type Page = "center" | "teams" | "scorecard" | "insights" | "studio";
 type Tab = "overview" | "market" | "form" | "h2h";
 type Selected = LiveFixture & { hypothetical?: boolean };
 const pages: { id: Page; title: string; icon: IconName }[] = [
   { id: "center", title: "Match center", icon: "grid" },
   { id: "teams", title: "My teams", icon: "star" },
   { id: "scorecard", title: "Forecast journal", icon: "chart" },
+  { id: "insights", title: "Betting insights", icon: "bolt" },
   { id: "studio", title: "Model studio", icon: "layers" },
 ];
 function initialTheme() {
@@ -1354,6 +1356,9 @@ export default function Dashboard() {
           )}
           {page === "teams" && renderTeams()}
           {page === "scorecard" && renderJournal()}
+          {page === "insights" && (
+            <BettingInsights records={records} onNavigate={navigate} />
+          )}
           {page === "studio" && renderStudio()}
         </main>
         <footer className="tl-footer">

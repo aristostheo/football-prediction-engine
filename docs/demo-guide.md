@@ -41,13 +41,16 @@ substitutes simulated fixtures, odds, or predictions for missing live data.
    The model remains independent of the comparison. Goal markets and team
    totals are experimental and use manually entered paired odds; extra live
    betting markets are not implemented.
-5. **My teams:** follow a club. Return to the match center and use Following.
-6. **Forecast journal:** show that pre-kickoff scheduled forecasts are saved.
+5. **Betting insights:** compare saved model probabilities with saved
+   margin-removed market probabilities. The page makes no bulk odds requests
+   and labels probability differences as context, not recommendations.
+6. **My teams:** follow a club. Return to the match center and use Following.
+7. **Forecast journal:** show that pre-kickoff scheduled forecasts are saved.
    Completed matches show the original prediction against the actual score.
    Pending matches remain pending. Hypothetical matchups are not journalled.
-7. **Model studio:** explain the methods. Historical numerical benchmarks are
+8. **Model studio:** explain the methods. Historical numerical benchmarks are
    explicitly archived snapshots, not a live performance claim.
-8. **Mobile/night theme:** check the drawer, long club names, odds fields, and
+9. **Mobile/night theme:** check the drawer, long club names, odds fields, and
    journal cards. Escape closes the drawer and restores focus; analysis tabs
    support arrow keys, Home, and End.
 

@@ -127,6 +127,41 @@ test("loads rounded odds, forecasts with full precision and preserves comparison
   await expect(page.getByRole("row").filter({ hasText: "Nottingham Forest" })).toContainText("57.4%");
 });
 
+test("Betting Insights compares saved independent model and market probabilities without extra odds requests", async ({ page, api }) => {
+  await ready(page);
+  await marketTab(page);
+  await page.getByRole("button", { name: "Load live market odds" }).click();
+  await page.getByRole("button", { name: "Generate forecast", exact: true }).click();
+  await expect(page.locator(".tl-jumbo-probability")).toContainText("57.4");
+
+  await navigate(page, "Betting insights");
+  await expect(page.getByRole("heading", { name: "Bet with context." })).toBeVisible();
+  await expect(page.getByText("No upcoming forecasts to compare yet.")).toHaveCount(0);
+  await expect(page.locator(".tl-insight-match")).toHaveCount(1);
+  await expect(page.locator(".tl-insight-match").first()).toContainText("Nottingham Forest FC");
+  await expect(page.locator(".tl-insight-match").first()).toContainText("Arsenal FC");
+  await expect(page.locator(".tl-insight-outcome")).toHaveCount(3);
+  await expect(page.locator(".tl-insight-match").first()).toContainText("MARKET");
+  await expect(page.locator(".tl-insight-match").first()).toContainText("Difference");
+  await expect(page.locator(".tl-insight-match").first()).toContainText("Offline test consensus");
+  expect(api.requests.filter(request => new URL(request.url()).pathname === "/odds")).toHaveLength(1);
+  await noPageOverflow(page);
+});
+
+test("Betting Insights keeps model-only forecasts visible and filters competitions", async ({ page, api }) => {
+  await ready(page);
+  await page.getByRole("button", { name: "Generate forecast", exact: true }).click();
+  await navigate(page, "Betting insights");
+  const card = page.locator(".tl-insight-match").first();
+  await expect(card).toContainText("Model only");
+  await expect(card).toContainText("Load odds");
+  await page.getByLabel("Filter betting insights by competition").selectOption("la_liga");
+  await expect(page.getByText("No upcoming forecasts to compare yet.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Go to Match center" })).toBeVisible();
+  expect(api.requests.filter(request => new URL(request.url()).pathname === "/odds")).toHaveLength(0);
+  await noPageOverflow(page);
+});
+
 test("fixture, forecast and odds failures recover on an explicit retry", async ({ page, api }) => {
   api.nextFailures = 1;
   await page.goto("/");

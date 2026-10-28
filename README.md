@@ -64,19 +64,18 @@ WebKit browser flows against mocked providers. These checks do not consume your
 Goal API or Odds API allowance. See [browser checks](docs/browser-tests.md) for
 local setup, coverage and device-testing limits.
 
-The match Betting tab is being developed in checkpoints. The first
-checkpoint adds offline goal-market calculations and a 10,984-match chronological
-benchmark; it does not change production forecasts or the UI. Read the
-[betting-market findings and next steps](docs/betting-markets.md), including
-markets that still need validation. The [historical date correction](docs/historical-date-correction.md)
-documents corrected July/August 2020 chronology, the repeated benchmark and an
-offline migration that preserves newer results in local synced snapshots.
-
 The match **Betting** tab now presents Result, Goals, Team totals and Scores,
 with two-decimal model fair prices and manual paired-price comparisons for goal
 lines. Live loading still covers 1X2; additional live markets and extra-market
 journal settlement are later checkpoints. See the [Betting tab guide](docs/betting-tab.md)
 for forecast provenance, experimental goal estimates, refund rules and setup.
+The separate **Betting insights** workspace compares saved, independent model
+probabilities with the margin-removed market probabilities the user chose to
+load. Differences are context for review, not a betting recommendation; the
+page makes no bulk odds requests. See the [Betting insights guide](docs/betting-insights.md).
+The [historical date correction](docs/historical-date-correction.md) documents
+corrected July/August 2020 chronology, the repeated benchmark and an offline
+migration that preserves newer results in local synced snapshots.
 
 ## Build model-ready features
 
