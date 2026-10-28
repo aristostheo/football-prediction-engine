@@ -31,6 +31,8 @@
 .tl-live .tl-research[open] summary { margin-bottom: 24px; }
 .tl-live summary:focus-visible { outline: 2px solid var(--tl-orange); outline-offset: 4px; }
 @media (max-width: 800px) {
+  .tl-live .tl-sidebar { visibility: hidden; }
+  .tl-live .tl-sidebar-open { visibility: visible; }
   .tl-drawer-close { display: inline-grid; flex-shrink: 0; }
   .tl-live .tl-sidebar-brand .tl-brand { min-width: 0; padding: 0; }
   .tl-live .tl-sidebar-brand .tl-brand strong { font-size: 16px; }

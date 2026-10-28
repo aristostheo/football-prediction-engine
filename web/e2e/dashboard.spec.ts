@@ -20,7 +20,7 @@ function gate() {
   return { wait, release };
 }
 
-test("retired page links open Touchline without losing saved favourites or showing demo data", async ({ page }) => {
+test("retired page links open Touchline without losing saved favourites or showing demo data", async ({ page }, testInfo) => {
   await ready(page);
   await page.getByRole("button", { name: "Follow Nottingham Forest FC", exact: true }).click();
   for (const path of ["/classic", "/updated-mockup/"]) {
@@ -31,6 +31,13 @@ test("retired page links open Touchline without losing saved favourites or showi
     await expect(page).toHaveTitle("Match Forecast — Touchline");
     await expect(hero(page)).toContainText("Nottingham Forest");
   }
+  await noPageOverflow(page);
+  await testInfo.attach("demo-home", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+  await navigate(page, "Model studio");
+  await page.getByText("Historical benchmarks", { exact: false }).click();
+  await expect(page.getByText(/Archived research snapshot from October 2/)).toBeVisible();
+  await noPageOverflow(page);
+  await testInfo.attach("demo-methodology", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
 });
 
 test("analysis tabs support keyboard navigation and mobile navigation traps focus and closes cleanly", async ({ page }) => {
@@ -45,6 +52,7 @@ test("analysis tabs support keyboard navigation and mobile navigation traps focu
   await page.keyboard.press("Home");
   await expect(overview).toBeFocused();
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".tl-sidebar")).not.toBeVisible();
   const menu = page.getByRole("button", { name: "Open navigation", exact: true });
   await menu.click();
   const drawer = page.getByRole("dialog", { name: "Navigation", exact: true });
@@ -57,6 +65,7 @@ test("analysis tabs support keyboard navigation and mobile navigation traps focu
   await expect(page.locator(".tl-workspace")).toHaveAttribute("inert", "");
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);
+  await expect(page.locator(".tl-sidebar")).not.toBeVisible();
   await expect(menu).toBeFocused();
   await expect(page.locator(".tl-workspace")).not.toHaveAttribute("inert");
   await menu.click();
